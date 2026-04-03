@@ -1087,6 +1087,7 @@ export const quickNoteApi = {
     is_processed?: number;
     group_id?: string;
     source_document_id?: string;
+    source_page?: number;
     search?: string;
     skip?: number;
     limit?: number;

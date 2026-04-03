@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   X, 
   Minimize2, 
@@ -6,10 +6,7 @@ import {
   Check, 
   Save, 
   Tag, 
-  Plus, 
-  ChevronDown, 
-  ChevronUp, 
-  Search,
+  Plus,
   Calendar,
   Sparkles,
   Loader,
@@ -50,7 +47,6 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
   const [tagInput, setTagInput] = useState('');
   const [historyTags, setHistoryTags] = useState<string[]>([]);
   const [historyTagDropdownOpen, setHistoryTagDropdownOpen] = useState(false);
-  const [historyTagSearchQuery, setHistoryTagSearchQuery] = useState('');
   const historyTagDropdownRef = useRef<HTMLDivElement>(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -83,14 +79,6 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
       console.error('Failed to load history tags:', error);
     }
   };
-
-  const filteredHistoryTags = useMemo(() => {
-    if (!historyTagSearchQuery.trim()) {
-      return historyTags;
-    }
-    const query = historyTagSearchQuery.toLowerCase();
-    return historyTags.filter(tag => tag.toLowerCase().includes(query));
-  }, [historyTags, historyTagSearchQuery]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.window-controls') || 
@@ -285,13 +273,6 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
     
     setTagFeedback(`已为 ${selectedEvents.size} 个事件添加标签 "${tag}"`);
     setTimeout(() => setTagFeedback(null), 2000);
-  };
-
-  const removeEventTag = (eventIndex: number, tag: string) => {
-    const newEventTags = new Map(eventTags);
-    const currentTags = newEventTags.get(eventIndex) || [];
-    newEventTags.set(eventIndex, currentTags.filter(t => t !== tag));
-    setEventTags(newEventTags);
   };
 
   if (!isOpen) return null;

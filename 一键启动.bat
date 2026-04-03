@@ -10,42 +10,34 @@ echo.
 
 cd /d "%~dp0"
 
-echo [1/4] 检查 Python 环境...
+echo [1/3] 检查 Python 环境...
 python --version >nul 2>&1
 if errorlevel 1 (
     echo [错误] 未找到 Python，请先安装 Python 3.8+
     pause
     exit /b 1
 )
-echo       Python 已安装 ✓
+echo       Python 已安装
 
 echo.
-echo [2/4] 检查并安装后端依赖...
-cd backend
-python -m pip install -r requirements.txt -q
+echo [2/3] 检查核心依赖...
+python -c "import fastapi, uvicorn, fitz" >nul 2>&1
 if errorlevel 1 (
-    echo [警告] 后端依赖安装可能有问题，继续尝试启动...
+    echo       核心依赖未安装
+    echo.
+    echo       正在自动安装依赖，请稍候...
+    echo.
+    cd backend
+    python -m pip install --upgrade pip -i https://pypi.tuna.tsinghua.edu.cn/simple >nul 2>&1
+    python -m pip install fastapi==0.109.0 uvicorn==0.27.0 sqlalchemy==2.0.25 pydantic==2.5.3 pydantic-settings==2.1.0 python-multipart==0.0.6 httpx==0.26.0 openai==1.12.0 python-dotenv==1.0.0 python-docx==1.1.0 PyMuPDF==1.24.0 Pillow==10.2.0 aiofiles==23.2.1 -i https://pypi.tuna.tsinghua.edu.cn/simple --quiet
+    cd ..
+    echo       基础依赖安装完成
 ) else (
-    echo       后端依赖已就绪 ✓
+    echo       核心依赖已就绪
 )
-cd ..
 
 echo.
-echo [3/4] 检查并安装前端依赖...
-cd frontend
-if not exist "node_modules" (
-    echo       首次运行，正在安装前端依赖，请稍候...
-    call npm install --silent
-)
-if errorlevel 1 (
-    echo [警告] 前端依赖安装可能有问题，继续尝试启动...
-) else (
-    echo       前端依赖已就绪 ✓
-)
-cd ..
-
-echo.
-echo [4/4] 启动服务...
+echo [3/3] 启动服务...
 echo.
 
 echo 启动后端服务 (端口 8000)...
@@ -57,6 +49,10 @@ timeout /t 3 /nobreak >nul
 
 echo 启动前端服务 (端口 3001)...
 cd frontend
+if not exist "node_modules" (
+    echo       首次运行，正在安装前端依赖...
+    call npm install --silent
+)
 start "前端服务" /min cmd /c "npm run dev"
 cd ..
 

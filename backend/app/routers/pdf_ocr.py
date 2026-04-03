@@ -339,3 +339,149 @@ async def get_paddle_task_status(file_path: str):
         }
     
     return PADDLE_STATUS_CACHE[cache_key]
+
+class SmartOCRRequest(BaseModel):
+    file_path: str
+    output_path: Optional[str] = None
+    start_page: int = 0
+    end_page: Optional[int] = None
+
+class SmartOCRResponse(BaseModel):
+    success: bool
+    output_path: Optional[str] = None
+    error: Optional[str] = None
+    had_ocr: bool = False
+    pages_processed: int = 0
+    message: Optional[str] = None
+    text_content: Optional[str] = None
+
+@router.post("/paddle/smart-process", response_model=SmartOCRResponse)
+async def smart_process_pdf(request: SmartOCRRequest):
+    resolved_path = resolve_file_path(request.file_path)
+    
+    if not os.path.exists(resolved_path):
+        raise HTTPException(status_code=404, detail=f"PDF 文件不存在: {request.file_path}")
+    
+    output_path = request.output_path
+    if output_path:
+        output_path = resolve_file_path(output_path)
+    
+    result = await paddleocr_service.process_pdf_smart(
+        resolved_path,
+        output_path=output_path,
+        start_page=request.start_page,
+        end_page=request.end_page
+    )
+    
+    return SmartOCRResponse(
+        success=result.get('success', False),
+        output_path=result.get('output_path'),
+        error=result.get('error'),
+        had_ocr=result.get('had_ocr', False),
+        pages_processed=result.get('pages_processed', 0),
+        message=result.get('message'),
+        text_content=result.get('text_content')
+    )
+
+@router.post("/paddle/create-searchable/{file_path:path}", response_model=SmartOCRResponse)
+async def create_searchable_pdf(
+    file_path: str,
+    output_path: Optional[str] = None,
+    start_page: int = 0,
+    end_page: Optional[int] = None
+):
+    resolved_path = resolve_file_path(file_path)
+    
+    if not os.path.exists(resolved_path):
+        raise HTTPException(status_code=404, detail=f"PDF 文件不存在: {file_path}")
+    
+    resolved_output = None
+    if output_path:
+        resolved_output = resolve_file_path(output_path)
+    
+    result = await paddleocr_service.create_searchable_pdf(
+        resolved_path,
+        output_path=resolved_output,
+        start_page=start_page,
+        end_page=end_page
+    )
+    
+    return SmartOCRResponse(
+        success=result.success,
+        output_path=resolved_output if result.success else None,
+        error=result.error,
+        had_ocr=False,
+        pages_processed=len(result.pages) if result.success else 0,
+        message="双层PDF创建成功" if result.success else f"双层PDF创建失败: {result.error}",
+        text_content=result.text_content
+    )
+
+SMART_STATUS_CACHE = {}
+
+@router.post("/paddle/smart-process-async/{file_path:path}")
+async def smart_process_pdf_async(
+    file_path: str,
+    background_tasks: BackgroundTasks,
+    output_path: Optional[str] = None,
+    start_page: int = 0,
+    end_page: Optional[int] = None
+):
+    resolved_path = resolve_file_path(file_path)
+    
+    if not os.path.exists(resolved_path):
+        raise HTTPException(status_code=404, detail=f"PDF 文件不存在: {file_path}")
+    
+    resolved_output = None
+    if output_path:
+        resolved_output = resolve_file_path(output_path)
+    
+    cache_key = os.path.abspath(resolved_path)
+    SMART_STATUS_CACHE[cache_key] = {
+        'status': 'processing',
+        'progress': 0,
+        'error': None
+    }
+    
+    async def process_task():
+        try:
+            result = await paddleocr_service.process_pdf_smart(
+                resolved_path,
+                output_path=resolved_output,
+                start_page=start_page,
+                end_page=end_page
+            )
+            
+            SMART_STATUS_CACHE[cache_key] = {
+                'status': 'completed' if result.get('success') else 'failed',
+                'progress': 100,
+                'error': result.get('error'),
+                'result': result
+            }
+        except Exception as e:
+            SMART_STATUS_CACHE[cache_key] = {
+                'status': 'failed',
+                'progress': 0,
+                'error': str(e)
+            }
+    
+    background_tasks.add_task(process_task)
+    
+    return {
+        "message": "智能OCR处理已启动",
+        "file_path": file_path,
+        "status": "processing"
+    }
+
+@router.get("/paddle/smart-status/{file_path:path}")
+async def get_smart_task_status(file_path: str):
+    resolved_path = resolve_file_path(file_path)
+    cache_key = os.path.abspath(resolved_path)
+    
+    if cache_key not in SMART_STATUS_CACHE:
+        return {
+            "status": "not_started",
+            "progress": 0,
+            "error": None
+        }
+    
+    return SMART_STATUS_CACHE[cache_key]

@@ -289,7 +289,7 @@ const WorldPanel: React.FC<WorldPanelProps> = ({ book, currentPage, onJumpToPage
 
   const handleTagClick = (tag: string) => {
     setSearchQuery(prev => prev ? `${prev}, ${tag}` : tag);
-    setShowTagDropdown(false);
+    setShowSearchTagDropdown(false);
   };
 
   return (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Save, X, Plus, Edit3, Sparkles } from 'lucide-react';
+import { Calendar, Save, X, Plus, Edit3, Sparkles, ChevronUp, ChevronDown } from 'lucide-react';
 import { worldTimelineApi, optimizeApi } from '../api';
 import { WorldTimelineEvent, UpdateTimelineEventRequest } from '../types';
 

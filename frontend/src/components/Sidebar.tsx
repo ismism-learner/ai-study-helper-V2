@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Document, Folder } from '../types';
-import { FileText, Trash2, Upload, Clock, Highlighter, Move, FolderOpen, X, Check, Home, FileText as FileTextIcon, Loader, Square, CheckSquare, RefreshCw, AlertTriangle, Calendar, Sparkles } from 'lucide-react';
+import { FileText, Trash2, Upload, Clock, Highlighter, Move, FolderOpen, X, Check, Home, FileText as FileTextIcon, Loader, Square, CheckSquare, Calendar, Sparkles } from 'lucide-react';
 import FolderManager from './FolderManager';
 import BatchTimelineGeneratePanel from './BatchTimelineGeneratePanel';
 

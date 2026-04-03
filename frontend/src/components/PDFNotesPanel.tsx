@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Document } from '../types';
-import { Search, X, ChevronUp, ChevronDown, Plus, Edit3, Trash2, BookOpen, Tag, Clock, FileText, Sparkles, Zap, ToggleLeft, ToggleRight, Send, Check, RefreshCw, CheckSquare, Square } from 'lucide-react';
+import { Search, X, ChevronUp, ChevronDown, Plus, Edit3, Trash2, BookOpen, Tag, Clock, FileText, Sparkles, Zap, Send, Check, RefreshCw, CheckSquare, Square } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
-import { optimizeApi, worldTimelineApi, quickNoteApi, QuickNote } from '../api';
+import { optimizeApi, quickNoteApi, QuickNote } from '../api';
 
 interface PDFNote {
   id: string;
@@ -59,10 +59,8 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
   });
   const [showAddNoteForm, setShowAddNoteForm] = useState(false);
   const [editingNote, setEditingNote] = useState<PDFNote | null>(null);
-  const [historyTags, setHistoryTags] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
-  const [showTagDropdown, setShowTagDropdown] = useState(false);
   
   const [position, setPosition] = useState<Position>({ x: window.innerWidth - 420, y: 80 });
   const [isDragging, setIsDragging] = useState(false);
@@ -75,7 +73,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
   const [isSavingQuick, setIsSavingQuick] = useState(false);
   const [quickNotes, setQuickNotes] = useState<QuickNote[]>([]);
   const [allUnprocessedQuickNotes, setAllUnprocessedQuickNotes] = useState<QuickNote[]>([]);
-  const [currentQuickNote, setCurrentQuickNote] = useState<QuickNote | null>(null);
+  const [_currentQuickNote, setCurrentQuickNote] = useState<QuickNote | null>(null);
   const [selectedQuickNotes, setSelectedQuickNotes] = useState<Set<string>>(new Set());
   const [isBatchPolishing, setIsBatchPolishing] = useState(false);
   const [polishResults, setPolishResults] = useState<any[] | null>(null);
@@ -85,24 +83,11 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
   }, [documentId]);
 
   useEffect(() => {
-    loadHistoryTags();
-  }, []);
-
-  useEffect(() => {
     if (isQuickMode) {
       loadQuickNotes();
       loadAllUnprocessedQuickNotes();
     }
   }, [currentPage, isQuickMode]);
-
-  const loadHistoryTags = async () => {
-    try {
-      const response = await worldTimelineApi.getTimelineTagsHistory();
-      setHistoryTags(response.data.tags || []);
-    } catch (error) {
-      console.error('Failed to load history tags:', error);
-    }
-  };
 
   const loadQuickNotes = useCallback(async () => {
     try {
@@ -376,7 +361,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
 
     setIsSavingQuick(true);
     try {
-      const response = await quickNoteApi.create({
+      await quickNoteApi.create({
         content: quickContent.trim(),
         source_document_id: documentId,
         source_page: currentPage,

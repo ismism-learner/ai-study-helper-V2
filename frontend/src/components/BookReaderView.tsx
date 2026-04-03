@@ -244,7 +244,6 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
 
     const handleScroll = () => {
       const scrollTop = scrollContainer.scrollTop;
-      const containerHeight = scrollContainer.clientHeight;
       const estimatedPageHeight = PAGE_HEIGHT_ESTIMATE * scale;
       
       const estimatedPage = Math.floor(scrollTop / estimatedPageHeight) + 1;
@@ -282,7 +281,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
         });
 
         if (newVisiblePages.size > 0) {
-          setVisiblePages(prev => {
+          setVisiblePages(() => {
             const combined = new Set<number>();
             newVisiblePages.forEach(page => {
               for (let i = Math.max(1, page - BUFFER_PAGES); i <= Math.min(numPages, page + BUFFER_PAGES); i++) {

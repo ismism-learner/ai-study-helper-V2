@@ -338,6 +338,244 @@ class PaddleOCRService:
             return max(scores, key=scores.get)
         return None
     
+    async def create_searchable_pdf(
+        self,
+        pdf_path: str,
+        output_path: str = None,
+        start_page: int = 0,
+        end_page: int = None,
+        progress_callback: callable = None
+    ) -> PaddleOCRResult:
+        if not os.path.exists(pdf_path):
+            return PaddleOCRResult(
+                success=False,
+                error=f"PDF 文件不存在: {pdf_path}"
+            )
+        
+        if not self.model_loaded:
+            success = await self.load_model()
+            if not success:
+                return PaddleOCRResult(
+                    success=False,
+                    error=f"模型加载失败: {self._load_error}"
+                )
+        
+        try:
+            import fitz
+            
+            doc = fitz.open(pdf_path)
+            total_pages = len(doc)
+            actual_end = min(end_page, total_pages) if end_page else total_pages
+            
+            if output_path is None:
+                base, ext = os.path.splitext(pdf_path)
+                output_path = f"{base}_searchable{ext}"
+            
+            new_doc = fitz.open()
+            
+            all_text = []
+            all_code_blocks = []
+            all_ocr_results = []
+            pages_result = []
+            
+            for page_idx in range(start_page, actual_end):
+                page = doc[page_idx]
+                
+                mat = fitz.Matrix(2.0, 2.0)
+                pix = page.get_pixmap(matrix=mat)
+                
+                tmp_dir = tempfile.gettempdir()
+                tmp_path = os.path.join(tmp_dir, f"paddle_ocr_{page_idx}_{os.getpid()}.png")
+                
+                try:
+                    pix.save(tmp_path)
+                except Exception as save_err:
+                    logger.warning(f"Failed to save temp image: {save_err}")
+                    tmp_path = os.path.join(tempfile.gettempdir(), f"temp_ocr_{page_idx}.png")
+                    os.makedirs(os.path.dirname(tmp_path), exist_ok=True)
+                    pix.save(tmp_path)
+                
+                try:
+                    result = await self.process_image(tmp_path)
+                    
+                    if result.success:
+                        new_page = new_doc.new_page(width=page.rect.width, height=page.rect.height)
+                        
+                        new_page.insert_image(
+                            page.rect,
+                            filename=tmp_path
+                        )
+                        
+                        text_instances = []
+                        for ocr_item in result.ocr_results:
+                            text = ocr_item.get('text', '')
+                            box = ocr_item.get('box', [])
+                            
+                            if not text or not box or len(box) < 4:
+                                continue
+                            
+                            try:
+                                scale_x = page.rect.width / (pix.width / 2.0)
+                                scale_y = page.rect.height / (pix.height / 2.0)
+                                
+                                x0 = min(point[0] for point in box) * scale_x
+                                y0 = min(point[1] for point in box) * scale_y
+                                x1 = max(point[0] for point in box) * scale_x
+                                y1 = max(point[1] for point in box) * scale_y
+                                
+                                rect = fitz.Rect(x0, y0, x1, y1)
+                                
+                                fontsize = max(6, min(14, (y1 - y0) * 0.6))
+                                
+                                text_instances.append({
+                                    'text': text,
+                                    'rect': rect,
+                                    'fontsize': fontsize
+                                })
+                            except Exception as e:
+                                logger.warning(f"Failed to process text box: {e}")
+                                continue
+                        
+                        for ti in text_instances:
+                            try:
+                                point = fitz.Point(ti['rect'].x0, ti['rect'].y1 - 2)
+                                new_page.insert_text(
+                                    point,
+                                    ti['text'],
+                                    fontsize=ti['fontsize'],
+                                    fontname="helv",
+                                    color=(0, 0, 0)
+                                )
+                            except Exception as e:
+                                logger.warning(f"Failed to insert text: {e}")
+                                continue
+                        
+                        all_text.append(result.text_content)
+                        all_code_blocks.extend(result.code_blocks)
+                        all_ocr_results.extend(result.ocr_results)
+                        
+                        pages_result.append({
+                            'page_number': page_idx + 1,
+                            'text_content': result.text_content,
+                            'code_blocks': result.code_blocks,
+                            'ocr_results': result.ocr_results
+                        })
+                    else:
+                        logger.warning(f"Failed to process page {page_idx + 1}: {result.error}")
+                        new_page = new_doc.new_page(width=page.rect.width, height=page.rect.height)
+                        new_page.insert_image(page.rect, filename=tmp_path)
+                        
+                        pages_result.append({
+                            'page_number': page_idx + 1,
+                            'error': result.error
+                        })
+                    
+                    if progress_callback:
+                        progress = int((page_idx - start_page + 1) / (actual_end - start_page) * 100)
+                        await progress_callback(progress, page_idx + 1, actual_end)
+                        
+                finally:
+                    try:
+                        if os.path.exists(tmp_path):
+                            os.unlink(tmp_path)
+                    except PermissionError:
+                        pass
+                    except Exception:
+                        pass
+            
+            doc.close()
+            
+            new_doc.save(output_path)
+            new_doc.close()
+            
+            logger.info(f"Searchable PDF created: {output_path}")
+            
+            return PaddleOCRResult(
+                success=True,
+                text_content="\n\n".join(all_text),
+                pages=pages_result,
+                code_blocks=all_code_blocks,
+                ocr_results=all_ocr_results
+            )
+            
+        except Exception as e:
+            logger.error(f"Error creating searchable PDF: {e}")
+            import traceback
+            traceback.print_exc()
+            return PaddleOCRResult(
+                success=False,
+                error=str(e)
+            )
+    
+    async def process_pdf_smart(
+        self,
+        pdf_path: str,
+        output_path: str = None,
+        start_page: int = 0,
+        end_page: int = None,
+        progress_callback: callable = None
+    ) -> Dict[str, Any]:
+        if not os.path.exists(pdf_path):
+            return {
+                'success': False,
+                'error': f"PDF 文件不存在: {pdf_path}"
+            }
+        
+        try:
+            import fitz
+            
+            doc = fitz.open(pdf_path)
+            total_pages = len(doc)
+            
+            text_pages = 0
+            for page in doc:
+                text = page.get_text()
+                if text.strip():
+                    text_pages += 1
+            
+            doc.close()
+            
+            has_text = text_pages > total_pages * 0.3
+            
+            if has_text:
+                logger.info(f"PDF already has text layer, skipping OCR: {pdf_path}")
+                return {
+                    'success': True,
+                    'output_path': pdf_path,
+                    'had_ocr': True,
+                    'pages_processed': total_pages,
+                    'message': 'PDF已包含文字层，无需OCR处理'
+                }
+            
+            logger.info(f"PDF needs OCR processing: {pdf_path}")
+            result = await self.create_searchable_pdf(
+                pdf_path,
+                output_path=output_path,
+                start_page=start_page,
+                end_page=end_page,
+                progress_callback=progress_callback
+            )
+            
+            return {
+                'success': result.success,
+                'output_path': output_path if result.success else None,
+                'error': result.error,
+                'had_ocr': False,
+                'pages_processed': len(result.pages) if result.success else 0,
+                'text_content': result.text_content,
+                'pages': result.pages,
+                'message': 'OCR处理完成' if result.success else f'OCR处理失败: {result.error}'
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in smart PDF processing: {e}")
+            import traceback
+            traceback.print_exc()
+            return {
+                'success': False,
+                'error': str(e)
+            }
+    
     def get_status(self) -> Dict[str, Any]:
         return {
             'model_loaded': self.model_loaded,
