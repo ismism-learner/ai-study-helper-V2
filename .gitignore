@@ -1,0 +1,40 @@
+# 忽略Python编译文件
+__pycache__/
+*.pyc
+
+# 忽略数据库文件
+*.db
+*.db.*
+
+# 忽略上传的书籍文件
+backend/uploads/
+
+# 忽略备份文件
+backend/backups/
+
+# 忽略环境变量文件
+.env
+
+# 忽略Quark配置
+backend/quark_config/
+
+# 忽略工具文件
+backend/tools/
+
+# 忽略Node.js依赖
+frontend/node_modules/
+
+# 忽略前端构建文件
+frontend/build/
+frontend/dist/
+
+# 忽略IDE文件
+.vscode/
+.idea/
+
+# 忽略系统文件
+Thumbs.db
+.DS_Store
+
+# 忽略日志文件
+*.log

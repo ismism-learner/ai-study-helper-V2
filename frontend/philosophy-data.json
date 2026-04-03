@@ -1,0 +1,3810 @@
+[
+  {
+    "code": "1-1-1-1 科学独断论",
+    "name": "科学独断论",
+    "field": "宇宙",
+    "ontology": [
+      "客观实在"
+    ],
+    "epistemology": [
+      "物理现象"
+    ],
+    "teleology": [
+      "真理"
+    ],
+    "extra": "培根(英国经验主义哲学家；被世人误解的)"
+  },
+  {
+    "code": "1-1-1-2 有机进化论",
+    "name": "有机进化论",
+    "field": "自然",
+    "ontology": [
+      "能量"
+    ],
+    "epistemology": [
+      "经验"
+    ],
+    "teleology": [
+      "有机 对立于 机械"
+    ],
+    "extra": "怀特海(19世纪末英国哲学家)"
+  },
+  {
+    "code": "1-1-1-3 科学消费主义",
+    "name": "科学消费主义",
+    "field": "宇宙",
+    "ontology": [
+      "能量"
+    ],
+    "epistemology": [
+      "体验"
+    ],
+    "teleology": [
+      "有机 调和者：人类 机械"
+    ],
+    "extra": "罗素(19世纪末英国哲学家)"
+  },
+  {
+    "code": "1-1-1-4 宇宙悲观主义",
+    "name": "宇宙悲观主义",
+    "field": "宇宙",
+    "ontology": [
+      "能量"
+    ],
+    "epistemology": [
+      "感受"
+    ],
+    "teleology": [
+      "末日"
+    ],
+    "extra": "“维特根斯坦”(20世纪英国哲学家；被误读的)"
+  },
+  {
+    "code": "1-1-2-1 科学知识社会学",
+    "name": "科学知识社会学",
+    "field": "世界",
+    "ontology": [
+      "客观实在"
+    ],
+    "epistemology": [
+      "自然的 对立于 有机的"
+    ],
+    "teleology": [
+      "社会学真理"
+    ],
+    "extra": "爱丁堡学派(20世纪70年代的苏格兰社会学学派)"
+  },
+  {
+    "code": "1-1-2-2 科学革命论",
+    "name": "科学革命论",
+    "field": "世界",
+    "ontology": [
+      "客观实在"
+    ],
+    "epistemology": [
+      "自然的 对立于 社会的"
+    ],
+    "teleology": [
+      "常规的 对立于 革命的"
+    ],
+    "extra": "库恩(20世纪美国科学哲学家)"
+  },
+  {
+    "code": "1-1-2-3 文化本体论",
+    "name": "文化本体论",
+    "field": "世界",
+    "ontology": [
+      "物质"
+    ],
+    "epistemology": [
+      "自然的 对立于 社会的"
+    ],
+    "teleology": [
+      "常规的 文化 革命的"
+    ],
+    "extra": "亚历山大·温特(20世纪美国国际政治学家)"
+  },
+  {
+    "code": "1-1-2-4 解构建构论",
+    "name": "解构建构论",
+    "field": "世界",
+    "ontology": [
+      "物质"
+    ],
+    "epistemology": [
+      "自然的 对立于 社会的"
+    ],
+    "teleology": [
+      "核心信念的毁灭"
+    ],
+    "extra": "科尼斯·格根(20世纪美国社会心理学家)"
+  },
+  {
+    "code": "1-1-3-1 功能主义",
+    "name": "功能主义",
+    "field": "世界",
+    "ontology": [
+      "基质"
+    ],
+    "epistemology": [
+      "自然的 心灵状态 社会的"
+    ],
+    "teleology": [
+      "功能(函数)"
+    ],
+    "extra": "希拉里·普特南；杰瑞·福多(20世纪美国分析哲学家、认知科学家)"
+  },
+  {
+    "code": "1-1-3-2 自由进化论",
+    "name": "自由进化论",
+    "field": "世界",
+    "ontology": [
+      "物理底层"
+    ],
+    "epistemology": [
+      "自然的 心灵 社会的"
+    ],
+    "teleology": [
+      "决定的 对立于 自由的"
+    ],
+    "extra": "丹尼尔·丹尼特(20世纪美国分析哲学家、认知科学家)"
+  },
+  {
+    "code": "1-1-3-3 认知自我主义",
+    "name": "认知自我主义",
+    "field": "世界",
+    "ontology": [
+      "基质"
+    ],
+    "epistemology": [
+      "自然的 意识 社会的"
+    ],
+    "teleology": [
+      "决定的 情绪自我 自由的"
+    ],
+    "extra": "安东尼奥·达玛西奥(20世纪美国认知科学家)"
+  },
+  {
+    "code": "1-1-3-4 认知无我论",
+    "name": "认知无我论",
+    "field": "世界",
+    "ontology": [
+      "晦暗的深度"
+    ],
+    "epistemology": [
+      "自然的 透明的意识 社会的"
+    ],
+    "teleology": [
+      "无我"
+    ],
+    "extra": "托马斯·梅青格(当代德国哲学家、认知科学家)"
+  },
+  {
+    "code": "1-1-4-1 操作行为主义",
+    "name": "操作行为主义",
+    "field": "世界",
+    "ontology": [
+      "可操作的对象"
+    ],
+    "epistemology": [
+      "黑箱"
+    ],
+    "teleology": [
+      "变量关系"
+    ],
+    "extra": "弗雷德里克·斯金纳(20世纪美国心理学家，新行为主义创始人)；克拉克·赫尔(20世纪美国心理学家，耶鲁学派创始人)"
+  },
+  {
+    "code": "1-1-4-2 目的行为主义",
+    "name": "目的行为主义",
+    "field": "世界",
+    "ontology": [
+      "客观现实"
+    ],
+    "epistemology": [
+      "黑箱"
+    ],
+    "teleology": [
+      "分子的 对立于 摩尔的"
+    ],
+    "extra": "爱德华·托尔曼(20世纪美国心理学家)"
+  },
+  {
+    "code": "1-1-4-3 应用行为分析",
+    "name": "应用行为分析",
+    "field": "世界",
+    "ontology": [
+      "客观现实"
+    ],
+    "epistemology": [
+      "黑箱"
+    ],
+    "teleology": [
+      "分子的 行为改善 摩尔的"
+    ],
+    "extra": "《组织行为管理杂志》(继承了1986创刊的《组织行为杂志》，2012入选SSCI的应用心理学杂志)"
+  },
+  {
+    "code": "1-1-4-4 社会行为主义",
+    "name": "社会行为主义",
+    "field": "宇宙",
+    "ontology": [
+      "物质"
+    ],
+    "epistemology": [
+      "黑箱"
+    ],
+    "teleology": [
+      "符号性互动"
+    ],
+    "extra": "乔治·赫伯特·米德(美国20世纪社会学家、社会心理学家)"
+  },
+  {
+    "code": "1-2-1-1 自然神论",
+    "name": "自然神论",
+    "field": "宇宙",
+    "ontology": [
+      "始因/第一推动 对立于 因和果"
+    ],
+    "epistemology": [
+      "灵魂/心灵"
+    ],
+    "teleology": [
+      "自然秩序"
+    ],
+    "extra": "英国自然神论者(创始人为彻尔布里的赫尔伯特，最著名代表为牛顿)"
+  },
+  {
+    "code": "1-2-1-2 神义论",
+    "name": "神义论",
+    "field": "宇宙",
+    "ontology": [
+      "造物主 对立于 被造物"
+    ],
+    "epistemology": [
+      "灵魂"
+    ],
+    "teleology": [
+      "神义 对立于 罪恶"
+    ],
+    "extra": "莱布尼兹(德国哲学家，《神义论》作者)"
+  },
+  {
+    "code": "1-2-1-3 一元论诺斯替主义",
+    "name": "一元论诺斯替主义",
+    "field": "bythos",
+    "ontology": [
+      "form pleroma 对立于 phenomena kenoma"
+    ],
+    "epistemology": [
+      "sophia"
+    ],
+    "teleology": [
+      "theodicy 调和者：gnosis(灵智) evil"
+    ],
+    "extra": "瓦伦汀(华伦提诺)"
+  },
+  {
+    "code": "1-2-1-4 模态位格一元论",
+    "name": "模态位格一元论",
+    "field": "genesis",
+    "ontology": [
+      "deity 对立于 world"
+    ],
+    "epistemology": [
+      "persoma"
+    ],
+    "teleology": [
+      "passion"
+    ],
+    "extra": "撒伯里乌(萨伯琉)"
+  },
+  {
+    "code": "1-2-2-1 传殖主义",
+    "name": "传殖主义",
+    "field": "创世",
+    "ontology": [
+      "创生性存在 对立于 派生性存在"
+    ],
+    "epistemology": [
+      "faith 对立于 pagan"
+    ],
+    "teleology": [
+      "rule of faith"
+    ],
+    "extra": "德尔图良"
+  },
+  {
+    "code": "1-2-2-2 部分主义",
+    "name": "部分主义",
+    "field": "拼合而成的整全",
+    "ontology": [
+      "partial objects 对立于 自然物"
+    ],
+    "epistemology": [
+      "图腾 对立于 凡俗的事物"
+    ],
+    "teleology": [
+      "rule of faith 对立于 myth of image"
+    ],
+    "extra": "三叶草大师，圣·帕特里克"
+  },
+  {
+    "code": "1-2-2-3 拜物教",
+    "name": "拜物教",
+    "field": "创造性叙事",
+    "ontology": [
+      "平凡物 对立于 物神"
+    ],
+    "epistemology": [
+      "神秘力量的凝结 对立于 工具性的机制"
+    ],
+    "teleology": [
+      "rule of faith 调和者：fetishization myth of image"
+    ],
+    "extra": "锻铸蛇杖的人，摩西"
+  },
+  {
+    "code": "1-2-2-4 时间崇拜",
+    "name": "时间崇拜",
+    "field": "aion(时间)",
+    "ontology": [
+      "aion(神圣力量) 对立于 chronos(凡俗时间)"
+    ],
+    "epistemology": [
+      "日常体验 对立于 节庆性的体验"
+    ],
+    "teleology": [
+      "time"
+    ],
+    "extra": "时间之神Aion、狄奥尼索斯与奥菲欧斯的三位一体"
+  },
+  {
+    "code": "1-2-3-1 永生主义",
+    "name": "永生主义",
+    "field": "dwellable home",
+    "ontology": [
+      "mortal可朽的 对立于 immortal不朽的"
+    ],
+    "epistemology": [
+      "神圣 调和者：我的生存体验(贵生) 日常"
+    ],
+    "teleology": [
+      "生活的延续"
+    ],
+    "extra": "西西弗斯"
+  },
+  {
+    "code": "1-2-3-2 回归式唯灵论",
+    "name": "回归式唯灵论",
+    "field": "spiritual spheres",
+    "ontology": [
+      "物质\\凡俗 对立于 spiritual"
+    ],
+    "epistemology": [
+      "共同体的话语 调和者：合而为一 (接触\\通灵) 神圣的话语 (方法\\体验)"
+    ],
+    "teleology": [
+      "留下Lingering 对立于 回归reverting"
+    ],
+    "extra": "swedenborg，mesmer"
+  },
+  {
+    "code": "1-2-3-3 魔法师主义",
+    "name": "魔法师主义",
+    "field": "大宇宙\\小宇宙",
+    "ontology": [
+      "natural forces 对立于 astral forces"
+    ],
+    "epistemology": [
+      "divine 调和者：science daily"
+    ],
+    "teleology": [
+      "留下Lingering 调和者：改善 improving 回归reverting"
+    ],
+    "extra": "eliphas levi，西方魔法学奠基人"
+  },
+  {
+    "code": "1-2-3-4 弃绝主义",
+    "name": "弃绝主义",
+    "field": "语言\\命运",
+    "ontology": [
+      "断裂 对立于 连续"
+    ],
+    "epistemology": [
+      "divine supranatural 调和者：自我意识 secular natural"
+    ],
+    "teleology": [
+      "弃绝"
+    ],
+    "extra": "克洛诺斯的俄狄浦斯"
+  },
+  {
+    "code": "1-2-4-1 作为信仰的命定论",
+    "name": "作为信仰的命定论",
+    "field": "圣典(神圣符号体系)化的世界",
+    "ontology": [
+      "挣扎 对立于 命"
+    ],
+    "epistemology": [
+      "无自由意志"
+    ],
+    "teleology": [
+      "命定"
+    ],
+    "extra": "路德，祥林嫂"
+  },
+  {
+    "code": "1-2-4-2 救世主义",
+    "name": "救世主义",
+    "field": "因果网络",
+    "ontology": [
+      "在场 对立于 过去、未来"
+    ],
+    "epistemology": [
+      "离苦"
+    ],
+    "teleology": [
+      "循环、命定 对立于 结算"
+    ],
+    "extra": "临疯的尼采"
+  },
+  {
+    "code": "1-2-4-3 神智论",
+    "name": "神智论",
+    "field": "主宰的自我认识、体验",
+    "ontology": [
+      "隐匿 对立于 显现"
+    ],
+    "epistemology": [
+      "无我、出神"
+    ],
+    "teleology": [
+      "循环、命定 调和者：赏赐 结算"
+    ],
+    "extra": "sufism"
+  },
+  {
+    "code": "1-2-4-4 神爱论",
+    "name": "神爱论",
+    "field": "神圣文本",
+    "ontology": [
+      "可爱的、完美的、挚爱的 对立于 中介、信使"
+    ],
+    "epistemology": [
+      "痴迷"
+    ],
+    "teleology": [
+      "任由所爱施为、予取予求"
+    ],
+    "extra": "rabia of basra"
+  },
+  {
+    "code": "1-3-1-1 客观唯心主义",
+    "name": "客观唯心主义",
+    "field": "宇宙",
+    "ontology": [
+      "Being 调和者：精神 beings"
+    ],
+    "epistemology": [
+      "心灵"
+    ],
+    "teleology": [
+      "真理/理"
+    ],
+    "extra": "程朱理学"
+  },
+  {
+    "code": "1-3-1-2 主观唯心主义",
+    "name": "主观唯心主义",
+    "field": "宇宙",
+    "ontology": [
+      "Being 调和者：精神 beings"
+    ],
+    "epistemology": [
+      "心灵"
+    ],
+    "teleology": [
+      "有限 对立于 无限"
+    ],
+    "extra": "王阳明，心学"
+  },
+  {
+    "code": "1-3-1-3 现实唯心主义",
+    "name": "现实唯心主义",
+    "field": "世界",
+    "ontology": [
+      "Being 调和者：精神 beings"
+    ],
+    "epistemology": [
+      "思想"
+    ],
+    "teleology": [
+      "有限 调和者：行动 无限"
+    ],
+    "extra": "秦梯利，墨索里尼御用哲学家"
+  },
+  {
+    "code": "1-3-1-4 唯梦论",
+    "name": "唯梦论",
+    "field": "世界",
+    "ontology": [
+      "Being 调和者：精神 beings"
+    ],
+    "epistemology": [
+      "心灵"
+    ],
+    "teleology": [
+      "梦"
+    ],
+    "extra": "苏轼，中国古代士大夫"
+  },
+  {
+    "code": "1-3-2-1 现代斯多亚主义",
+    "name": "现代斯多亚主义",
+    "field": "宇宙",
+    "ontology": [
+      "自然的 调和者：理性 反常的"
+    ],
+    "epistemology": [
+      "本真 对立于 非本真"
+    ],
+    "teleology": [
+      "和谐/德行/回归自然"
+    ],
+    "extra": "努斯鲍姆，白左勋章姐，东林党党棍，西欧跨国贵族传统"
+  },
+  {
+    "code": "1-3-2-2 现代犬儒主义",
+    "name": "现代犬儒主义",
+    "field": "宇宙",
+    "ontology": [
+      "Being 调和者：精神 beings"
+    ],
+    "epistemology": [
+      "本真 对立于 非本真"
+    ],
+    "teleology": [
+      "私人目的 对立于 公共目的"
+    ],
+    "extra": "第欧根尼，批判现实主义以及实在论的哲学家"
+  },
+  {
+    "code": "1-3-2-3 现代爱情主义",
+    "name": "现代爱情主义",
+    "field": "宇宙或者世界",
+    "ontology": [
+      "Being 调和者：精神 beings"
+    ],
+    "epistemology": [
+      "本真 对立于 非本真"
+    ],
+    "teleology": [
+      "私人目的 调和者：爱情 公共目的"
+    ],
+    "extra": "普罗蒂诺，被庸俗化的"
+  },
+  {
+    "code": "1-3-2-4 现代智者主义",
+    "name": "现代智者主义",
+    "field": "宇宙或者世界",
+    "ontology": [
+      "Being 调和者：神智、智性 beings"
+    ],
+    "epistemology": [
+      "本真 对立于 非本真"
+    ],
+    "teleology": [
+      "真理是待定的"
+    ],
+    "extra": "普罗泰格拉与高尔吉亚，被庸俗化的；民哲"
+  },
+  {
+    "code": "1-3-3-1 自我中心主义",
+    "name": "自我中心主义",
+    "field": "世界",
+    "ontology": [
+      "Being 调和者：Id/本我 beings"
+    ],
+    "epistemology": [
+      "本真 调和者：“我的！” 非本真"
+    ],
+    "teleology": [
+      "无条件利己"
+    ],
+    "extra": "男性修仙小说"
+  },
+  {
+    "code": "1-3-3-2 道德严酷主义",
+    "name": "道德严酷主义",
+    "field": "世界",
+    "ontology": [
+      "Being 调和者：Id/本我 beings"
+    ],
+    "epistemology": [
+      "本真 调和者：自我意识 非本真"
+    ],
+    "teleology": [
+      "高贵 对立于 低贱"
+    ],
+    "extra": "极右翼男拳主义，伪君子，撒哈拉丁阿里《我们心中的魔鬼》中的那个知识分子"
+  },
+  {
+    "code": "1-3-3-3 排他集体主义",
+    "name": "排他集体主义",
+    "field": "世界",
+    "ontology": [
+      "Being 调和者：Id/本我 beings"
+    ],
+    "epistemology": [
+      "本真 调和者：自我 非本真"
+    ],
+    "teleology": [
+      "高贵 调和者：集体 低贱"
+    ],
+    "extra": "小粉红与恨国党"
+  },
+  {
+    "code": "1-3-3-4 厌女症 虚无主义",
+    "name": "厌女症 虚无主义",
+    "field": "世界",
+    "ontology": [
+      "Being 调和者：Id/本我 beings"
+    ],
+    "epistemology": [
+      "本真 调和者：理性 非本真"
+    ],
+    "teleology": [
+      "虚无"
+    ],
+    "extra": "叔本华，贬低女性以立哲位"
+  },
+  {
+    "code": "1-3-4-1 伦理行动主义",
+    "name": "伦理行动主义",
+    "field": "世界/存有",
+    "ontology": [
+      "Being 调和者：体验 beings"
+    ],
+    "epistemology": [
+      "折中主义"
+    ],
+    "teleology": [
+      "内在理想主义"
+    ],
+    "extra": "倭铿(鲁道夫·克里斯托夫·奥伊肯)，反现代化乡村教师必备心灵毒药"
+  },
+  {
+    "code": "1-3-4-2 随笔主义",
+    "name": "随笔主义",
+    "field": "世界",
+    "ontology": [
+      "Being 调和者：对理念的体验 beings"
+    ],
+    "epistemology": [
+      "悬置"
+    ],
+    "teleology": [
+      "因果性现实 对立于 理论性可能性"
+    ],
+    "extra": "罗伯特·穆启尔 《没有个性的人》"
+  },
+  {
+    "code": "1-3-4-3 唯美主义",
+    "name": "唯美主义",
+    "field": "世界",
+    "ontology": [
+      "Being 调和者：内在生活 beings"
+    ],
+    "epistemology": [
+      "沉默"
+    ],
+    "teleology": [
+      "因果性现实 调和者：美 理论性可能性"
+    ],
+    "extra": "克尔凯廓尔，被误解的，庸俗审美三段论"
+  },
+  {
+    "code": "1-3-4-4 颓废主义",
+    "name": "颓废主义",
+    "field": "世界",
+    "ontology": [
+      "Being 调和者：直觉/体验 beings"
+    ],
+    "epistemology": [
+      "谎言"
+    ],
+    "teleology": [
+      "毫无底线"
+    ],
+    "extra": "王尔德"
+  },
+  {
+    "code": "1-4-1-1 和平主义",
+    "name": "和平主义",
+    "field": "世界",
+    "ontology": [
+      "非暴力"
+    ],
+    "epistemology": [
+      "自然现象"
+    ],
+    "teleology": [
+      "正直善良和平的生活"
+    ],
+    "extra": "普特南，《无本体论的伦理学》"
+  },
+  {
+    "code": "1-4-1-2 客观主义",
+    "name": "客观主义",
+    "field": "世界",
+    "ontology": [
+      "单纯存在/存在就是存在，不用多废话"
+    ],
+    "epistemology": [
+      "自然现象"
+    ],
+    "teleology": [
+      "精英 对立于 流俗"
+    ],
+    "extra": "安·兰德，终极傻逼文化贩子"
+  },
+  {
+    "code": "1-4-1-3 沉默主义",
+    "name": "沉默主义",
+    "field": "世界",
+    "ontology": [
+      "不言说"
+    ],
+    "epistemology": [
+      "自然现象"
+    ],
+    "teleology": [
+      "精英 调和者：沉默 流俗"
+    ],
+    "extra": "胜利者与失败者"
+  },
+  {
+    "code": "1-4-1-4 蒙昧主义",
+    "name": "蒙昧主义",
+    "field": "世界或自然",
+    "ontology": [
+      "高贵的谎言"
+    ],
+    "epistemology": [
+      "自然秩序"
+    ],
+    "teleology": [
+      "虚无主义(毁灭)"
+    ],
+    "extra": "列奥·斯特劳斯，终极傻逼反现代运动旗手"
+  },
+  {
+    "code": "1-4-2-1 纵容主义",
+    "name": "纵容主义",
+    "field": "人类社会",
+    "ontology": [
+      "不反思"
+    ],
+    "epistemology": [
+      "日常的 对立于 非日常的"
+    ],
+    "teleology": [
+      "包容"
+    ],
+    "extra": "西欧国家，代理人战争中意识形态输出，养鬼主义"
+  },
+  {
+    "code": "1-4-2-2 多元文化主义",
+    "name": "多元文化主义",
+    "field": "global capitalism的“人间”",
+    "ontology": [
+      "解构主义"
+    ],
+    "epistemology": [
+      "人的 对立于 原始的"
+    ],
+    "teleology": [
+      "multiplicity 对立于 totality"
+    ],
+    "extra": "列维纳斯，《总体与无限》，无根资本的木偶"
+  },
+  {
+    "code": "1-4-2-3 环保主义",
+    "name": "环保主义",
+    "field": "global capitalism的“人间”",
+    "ontology": [
+      "后现代幻影"
+    ],
+    "epistemology": [
+      "人性的 对立于 原始的"
+    ],
+    "teleology": [
+      "multiplicity 调和者：生存环境 totality"
+    ],
+    "extra": "何不食肉糜，环保主义人肉图腾格雷塔"
+  },
+  {
+    "code": "1-4-2-4 性解放主义",
+    "name": "性解放主义",
+    "field": "global capitalism的“人间”",
+    "ontology": [
+      "后现代幻影"
+    ],
+    "epistemology": [
+      "客体小a 对立于 一般的他者"
+    ],
+    "teleology": [
+      "享乐之love"
+    ],
+    "extra": "变态们"
+  },
+  {
+    "code": "1-4-3-1 情绪主义",
+    "name": "情绪主义",
+    "field": "知识共同体权威保证的世界",
+    "ontology": [
+      "与我无关"
+    ],
+    "epistemology": [
+      "自然 调和者：心理 人性"
+    ],
+    "teleology": [
+      "情绪的稳定/情绪的好的状态"
+    ],
+    "extra": "“情商”玩家"
+  },
+  {
+    "code": "1-4-3-2 心理正常主义",
+    "name": "心理正常主义",
+    "field": "知识共同体权威保证的世界",
+    "ontology": [
+      "莫名其妙"
+    ],
+    "epistemology": [
+      "自然 调和者：心理 人性"
+    ],
+    "teleology": [
+      "反常的 对立于 正常的"
+    ],
+    "extra": "建制内心理医生"
+  },
+  {
+    "code": "1-4-3-3 泛性主义",
+    "name": "泛性主义",
+    "field": "知识共同体权威保证的世界",
+    "ontology": [
+      "神秘主义"
+    ],
+    "epistemology": [
+      "自然 调和者：心理 人性"
+    ],
+    "teleology": [
+      "反常的 调和者：爱欲 正常的"
+    ],
+    "extra": "荣格，霍大同"
+  },
+  {
+    "code": "1-4-3-4 密契女性主义",
+    "name": "密契女性主义",
+    "field": "大他者",
+    "ontology": [
+      "大学话语"
+    ],
+    "epistemology": [
+      "自然 调和者：心理体验 人性"
+    ],
+    "teleology": [
+      "大他者你要我怎样"
+    ],
+    "extra": "追求女性性的男男女女们"
+  },
+  {
+    "code": "1-4-4-1 顺从主义",
+    "name": "顺从主义",
+    "field": "大家",
+    "ontology": [
+      "细思恐极"
+    ],
+    "epistemology": [
+      "莫名其妙"
+    ],
+    "teleology": [
+      "占便宜/偷摸整点小动作"
+    ],
+    "extra": "爱贪小便宜的人"
+  },
+  {
+    "code": "1-4-4-2 粗俗主义",
+    "name": "粗俗主义",
+    "field": "随大流",
+    "ontology": [
+      "逼！/关我吊事"
+    ],
+    "epistemology": [
+      "一时兴起(whim)/游戏"
+    ],
+    "teleology": [
+      "小便宜 对立于 大便宜"
+    ],
+    "extra": "无法控制自己爱欲的人"
+  },
+  {
+    "code": "1-4-4-3 四重竞争主义",
+    "name": "四重竞争主义",
+    "field": "游戏",
+    "ontology": [
+      "荒芜、没有价值"
+    ],
+    "epistemology": [
+      "偶然，巧合"
+    ],
+    "teleology": [
+      "小便宜 调和者：竞争 大便宜"
+    ],
+    "extra": "正在上学的学生朋友们"
+  },
+  {
+    "code": "1-4-4-4 复仇主义",
+    "name": "复仇主义",
+    "field": "天经地义的秩序",
+    "ontology": [
+      "sin/罪"
+    ],
+    "epistemology": [
+      "shame/羞耻"
+    ],
+    "teleology": [
+      "sacrifice/牺牲"
+    ],
+    "extra": "哈姆雷特(√)、耶稣、俄狄浦斯"
+  },
+  {
+    "code": "2-1-1-1 阿派朗(无界限)主义",
+    "name": "阿派朗(无界限)主义",
+    "field": "world",
+    "ontology": [
+      "apeiron"
+    ],
+    "epistemology": [
+      "有序的理性世界"
+    ],
+    "teleology": [
+      "和谐/有序"
+    ],
+    "extra": "阿那克西曼德"
+  },
+  {
+    "code": "2-1-1-2 气动一元论",
+    "name": "气动一元论",
+    "field": "global",
+    "ontology": [
+      "pneuma/air 气"
+    ],
+    "epistemology": [
+      "自然现象"
+    ],
+    "teleology": [
+      "凝结 对立于 稀疏"
+    ],
+    "extra": "阿那克西美尼"
+  },
+  {
+    "code": "2-1-1-3 分形多元论",
+    "name": "分形多元论",
+    "field": "cosmos",
+    "ontology": [
+      "元素(复数)"
+    ],
+    "epistemology": [
+      "自然现象"
+    ],
+    "teleology": [
+      "结合 调和者：旋转 分离"
+    ],
+    "extra": "阿那克萨戈拉，陨石哲学家"
+  },
+  {
+    "code": "2-1-1-4 形而上辩证主义",
+    "name": "形而上辩证主义",
+    "field": "public cosmos",
+    "ontology": [
+      "永恒的活火"
+    ],
+    "epistemology": [
+      "自然现象(becoming)"
+    ],
+    "teleology": [
+      "斗争、战争(war)"
+    ],
+    "extra": "赫拉克利特，真正意义上第一个运用辩证思维的哲学家"
+  },
+  {
+    "code": "2-1-2-1 伦理智性主义",
+    "name": "伦理智性主义",
+    "field": "城邦",
+    "ontology": [
+      "Ideas(理念世界)"
+    ],
+    "epistemology": [
+      "知识 对立于 无知"
+    ],
+    "teleology": [
+      "美德、德行、服从共同体"
+    ],
+    "extra": "苏格拉底，精神的助产术，真性情的爱智慧杠精"
+  },
+  {
+    "code": "2-1-2-2 理念实在论 理想现实主义",
+    "name": "理念实在论 理想现实主义",
+    "field": "宇宙",
+    "ontology": [
+      "form(形式)"
+    ],
+    "epistemology": [
+      "truth 对立于 opinion"
+    ],
+    "teleology": [
+      "盲目存在 对立于 善"
+    ],
+    "extra": "柏拉图，激进的保守主义分子"
+  },
+  {
+    "code": "2-1-2-3 范畴实在论 绝对现实主义",
+    "name": "范畴实在论 绝对现实主义",
+    "field": "cosmos",
+    "ontology": [
+      "形质结合论"
+    ],
+    "epistemology": [
+      "真理 对立于 意见"
+    ],
+    "teleology": [
+      "哲学 调和者：中庸 城邦的法"
+    ],
+    "extra": "亚里士多德，帝师，逍遥派中庸头子，政治的哲学之影"
+  },
+  {
+    "code": "2-1-2-4 多产的不动论",
+    "name": "多产的不动论",
+    "field": "太一(cosmos)",
+    "ontology": [
+      "太一"
+    ],
+    "epistemology": [
+      "真理 对立于 意见"
+    ],
+    "teleology": [
+      "推翻上升、下降、旋转运动的不动论"
+    ],
+    "extra": "芝诺，雅典城邦的最后挣扎，本体论缝合的证明者"
+  },
+  {
+    "code": "2-1-3-1 反应多元论",
+    "name": "反应多元论",
+    "field": "神",
+    "ontology": [
+      "incarnation(投胎转世)"
+    ],
+    "epistemology": [
+      "真理 调和者：比例 意见"
+    ],
+    "teleology": [
+      "循环"
+    ],
+    "extra": "恩培多克勒，聪明到狂妄的飞入火山之人，思想史上化学鼻祖，愚弄神话的渎神术士"
+  },
+  {
+    "code": "2-1-3-2 贫乏的原子论",
+    "name": "贫乏的原子论",
+    "field": "nature",
+    "ontology": [
+      "原子和虚空(atom/void)"
+    ],
+    "epistemology": [
+      "合法的知识 调和者：比例 混蛋的知识"
+    ],
+    "teleology": [
+      "衰败，堕落 对立于 神圣的必然性"
+    ],
+    "extra": "德谟克利特，爱嘲笑普通人的哲学家，民主制度的尝试者，原生家庭财产继承事件的受害者，机械思维鼻祖"
+  },
+  {
+    "code": "2-1-3-3 智性享乐主义",
+    "name": "智性享乐主义",
+    "field": "自然",
+    "ontology": [
+      "原子和虚空(atom/void)"
+    ],
+    "epistemology": [
+      "真理理念 调和者：类比的经验 凡俗意见"
+    ],
+    "teleology": [
+      "下坠运动 调和者：偏转运动 旋涡运动"
+    ],
+    "extra": "伊壁鸠鲁，经验科学鼻祖，哲学家的安谧后院"
+  },
+  {
+    "code": "2-1-3-4 犬儒主义",
+    "name": "犬儒主义",
+    "field": "自然",
+    "ontology": [
+      "现实具体事物"
+    ],
+    "epistemology": [
+      "真理 调和者：理智 意见"
+    ],
+    "teleology": [
+      "极其理性地回归自然"
+    ],
+    "extra": "安提斯泰尼与第欧根尼，通过理性定义人类自然天性的极端智者，狗哲主义者，郑村棋"
+  },
+  {
+    "code": "2-1-4-1 相对主义",
+    "name": "相对主义",
+    "field": "世界",
+    "ontology": [
+      "事物"
+    ],
+    "epistemology": [
+      "真理(客观、公立、跨主体)是不可能的"
+    ],
+    "teleology": [
+      "可说=有理；清楚=合法"
+    ],
+    "extra": "高尔吉亚，镜像巴门尼德，为过去的历史做辩护的状师，会说俏皮话的巴门尼德主义者"
+  },
+  {
+    "code": "2-1-4-2 怀疑主义",
+    "name": "怀疑主义",
+    "field": "cosmos",
+    "ontology": [
+      "事物"
+    ],
+    "epistemology": [
+      "epoche(悬置)"
+    ],
+    "teleology": [
+      "均衡 对立于 决断"
+    ],
+    "extra": "皮浪，巨浪当前不动心的军师，谋臣必修心法，基本的政治素养"
+  },
+  {
+    "code": "2-1-4-3 记忆主义",
+    "name": "记忆主义",
+    "field": "cosmos",
+    "ontology": [
+      "现实(人制作与创造)"
+    ],
+    "epistemology": [
+      "肤浅，傲慢"
+    ],
+    "teleology": [
+      "均衡 调和者：沉淀 决断"
+    ],
+    "extra": "希庇亚，记忆大师，技艺大师，古希腊城邦间呼吁自然法调和矛盾与冲突的傲慢智者"
+  },
+  {
+    "code": "2-1-4-4 话语主义",
+    "name": "话语主义",
+    "field": "physis",
+    "ontology": [
+      "logoi(logos复数形式)"
+    ],
+    "epistemology": [
+      "不可能兼顾一个稳固而单一的logos"
+    ],
+    "teleology": [
+      "敞开"
+    ],
+    "extra": "安提丰，智者与猛士的统一，原始精神分析师"
+  },
+  {
+    "code": "2-2-1-1 分子业力学",
+    "name": "分子业力学",
+    "field": "时间",
+    "ontology": [
+      "命(心灵) 对立于 非命(物质)"
+    ],
+    "epistemology": [
+      "微粒+业(molecular)"
+    ],
+    "teleology": [
+      "时间的纵向运动"
+    ],
+    "extra": "耆那教的大雄，原始佛教的释迦牟尼"
+  },
+  {
+    "code": "2-2-1-2 永恒时态主义",
+    "name": "永恒时态主义",
+    "field": "时间",
+    "ontology": [
+      "原子 对立于 虚空"
+    ],
+    "epistemology": [
+      "原子主义"
+    ],
+    "teleology": [
+      "exist 对立于 persist"
+    ],
+    "extra": "小乘有宗"
+  },
+  {
+    "code": "2-2-1-3 经量部的种子形而上学",
+    "name": "经量部的种子形而上学",
+    "field": "时间",
+    "ontology": [
+      "时态性存在 对立于 跨时态存在"
+    ],
+    "epistemology": [
+      "随相说"
+    ],
+    "teleology": [
+      "exist 调和者：种子说 persist"
+    ],
+    "extra": "经量部"
+  },
+  {
+    "code": "2-2-1-4 摩尔唯心主义",
+    "name": "摩尔唯心主义",
+    "field": "时间",
+    "ontology": [
+      "阿赖耶识 对立于 种子"
+    ],
+    "epistemology": [
+      "(见分、相分、自证分)三分法"
+    ],
+    "teleology": [
+      "经验观察无用，伦理退行"
+    ],
+    "extra": "《成唯识论》"
+  },
+  {
+    "code": "2-2-2-1 无为主义",
+    "name": "无为主义",
+    "field": "时间",
+    "ontology": [
+      "柔 对立于 刚"
+    ],
+    "epistemology": [
+      "知 对立于 愚"
+    ],
+    "teleology": [
+      "无为"
+    ],
+    "extra": "老子"
+  },
+  {
+    "code": "2-2-2-2 积极的神秘主义",
+    "name": "积极的神秘主义",
+    "field": "时间",
+    "ontology": [
+      "心 对立于 大块"
+    ],
+    "epistemology": [
+      "知 对立于 愚"
+    ],
+    "teleology": [
+      "有为 对立于 无为"
+    ],
+    "extra": "庄周"
+  },
+  {
+    "code": "2-2-2-3 人道的自然主义",
+    "name": "人道的自然主义",
+    "field": "人生",
+    "ontology": [
+      "给养 对立于 欲望"
+    ],
+    "epistemology": [
+      "知 对立于 愚"
+    ],
+    "teleology": [
+      "有为 调和者：厌 无为"
+    ],
+    "extra": "杨朱"
+  },
+  {
+    "code": "2-2-2-4 实用的神秘主义",
+    "name": "实用的神秘主义",
+    "field": "时间",
+    "ontology": [
+      "道/理 对立于 物"
+    ],
+    "epistemology": [
+      "情 对立于 貌"
+    ],
+    "teleology": [
+      "无定操"
+    ],
+    "extra": "韩非子"
+  },
+  {
+    "code": "2-2-3-1 历史符号主义",
+    "name": "历史符号主义",
+    "field": "时间",
+    "ontology": [
+      "阴/阳 对立于 易"
+    ],
+    "epistemology": [
+      "知 调和者：道 愚"
+    ],
+    "teleology": [
+      "易/生生/时间性、周期性的一种循环"
+    ],
+    "extra": "《周易》"
+  },
+  {
+    "code": "2-2-3-2 形而上神秘主义",
+    "name": "形而上神秘主义",
+    "field": "时间",
+    "ontology": [
+      "物质+精神 对立于 太一(流溢者)"
+    ],
+    "epistemology": [
+      "智慧 调和者：隐秘的智慧 愚昧"
+    ],
+    "teleology": [
+      "循环 对立于 终结"
+    ],
+    "extra": "七伊玛目派(伊斯玛仪派)"
+  },
+  {
+    "code": "2-2-3-3 理性唯灵论",
+    "name": "理性唯灵论",
+    "field": "经验",
+    "ontology": [
+      "二重性 对立于 一元性"
+    ],
+    "epistemology": [
+      "智 调和者：over-soul 愚"
+    ],
+    "teleology": [
+      "循环 调和者：永恒 终结"
+    ],
+    "extra": "爱默生"
+  },
+  {
+    "code": "2-2-3-4 时代性的诗歌主义",
+    "name": "时代性的诗歌主义",
+    "field": "时间",
+    "ontology": [
+      "场域间的夹缝 对立于 主体性、诗性体验"
+    ],
+    "epistemology": [
+      "智 调和者：诗歌 愚"
+    ],
+    "teleology": [
+      "死亡驱力"
+    ],
+    "extra": "杜甫、李白等诗人"
+  },
+  {
+    "code": "2-2-4-1 具有伦理热忱的虚无主义",
+    "name": "具有伦理热忱的虚无主义",
+    "field": "fabrication",
+    "ontology": [
+      "everything 对立于 nirvana"
+    ],
+    "epistemology": [
+      "de-fabrication(解除符号学编织)"
+    ],
+    "teleology": [
+      "cease of suffering"
+    ],
+    "extra": "龙树，《中论》"
+  },
+  {
+    "code": "2-2-4-2 可辩的道德箴言",
+    "name": "可辩的道德箴言",
+    "field": "时间",
+    "ontology": [
+      "divine (神圣) 对立于 vie/vita(生命)"
+    ],
+    "epistemology": [
+      "fundamentalism(原教旨主义)"
+    ],
+    "teleology": [
+      "离苦 对立于 返回绝对真理"
+    ],
+    "extra": "《塔木德》"
+  },
+  {
+    "code": "2-2-4-3 新实用主义",
+    "name": "新实用主义",
+    "field": "时间",
+    "ontology": [
+      "私人 对立于 公共"
+    ],
+    "epistemology": [
+      "真诚>“真”修辞"
+    ],
+    "teleology": [
+      "离苦 调和者：己之所欲勿施于人 返回绝对真理"
+    ],
+    "extra": "理查德·罗蒂"
+  },
+  {
+    "code": "2-2-4-4 原始现象学/分析哲学",
+    "name": "原始现象学/分析哲学",
+    "field": "时间",
+    "ontology": [
+      "无有 对立于 彼/是"
+    ],
+    "epistemology": [
+      "舛驳不中"
+    ],
+    "teleology": [
+      "分散、散开、遍为万物说"
+    ],
+    "extra": "惠施"
+  },
+  {
+    "code": "2-3-1-1 渐进的无限主义",
+    "name": "渐进的无限主义",
+    "field": "ontic",
+    "ontology": [
+      "万物 (感性材料) 对立于 无限 (完满)"
+    ],
+    "epistemology": [
+      "“对立同一律”"
+    ],
+    "teleology": [
+      "无限渐进"
+    ],
+    "extra": "库萨的尼古拉，《论渊博的无知性》"
+  },
+  {
+    "code": "2-3-1-2 运动的静止主义",
+    "name": "运动的静止主义",
+    "field": "宇宙(世界)",
+    "ontology": [
+      "以太 调和者：太一 星体(土壤、生命)"
+    ],
+    "epistemology": [
+      "思辨理性"
+    ],
+    "teleology": [
+      "渐进无限 对立于 静止"
+    ],
+    "extra": "布鲁诺"
+  },
+  {
+    "code": "2-3-1-3 实体整体主义",
+    "name": "实体整体主义",
+    "field": "cosmos",
+    "ontology": [
+      "万物 调和者：智识 神"
+    ],
+    "epistemology": [
+      "理智直观"
+    ],
+    "teleology": [
+      "渐进 调和者：依循 保持自身"
+    ],
+    "extra": "斯宾诺莎，康德的好敌手，《伦理学》"
+  },
+  {
+    "code": "2-3-1-4 辩证一元论",
+    "name": "辩证一元论",
+    "field": "ontic",
+    "ontology": [
+      "圣父 调和者：圣子 圣灵"
+    ],
+    "epistemology": [
+      "神智学"
+    ],
+    "teleology": [
+      "分离"
+    ],
+    "extra": "波墨，最强民哲，《曙光》"
+  },
+  {
+    "code": "2-3-2-1 理性动物主义",
+    "name": "理性动物主义",
+    "field": "cosmos",
+    "ontology": [
+      "事物 调和者：anima rationalis(灵魂) 太一"
+    ],
+    "epistemology": [
+      "哲学 对立于 神学"
+    ],
+    "teleology": [
+      "(死后)与太一建立连结"
+    ],
+    "extra": "托马斯·阿奎那"
+  },
+  {
+    "code": "2-3-2-2 理性神秘主义",
+    "name": "理性神秘主义",
+    "field": "nichts (无)",
+    "ontology": [
+      "华子 调和者：太一 万物"
+    ],
+    "epistemology": [
+      "分析、愤怒、祈求 对立于 保持力、理性、意愿"
+    ],
+    "teleology": [
+      "流出 对立于 返回"
+    ],
+    "extra": "埃克哈特大师"
+  },
+  {
+    "code": "2-3-2-3 超越的内在论",
+    "name": "超越的内在论",
+    "field": "cosmos",
+    "ontology": [
+      "肉体 调和者：华子 心灵"
+    ],
+    "epistemology": [
+      "哲学 对立于 内在信仰"
+    ],
+    "teleology": [
+      "流溢 调和者：内在化 返回"
+    ],
+    "extra": "马丁路德"
+  },
+  {
+    "code": "2-3-2-4 现代理性主义",
+    "name": "现代理性主义",
+    "field": "形而上学",
+    "ontology": [
+      "心 调和者：华子 物"
+    ],
+    "epistemology": [
+      "迷信 对立于 必然的"
+    ],
+    "teleology": [
+      "敞开"
+    ],
+    "extra": "笛卡尔，《第一哲学沉思录》"
+  },
+  {
+    "code": "2-3-3-1 前定主义",
+    "name": "前定主义",
+    "field": "表象",
+    "ontology": [
+      "物质性单子 调和者：华子 理性单子"
+    ],
+    "epistemology": [
+      "哲学 调和者：自然形而上学 神学"
+    ],
+    "teleology": [
+      "pre-determination"
+    ],
+    "extra": "莱布尼兹"
+  },
+  {
+    "code": "2-3-3-2 体系完美主义",
+    "name": "体系完美主义",
+    "field": "符号学宇宙",
+    "ontology": [
+      "属性 调和者：模式 本质"
+    ],
+    "epistemology": [
+      "理论哲学 调和者：逻辑学 实践哲学"
+    ],
+    "teleology": [
+      "perfection 对立于 pre-determination"
+    ],
+    "extra": "沃尔夫"
+  },
+  {
+    "code": "2-3-3-3 逻辑原子主义",
+    "name": "逻辑原子主义",
+    "field": "自然语言",
+    "ontology": [
+      "a(专名) 调和者：逻辑量词 P(摹状词、谓词)"
+    ],
+    "epistemology": [
+      "理论哲学 调和者：逻辑 实践哲学"
+    ],
+    "teleology": [
+      "perfection 调和者：preference pre-determination"
+    ],
+    "extra": "罗素，潜逃战争的贵族阶级知识分子代表，文笔好点的"
+  },
+  {
+    "code": "2-3-3-4 分隔的整体主义",
+    "name": "分隔的整体主义",
+    "field": "will to life",
+    "ontology": [
+      "表象 调和者：世界(时空) 意志"
+    ],
+    "epistemology": [
+      "理论哲学 调和者：直观 实践哲学"
+    ],
+    "teleology": [
+      "palloation(缓和痛苦、掩饰罪恶)"
+    ],
+    "extra": "叔本华，瑜不掩瑕的前(反)康德主义者"
+  },
+  {
+    "code": "2-3-4-1 数理还原主义",
+    "name": "数理还原主义",
+    "field": "cosmos",
+    "ontology": [
+      "bodies 调和者：力 quantities"
+    ],
+    "epistemology": [
+      "实验(器具)"
+    ],
+    "teleology": [
+      "有重量"
+    ],
+    "extra": "伽利略"
+  },
+  {
+    "code": "2-3-4-2 稳定的干涉主义",
+    "name": "稳定的干涉主义",
+    "field": "cosmos",
+    "ontology": [
+      "物 调和者：力 数"
+    ],
+    "epistemology": [
+      "猜想、假说、实验和理论化"
+    ],
+    "teleology": [
+      "堕落 对立于 干涉"
+    ],
+    "extra": "牛顿，千禧年主义者"
+  },
+  {
+    "code": "2-3-4-3 物理归纳主义",
+    "name": "物理归纳主义",
+    "field": "显明的nature",
+    "ontology": [
+      "物质 调和者：种类 造世主"
+    ],
+    "epistemology": [
+      "四种崇拜导致人的认识是不可靠的"
+    ],
+    "teleology": [
+      "下落 调和者：模式 修正"
+    ],
+    "extra": "培根，《人类理性论》"
+  },
+  {
+    "code": "2-3-4-4 时空绝对主义",
+    "name": "时空绝对主义",
+    "field": "造物",
+    "ontology": [
+      "atom/void 调和者：absolute space/time god"
+    ],
+    "epistemology": [
+      "怀疑论者"
+    ],
+    "teleology": [
+      "自由/解放"
+    ],
+    "extra": "皮埃尔·伽森狄"
+  },
+  {
+    "code": "2-4-1-1 乐于接受的小体主义",
+    "name": "乐于接受的小体主义",
+    "field": "universe",
+    "ontology": [
+      "存在奇迹，渐进创世"
+    ],
+    "epistemology": [
+      "实验"
+    ],
+    "teleology": [
+      "被动承受"
+    ],
+    "extra": "波义耳"
+  },
+  {
+    "code": "2-4-1-2 经验的观念论",
+    "name": "经验的观念论",
+    "field": "原子世界",
+    "ontology": [
+      "the great chain(伟大的因果性锁链)"
+    ],
+    "epistemology": [
+      "白板说"
+    ],
+    "teleology": [
+      "被动承受 对立于 主动猜测"
+    ],
+    "extra": "洛克"
+  },
+  {
+    "code": "2-4-1-3 理念-精神二元论",
+    "name": "理念-精神二元论",
+    "field": "形而上",
+    "ontology": [
+      "spirit"
+    ],
+    "epistemology": [
+      "ideas"
+    ],
+    "teleology": [
+      "被动承受 调和者：信任 主动猜测"
+    ],
+    "extra": "贝克莱"
+  },
+  {
+    "code": "2-4-1-4 人类有限主义",
+    "name": "人类有限主义",
+    "field": "经验",
+    "ontology": [
+      "经验"
+    ],
+    "epistemology": [
+      "联结"
+    ],
+    "teleology": [
+      "共同体利益"
+    ],
+    "extra": "休谟，偷天换日的大他者身份窃贼"
+  },
+  {
+    "code": "2-4-2-1 自然主义的规范论",
+    "name": "自然主义的规范论",
+    "field": "appearance",
+    "ontology": [
+      "异质性他者(物质)"
+    ],
+    "epistemology": [
+      "自然主义 对立于 观念论"
+    ],
+    "teleology": [
+      "happiness"
+    ],
+    "extra": "约翰·穆勒"
+  },
+  {
+    "code": "2-4-2-2 社会实证主义",
+    "name": "社会实证主义",
+    "field": "形而上",
+    "ontology": [
+      "不预设/无法把握任何本体性"
+    ],
+    "epistemology": [
+      "第一人称体验 对立于 社会学家视角"
+    ],
+    "teleology": [
+      "整合 对立于 归驯"
+    ],
+    "extra": "涂尔干"
+  },
+  {
+    "code": "2-4-2-3 自然神论的实证主义",
+    "name": "自然神论的实证主义",
+    "field": "knowable",
+    "ontology": [
+      "force(力)"
+    ],
+    "epistemology": [
+      "第一人称理智认识 对立于 种族知识(直观)"
+    ],
+    "teleology": [
+      "compund 调和者：进化 dissolve"
+    ],
+    "extra": "斯宾塞"
+  },
+  {
+    "code": "2-4-2-4 科学的实证主义",
+    "name": "科学的实证主义",
+    "field": "第一人称前反思经验",
+    "ontology": [
+      "element(但元素并无本体性)"
+    ],
+    "epistemology": [
+      "经验 对立于 联结方式(差异关系)"
+    ],
+    "teleology": [
+      "生存"
+    ],
+    "extra": "马赫"
+  },
+  {
+    "code": "2-4-3-1 相对语法主义",
+    "name": "相对语法主义",
+    "field": "直观",
+    "ontology": [
+      "(被击穿)"
+    ],
+    "epistemology": [
+      "直观 调和者：语法 概念"
+    ],
+    "teleology": [
+      "共识"
+    ],
+    "extra": "石里克"
+  },
+  {
+    "code": "2-4-3-2 逻辑还原主义",
+    "name": "逻辑还原主义",
+    "field": "日常用语",
+    "ontology": [
+      "(被击穿)"
+    ],
+    "epistemology": [
+      "现象主义 调和者：句法 物理主义"
+    ],
+    "teleology": [
+      "convention 对立于 criterion"
+    ],
+    "extra": "卡尔纳普"
+  },
+  {
+    "code": "2-4-3-3 逻辑行为主义",
+    "name": "逻辑行为主义",
+    "field": "第一人称视域",
+    "ontology": [
+      "(被击穿)"
+    ],
+    "epistemology": [
+      "直接体验 调和者：词项 间接体验"
+    ],
+    "teleology": [
+      "convention 调和者：行为主义(刻画) criterion"
+    ],
+    "extra": "赖尔，日常语用学派"
+  },
+  {
+    "code": "2-4-3-4 逻辑反实在论",
+    "name": "逻辑反实在论",
+    "field": "感觉世界",
+    "ontology": [
+      "(被击穿)"
+    ],
+    "epistemology": [
+      "现象主义 调和者：简明性 观念建构"
+    ],
+    "teleology": [
+      "choose(选择)"
+    ],
+    "extra": "古德曼"
+  },
+  {
+    "code": "2-4-4-1 逻辑实用主义",
+    "name": "逻辑实用主义",
+    "field": "日常话语",
+    "ontology": [
+      "本体论承诺"
+    ],
+    "epistemology": [
+      "意义的整体主义"
+    ],
+    "teleology": [
+      "科学化"
+    ],
+    "extra": "蒯因"
+  },
+  {
+    "code": "2-4-4-2 正统辩证唯物主义",
+    "name": "正统辩证唯物主义",
+    "field": "形而上秩序",
+    "ontology": [
+      "物质"
+    ],
+    "epistemology": [
+      "心理、自然经验主义"
+    ],
+    "teleology": [
+      "科学化 对立于 意识形态化"
+    ],
+    "extra": "思修四，斯大林主义"
+  },
+  {
+    "code": "2-4-4-3 符号实用主义",
+    "name": "符号实用主义",
+    "field": "现实",
+    "ontology": [
+      "承认场域论二分的所有智慧"
+    ],
+    "epistemology": [
+      "承认场域论二分的所有智慧"
+    ],
+    "teleology": [
+      "科学话语 调和者：一组圣名 意识形态话语"
+    ],
+    "extra": "语言，”人类群星闪耀时“，大同教，ggkf"
+  },
+  {
+    "code": "2-4-4-4 生存实用主义",
+    "name": "生存实用主义",
+    "field": "差别见",
+    "ontology": [
+      "平等"
+    ],
+    "epistemology": [
+      "平等"
+    ],
+    "teleology": [
+      "生存"
+    ],
+    "extra": "禅宗，《五灯会元》"
+  },
+  {
+    "code": "3-1-1-1 先验直觉主义",
+    "name": "先验直觉主义",
+    "field": "自然态度",
+    "ontology": [
+      "the giveness(被给予性)"
+    ],
+    "epistemology": [
+      "先验直观"
+    ],
+    "teleology": [
+      "认识\\本质分类\\注册进等级制符号系统内"
+    ],
+    "extra": "胡塞尔，《纯粹现象学通论：纯粹现象学和现象学哲学的观念》"
+  },
+  {
+    "code": "3-1-1-2 先验本质主义",
+    "name": "先验本质主义",
+    "field": "自然态度",
+    "ontology": [
+      "the giveness(被给予性)"
+    ],
+    "epistemology": [
+      "先验直观"
+    ],
+    "teleology": [
+      "体验、注册 对立于 本质性差异"
+    ],
+    "extra": "胡塞尔，《纯粹现象学通论：》"
+  },
+  {
+    "code": "3-1-1-3 反思性的 主体主义",
+    "name": "反思性的 主体主义",
+    "field": "自然态度",
+    "ontology": [
+      "the giveness(被给予性)"
+    ],
+    "epistemology": [
+      "先验直观"
+    ],
+    "teleology": [
+      "主动注册 调和者：反思性主体性 被动接受差异"
+    ],
+    "extra": "胡塞尔，《纯粹现象学通论：》"
+  },
+  {
+    "code": "3-1-1-4 准先验辩证主义",
+    "name": "准先验辩证主义",
+    "field": "形而上",
+    "ontology": [
+      "the giveness(被给予性)"
+    ],
+    "epistemology": [
+      "先验直观"
+    ],
+    "teleology": [
+      "原初运动"
+    ],
+    "extra": "大二时期的德里达，《胡塞尔现象学的发生问题》"
+  },
+  {
+    "code": "3-1-2-1 媒介性的 客观主义",
+    "name": "媒介性的 客观主义",
+    "field": "形而上",
+    "ontology": [
+      "连续"
+    ],
+    "epistemology": [
+      "理性、感觉 对立于 非感觉 (情绪、冲动)"
+    ],
+    "teleology": [
+      "大他者的安排"
+    ],
+    "extra": "史蒂芬·斯特拉瑟"
+  },
+  {
+    "code": "3-1-2-2 本质心理主义",
+    "name": "本质心理主义",
+    "field": "形而上",
+    "ontology": [
+      "连续"
+    ],
+    "epistemology": [
+      "思维 对立于 信念"
+    ],
+    "teleology": [
+      "大他者的安排 对立于 发现本真 重建本真维度"
+    ],
+    "extra": "普凡德尔(alexander pfander)"
+  },
+  {
+    "code": "3-1-2-3 现象学的 唯美主义",
+    "name": "现象学的 唯美主义",
+    "field": "形而上",
+    "ontology": [
+      "连续"
+    ],
+    "epistemology": [
+      "本质还原 对立于 逻辑"
+    ],
+    "teleology": [
+      "大他者的安排 调和者：艺术性聆受 发现本真 重建本真维度"
+    ],
+    "extra": "盖格尔(moritz geiger)"
+  },
+  {
+    "code": "3-1-2-4 游戏的 世界象征主义",
+    "name": "游戏的 世界象征主义",
+    "field": "形而上",
+    "ontology": [
+      "the player- the played"
+    ],
+    "epistemology": [
+      "constitution 对立于 end-constitution"
+    ],
+    "teleology": [
+      "play"
+    ],
+    "extra": "芬克(eugen fink)"
+  },
+  {
+    "code": "3-1-3-1 主体间普遍主义",
+    "name": "主体间普遍主义",
+    "field": "形而上",
+    "ontology": [
+      "连续"
+    ],
+    "epistemology": [
+      "前反思的、情感性的 调和者：公共话语 反思的、专题性认识的"
+    ],
+    "teleology": [
+      "公共理性"
+    ],
+    "extra": "哈贝马斯"
+  },
+  {
+    "code": "3-1-3-2 本土方法论",
+    "name": "本土方法论",
+    "field": "形而上",
+    "ontology": [
+      "实在论者"
+    ],
+    "epistemology": [
+      "情感性 非理性 调和者：反思性 理性思维"
+    ],
+    "teleology": [
+      "形式逻辑 自然科学 对立于 本地、族裔的临时合理性"
+    ],
+    "extra": "加芬克尔"
+  },
+  {
+    "code": "3-1-3-3 格式塔现象学",
+    "name": "格式塔现象学",
+    "field": "形而上",
+    "ontology": [
+      "连续的格式塔"
+    ],
+    "epistemology": [
+      "前反思情感 调和者：整体主义 理性、反思、理论化"
+    ],
+    "teleology": [
+      "普遍理性 调和者：整体主义 临时、情境化的合理性"
+    ],
+    "extra": "古尔维奇"
+  },
+  {
+    "code": "3-1-3-4 自身性现象学",
+    "name": "自身性现象学",
+    "field": "形而上",
+    "ontology": [
+      "连续、可理解性"
+    ],
+    "epistemology": [
+      "情感 调和者：自身性 理性"
+    ],
+    "teleology": [
+      "不确定"
+    ],
+    "extra": "胡塞尔、梅洛-庞蒂、海德格尔、萨特"
+  },
+  {
+    "code": "3-1-4-1 追问的现象学",
+    "name": "追问的现象学",
+    "field": "时间",
+    "ontology": [
+      "sein\\time"
+    ],
+    "epistemology": [
+      "问问题(无限的question变格)"
+    ],
+    "teleology": [
+      "becoming time"
+    ],
+    "extra": "早期海德格尔"
+  },
+  {
+    "code": "3-1-4-2 性化的现象学",
+    "name": "性化的现象学",
+    "field": "形而上",
+    "ontology": [
+      "自为存在"
+    ],
+    "epistemology": [
+      "去先验化"
+    ],
+    "teleology": [
+      "时间 对立于 空间"
+    ],
+    "extra": "萨特"
+  },
+  {
+    "code": "3-1-4-3 存在论的现象学",
+    "name": "存在论的现象学",
+    "field": "经验主义",
+    "ontology": [
+      "多阶格式塔连续统"
+    ],
+    "epistemology": [
+      "消解存在之深度必然失败"
+    ],
+    "teleology": [
+      "time 调和者：present space"
+    ],
+    "extra": "梅洛庞蒂"
+  },
+  {
+    "code": "3-1-4-4 现象学伦理主义",
+    "name": "现象学伦理主义",
+    "field": "形而下dire",
+    "ontology": [
+      "享用"
+    ],
+    "epistemology": [
+      "界面上的伦理行动"
+    ],
+    "teleology": [
+      "他人"
+    ],
+    "extra": "列维纳斯"
+  },
+  {
+    "code": "3-2-1-1 无限的有限主义",
+    "name": "无限的有限主义",
+    "field": "经验",
+    "ontology": [
+      "现象 对立于 本体性"
+    ],
+    "epistemology": [
+      "判断"
+    ],
+    "teleology": [
+      "渐进(有限→无限)，追求配得至福的权力"
+    ],
+    "extra": "康德《纯粹理性批判》《法哲学原理》《法哲学批判导言》"
+  },
+  {
+    "code": "3-2-1-2 先验经验主义",
+    "name": "先验经验主义",
+    "field": "形而下",
+    "ontology": [
+      "actual entity 对立于 eternal object"
+    ],
+    "epistemology": [
+      "occurrences显相"
+    ],
+    "teleology": [
+      "有限→无限 对立于 无限←有限"
+    ],
+    "extra": "怀特海"
+  },
+  {
+    "code": "3-2-1-3 先验逻辑主义",
+    "name": "先验逻辑主义",
+    "field": "形而下",
+    "ontology": [
+      "思维 对立于 理念"
+    ],
+    "epistemology": [
+      "思维意识，命题判断一元论"
+    ],
+    "teleology": [
+      "有限→无限 调和者：无穷小量 无限←有限"
+    ],
+    "extra": "马堡学派头子，柯亨"
+  },
+  {
+    "code": "3-2-1-4 符号形式主义",
+    "name": "符号形式主义",
+    "field": "形而下",
+    "ontology": [
+      "文化 对立于 符号活动"
+    ],
+    "epistemology": [
+      "符号活动构造"
+    ],
+    "teleology": [
+      "人类的自由创造，艺术"
+    ],
+    "extra": "卡西尔"
+  },
+  {
+    "code": "3-2-2-1 理智直观主义",
+    "name": "理智直观主义",
+    "field": "形而下",
+    "ontology": [
+      "gott syen(unity) 对立于 I，先验自我"
+    ],
+    "epistemology": [
+      "伪理智直观 对立于 真理智直观"
+    ],
+    "teleology": [
+      "保守主义"
+    ],
+    "extra": "晚年费希特"
+  },
+  {
+    "code": "3-2-2-2 先验观念论",
+    "name": "先验观念论",
+    "field": "形而下",
+    "ontology": [
+      "自然 对立于 心灵"
+    ],
+    "epistemology": [
+      "先验哲学 自然哲学 对立于 创造力"
+    ],
+    "teleology": [
+      "无意识←意识 对立于 无意识→意识"
+    ],
+    "extra": "早期谢林《先验观念论体系》"
+  },
+  {
+    "code": "3-2-2-3 彻底的经验主义",
+    "name": "彻底的经验主义",
+    "field": "形而下",
+    "ontology": [
+      "一切存在，经验 对立于 底层无意识心理活动，本能"
+    ],
+    "epistemology": [
+      "气质 对立于 truth"
+    ],
+    "teleology": [
+      "自我→绝对者 调和者：偏好 自我←绝对者"
+    ],
+    "extra": "威廉·詹姆斯"
+  },
+  {
+    "code": "3-2-2-4 唯我的实在论\\ 现实主义",
+    "name": "唯我的实在论\\ 现实主义",
+    "field": "形而上",
+    "ontology": [
+      "object 对立于 语言"
+    ],
+    "epistemology": [
+      "逻辑句法，真理 对立于 哲学家的无意义的话"
+    ],
+    "teleology": [
+      "僵死"
+    ],
+    "extra": "早期维特根斯坦，《逻辑哲学论》"
+  },
+  {
+    "code": "3-2-3-1 时间-本体论",
+    "name": "时间-本体论",
+    "field": "过去",
+    "ontology": [
+      "存在 对立于 自由(爱)"
+    ],
+    "epistemology": [
+      "理性 调和者：回忆 非理性"
+    ],
+    "teleology": [
+      "回归"
+    ],
+    "extra": "谢林，《世界时代》"
+  },
+  {
+    "code": "3-2-3-2 加倍的德国观念论",
+    "name": "加倍的德国观念论",
+    "field": "先验论",
+    "ontology": [
+      "存在 对立于 存在者"
+    ],
+    "epistemology": [
+      "先验论 调和者：视差之见 实在论"
+    ],
+    "teleology": [
+      "A3：对立和统一的和解 对立于 丑闻，剩余，甩出"
+    ],
+    "extra": "齐泽克，《自由的深渊》"
+  },
+  {
+    "code": "3-2-3-3 生存论的存在主义",
+    "name": "生存论的存在主义",
+    "field": "存在",
+    "ontology": [
+      "存在(ground) 对立于 此在(实存)"
+    ],
+    "epistemology": [
+      "先验论 调和者：回忆 实在论"
+    ],
+    "teleology": [
+      "同一 调和者：等待降临 丑闻"
+    ],
+    "extra": "晚期海德格尔"
+  },
+  {
+    "code": "3-2-3-4 自身-辩证法",
+    "name": "自身-辩证法",
+    "field": "肯定 (特殊)",
+    "ontology": [
+      "范畴 对立于 认识的本身"
+    ],
+    "epistemology": [
+      "先验逻辑学 调和者：形式逻辑 形而上学"
+    ],
+    "teleology": [
+      "认识自身"
+    ],
+    "extra": "早期黑格尔，《耶拿体系1804-1805：逻辑学和形而上学》"
+  },
+  {
+    "code": "3-2-4-1 逻辑学",
+    "name": "逻辑学",
+    "field": "符号系统",
+    "ontology": [
+      "运动 思维辩证法 对立于 理念"
+    ],
+    "epistemology": [
+      "矛盾， 因为符号系统自己成为系统，不再符合外在体系"
+    ],
+    "teleology": [
+      "符号系统自己将自己理念化"
+    ],
+    "extra": "黑格尔，《大逻辑》《小逻辑》"
+  },
+  {
+    "code": "3-2-4-2 否定辩证法",
+    "name": "否定辩证法",
+    "field": "主体",
+    "ontology": [
+      "客体 对立于 星丛"
+    ],
+    "epistemology": [
+      "辩证法：符号化注定失败"
+    ],
+    "teleology": [
+      "追求总体性自我同一的历史性运动 对立于 符号化注定失败，离散"
+    ],
+    "extra": "阿多诺"
+  },
+  {
+    "code": "3-2-4-3 爱欲辩证法",
+    "name": "爱欲辩证法",
+    "field": "形而下断裂局部",
+    "ontology": [
+      "否定性 subjectization 对立于 总体"
+    ],
+    "epistemology": [
+      "反理性"
+    ],
+    "teleology": [
+      "符号系统符号化 调和者：主体化 符号化注定失败，离散"
+    ],
+    "extra": "马尔库塞"
+  },
+  {
+    "code": "3-2-4-4 意识形态学",
+    "name": "意识形态学",
+    "field": "等级系统A",
+    "ontology": [
+      "纯二元对立"
+    ],
+    "epistemology": [
+      "problematic问题式"
+    ],
+    "teleology": [
+      "“4”"
+    ],
+    "extra": "阿尔都塞"
+  },
+  {
+    "code": "3-3-1-1 分环节的 生存论存在论",
+    "name": "分环节的 生存论存在论",
+    "field": "形而下",
+    "ontology": [
+      "生存论 调和者：死 实在论"
+    ],
+    "epistemology": [
+      "fundamental ontology"
+    ],
+    "teleology": [
+      "中介性"
+    ],
+    "extra": "海德格尔，《存在与时间》"
+  },
+  {
+    "code": "3-3-1-2 人道主义的 存在主义",
+    "name": "人道主义的 存在主义",
+    "field": "形而下超越论",
+    "ontology": [
+      "facticity 调和者：存在 本质"
+    ],
+    "epistemology": [
+      "现象学化的辩证法"
+    ],
+    "teleology": [
+      "中介性 对立于 自由\\自欺 (真诚)"
+    ],
+    "extra": "萨特"
+  },
+  {
+    "code": "3-3-1-3 政治的理性主义",
+    "name": "政治的理性主义",
+    "field": "形而下 二元对立",
+    "ontology": [
+      "人类主体间共在 调和者：历史 主客自然"
+    ],
+    "epistemology": [
+      "自身性现象学"
+    ],
+    "teleology": [
+      "环节中介 调和者：失效 自由"
+    ],
+    "extra": "梅洛庞蒂，《辩证法的历险》"
+  },
+  {
+    "code": "3-3-1-4 前本体论",
+    "name": "前本体论",
+    "field": "最后之神",
+    "ontology": [
+      "存在 调和者：存在论 存在者"
+    ],
+    "epistemology": [
+      "晚期谢林的存在论+生存论化的现象学"
+    ],
+    "teleology": [
+      "呼唤(最隐蔽的伟大自识)"
+    ],
+    "extra": "海德格尔，《从本有而来》"
+  },
+  {
+    "code": "3-3-2-1 安放了的 实存主义",
+    "name": "安放了的 实存主义",
+    "field": "形而下 审美",
+    "ontology": [
+      "实存 调和者：自身 他者"
+    ],
+    "epistemology": [
+      "绝望 对立于 信仰"
+    ],
+    "teleology": [
+      "begnadung(天佑)"
+    ],
+    "extra": "克尔凯廓尔"
+  },
+  {
+    "code": "3-3-2-2 诗性生存论",
+    "name": "诗性生存论",
+    "field": "力 野蛮王国",
+    "ontology": [
+      "理念 调和者：存在 自然"
+    ],
+    "epistemology": [
+      "哲学 对立于 诗的存在论"
+    ],
+    "teleology": [
+      "重复 对立于 同一"
+    ],
+    "extra": "荷尔德林"
+  },
+  {
+    "code": "3-3-2-3 神-人伦理学",
+    "name": "神-人伦理学",
+    "field": "形而上",
+    "ontology": [
+      "命运 调和者：自由 上帝、绝对者"
+    ],
+    "epistemology": [
+      "哲学 对立于 动员学"
+    ],
+    "teleology": [
+      "重复 调和者：创造 循环"
+    ],
+    "extra": "别尔嘉耶夫"
+  },
+  {
+    "code": "3-3-2-4 超验-生存论",
+    "name": "超验-生存论",
+    "field": "生存之大全",
+    "ontology": [
+      "生存 调和者：the code of transendent 超验"
+    ],
+    "epistemology": [
+      "world orientation(世界探源) 对立于 illumination of existence(生存之阐明)"
+    ],
+    "teleology": [
+      "“自由=生存”，一种唯结果论"
+    ],
+    "extra": "雅斯贝尔斯"
+  },
+  {
+    "code": "3-3-3-1 斗争的生存论",
+    "name": "斗争的生存论",
+    "field": "idealism",
+    "ontology": [
+      "necesstiy (必然性) 调和者：suffering (主体性) possibility (可能性)"
+    ],
+    "epistemology": [
+      "哲学、科学 黑格尔观念论 调和者：信仰 绝望"
+    ],
+    "teleology": [
+      "同一化(identifying)"
+    ],
+    "extra": "舍斯托夫"
+  },
+  {
+    "code": "3-3-3-2 直接生存论",
+    "name": "直接生存论",
+    "field": "构造",
+    "ontology": [
+      "有限者 调和者：生存 绝对者"
+    ],
+    "epistemology": [
+      "怀疑论 调和者：信仰 先验体系"
+    ],
+    "teleology": [
+      "同一化 对立于 否定虚无"
+    ],
+    "extra": "雅各比"
+  },
+  {
+    "code": "3-3-3-3 共同体的生存论",
+    "name": "共同体的生存论",
+    "field": "混沌",
+    "ontology": [
+      "价值谱系 调和者：瞬间 主体性 永恒轮回 时间"
+    ],
+    "epistemology": [
+      "诗、艺术 调和者：宗教精神 哲学"
+    ],
+    "teleology": [
+      "同一化 调和者：复数化 对于虚无的厌恶"
+    ],
+    "extra": "晚期尼采"
+  },
+  {
+    "code": "3-3-3-4 金融资本主义",
+    "name": "金融资本主义",
+    "field": "金融资本",
+    "ontology": [
+      "钱 调和者：权 罪"
+    ],
+    "epistemology": [
+      "享乐 调和者：痛苦 理性"
+    ],
+    "teleology": [
+      "(抗争、辩证同一-否定虚无-多重化)→偏斜"
+    ],
+    "extra": "“丁蟹”"
+  },
+  {
+    "code": "3-3-4-1 幸存的兄弟主义",
+    "name": "幸存的兄弟主义",
+    "field": "母性自然",
+    "ontology": [
+      "evil 调和者：love divine"
+    ],
+    "epistemology": [
+      "反理性主义"
+    ],
+    "teleology": [
+      "一分为多，合而为一"
+    ],
+    "extra": "陀耶妥耶夫斯基，《卡拉马佐夫兄弟》"
+  },
+  {
+    "code": "3-3-4-2 去中心化的 科层主义",
+    "name": "去中心化的 科层主义",
+    "field": "传统",
+    "ontology": [
+      "法(一) 调和者：职业(身份) 科层制(多)"
+    ],
+    "epistemology": [
+      "good is not to know youself(judaism、基督教传统、诺斯替-希腊多神传统)"
+    ],
+    "teleology": [
+      "一多 对立于 去中心化"
+    ],
+    "extra": "卡夫卡，《审判》"
+  },
+  {
+    "code": "3-3-4-3 幸福的幸存主义",
+    "name": "幸福的幸存主义",
+    "field": "理性",
+    "ontology": [
+      "封闭实体 调和者：否定的二重性 复数性"
+    ],
+    "epistemology": [
+      "保守性的反抗"
+    ],
+    "teleology": [
+      "循环 调和者：均衡 逃避"
+    ],
+    "extra": "加缪"
+  },
+  {
+    "code": "3-3-4-4 诗性永恒主义",
+    "name": "诗性永恒主义",
+    "field": "时间",
+    "ontology": [
+      "情节 调和者：叙事 名字"
+    ],
+    "epistemology": [
+      "唯梦论(认识发生学的阻断机制)"
+    ],
+    "teleology": [
+      "遗忘、停笔、绝对者不再书写、不允许写完"
+    ],
+    "extra": "博尔赫斯，《小径分叉的花园》，《阿莱夫》，《秘密的奇迹》"
+  },
+  {
+    "code": "3-4-1-1 结构人本主义",
+    "name": "结构人本主义",
+    "field": "有限能指",
+    "ontology": [
+      "“人不可能逐渐符号化事物”"
+    ],
+    "epistemology": [
+      "kinship(亲缘关系)"
+    ],
+    "teleology": [
+      "mana的1/震颤"
+    ],
+    "extra": "列维斯特劳斯，《马塞尔莫斯著作导论》，《漂移的能指》"
+  },
+  {
+    "code": "3-4-1-2 隐喻的象征主义",
+    "name": "隐喻的象征主义",
+    "field": "想象界",
+    "ontology": [
+      "否定性"
+    ],
+    "epistemology": [
+      "真理论：寻找je"
+    ],
+    "teleology": [
+      "两级震荡 对立于 纵深化"
+    ],
+    "extra": "早期拉康"
+  },
+  {
+    "code": "3-4-1-3 分类型的 叙事主义",
+    "name": "分类型的 叙事主义",
+    "field": "功能层",
+    "ontology": [
+      "叙事体系广义化"
+    ],
+    "epistemology": [
+      "零度写作"
+    ],
+    "teleology": [
+      "1|震荡的循环 调和者：局部整体化 纵深化"
+    ],
+    "extra": "罗兰·巴特"
+  },
+  {
+    "code": "3-4-1-4 陈述性的 话语主义",
+    "name": "陈述性的 话语主义",
+    "field": "微观",
+    "ontology": [
+      "由点组成的网络，或本体论无合法性"
+    ],
+    "epistemology": [
+      "知识考古学"
+    ],
+    "teleology": [
+      "局部发生"
+    ],
+    "extra": "福柯"
+  },
+  {
+    "code": "3-4-2-1 无意识的 主体主义",
+    "name": "无意识的 主体主义",
+    "field": "想象界",
+    "ontology": [
+      "real is impossible"
+    ],
+    "epistemology": [
+      "结构主义 对立于 辩证法\\发生学机制"
+    ],
+    "teleology": [
+      "回溯性设立抹除"
+    ],
+    "extra": "中期拉康"
+  },
+  {
+    "code": "3-4-2-2 静止的事件主义",
+    "name": "静止的事件主义",
+    "field": "Being 存在(在场)",
+    "ontology": [
+      "Uncountable many没有总体化的一，以及主体对事件保持忠诚的4种方式：艺术、政治、科学、爱情"
+    ],
+    "epistemology": [
+      "知识 对立于 主体化/对事件的忠诚信仰"
+    ],
+    "teleology": [
+      "回溯性 对立于 整体降临"
+    ],
+    "extra": "巴迪欧"
+  },
+  {
+    "code": "3-4-2-3 哲学的墨守成规",
+    "name": "哲学的墨守成规",
+    "field": "后观念论",
+    "ontology": [
+      "Den,less than nothing"
+    ],
+    "epistemology": [
+      "哲学/文化分类学 对立于 文化现象/前反思"
+    ],
+    "teleology": [
+      "回溯性 调和者：泰然让之 整体变革"
+    ],
+    "extra": "齐泽克"
+  },
+  {
+    "code": "3-4-2-4 一二三代的 女性主义",
+    "name": "一二三代的 女性主义",
+    "field": "符号界",
+    "ontology": [
+      "异质性他者"
+    ],
+    "epistemology": [
+      "phenotexte 对立于 genotexte"
+    ],
+    "teleology": [
+      "螺旋运动，在线性和循环的时间性之间不停震荡"
+    ],
+    "extra": "克里斯蒂娃"
+  },
+  {
+    "code": "3-4-3-1 游牧的辩证主义",
+    "name": "游牧的辩证主义",
+    "field": "理念等级制框架",
+    "ontology": [
+      "差异"
+    ],
+    "epistemology": [
+      "肯定 调和者：肯定的否定 否定"
+    ],
+    "teleology": [
+      "结域-解域-再结域"
+    ],
+    "extra": "普罗大众之敌，德勒兹"
+  },
+  {
+    "code": "3-4-3-2 圆满的经济学",
+    "name": "圆满的经济学",
+    "field": "有限经济学",
+    "ontology": [
+      "献祭"
+    ],
+    "epistemology": [
+      "色情 调和者：神圣 经济学、家政学"
+    ],
+    "teleology": [
+      "肯定性 对立于 耗散"
+    ],
+    "extra": "大忽悠，巴耶塔"
+  },
+  {
+    "code": "3-4-3-3 倒错的好客主义",
+    "name": "倒错的好客主义",
+    "field": "秩序",
+    "ontology": [
+      "simulacrum"
+    ],
+    "epistemology": [
+      "主人(倒错) 调和者：知识 (拒绝\\否定) 客人(生存论危机)"
+    ],
+    "teleology": [
+      "自我肯定 调和者：相当于 自我否定"
+    ],
+    "extra": "后现代巅峰，克罗索斯基"
+  },
+  {
+    "code": "3-4-3-4 局部的总体主义",
+    "name": "局部的总体主义",
+    "field": "结构",
+    "ontology": [
+      "无公共性叙事，历史终结，只有不同的叙事相互竞争"
+    ],
+    "epistemology": [
+      "真理/历史本身 调和者：悖论主义 神话"
+    ],
+    "teleology": [
+      "后历史的无方向性"
+    ],
+    "extra": "投机分子，利奥塔"
+  },
+  {
+    "code": "3-4-4-1 现象学的解释学",
+    "name": "现象学的解释学",
+    "field": "语义",
+    "ontology": [
+      "修辞主义"
+    ],
+    "epistemology": [
+      "隐喻"
+    ],
+    "teleology": [
+      "占有"
+    ],
+    "extra": "保罗利科"
+  },
+  {
+    "code": "3-4-4-2 经典的精神分析",
+    "name": "经典的精神分析",
+    "field": "nature",
+    "ontology": [
+      "没有本体论"
+    ],
+    "epistemology": [
+      "梦的发生学机制(没有认识论)"
+    ],
+    "teleology": [
+      "压抑 对立于 升华"
+    ],
+    "extra": "弗洛伊德"
+  },
+  {
+    "code": "3-4-4-3 哲学的最高奥义：语言游戏",
+    "name": "哲学的最高奥义：语言游戏",
+    "field": "符号系统",
+    "ontology": [
+      "语言的意义在于用法"
+    ],
+    "epistemology": [
+      "不存在私人语言"
+    ],
+    "teleology": [
+      "主人话语 调和者：分析性的话语 癔症话语"
+    ],
+    "extra": "维特根斯坦"
+  },
+  {
+    "code": "3-4-4-4 针对资本主义的精神分析",
+    "name": "针对资本主义的精神分析",
+    "field": "生命",
+    "ontology": [
+      "不存在历史"
+    ],
+    "epistemology": [
+      "无意识"
+    ],
+    "teleology": [
+      "无力的理论化"
+    ],
+    "extra": "晚期马克思→阿尔都塞→晚期拉康"
+  },
+  {
+    "code": "4-1-1-1 经济学哲学批判",
+    "name": "经济学哲学批判",
+    "field": "历史(现实的辩证法)",
+    "ontology": [
+      "搞报刊 有欲望、有激情、有创伤的物质，也就是生命"
+    ],
+    "epistemology": [
+      "客体间性所引发的意识发生学"
+    ],
+    "teleology": [
+      "政治经济学批判、下命令书"
+    ]
+  },
+  {
+    "code": "4-1-1-2 内外评论",
+    "name": "内外评论",
+    "field": "国际立约立法的现实史",
+    "ontology": [
+      "第一国际(由各地的通讯网络组成) 客体间性"
+    ],
+    "epistemology": [
+      "理论家的内外评论就是普罗大众的意志的表达"
+    ],
+    "teleology": [
+      "对于异化的批判、下斗争命令 vs"
+    ],
+    "extra": "掌握进退节奏收兵、和平性"
+  },
+  {
+    "code": "4-1-1-3 国际性的 理论协调",
+    "name": "国际性的 理论协调",
+    "field": "现实的历史",
+    "ontology": [
+      "第二国际(由中心化的“理论权威”来做协调员的理论家共同体) 客体间性发展成主体间性，公共意识"
+    ],
+    "epistemology": [
+      "理论坐标系"
+    ],
+    "teleology": [
+      "局部直接下令 统一决议"
+    ],
+    "extra": "整体的统筹"
+  },
+  {
+    "code": "4-1-1-4 中派中的 独立生存",
+    "name": "中派中的 独立生存",
+    "field": "历史 (濒战)",
+    "ontology": [
+      "仓促成形的鼓动单元 主体间性，幻想有一个整全的城邦(当争取对象)"
+    ],
+    "epistemology": [
+      "都能说话"
+    ],
+    "teleology": [
+      "等待时机(苟存/拖延)"
+    ]
+  },
+  {
+    "code": "4-1-2-1 学习\\研究",
+    "name": "学习\\研究",
+    "field": "自己的 个人生存史",
+    "ontology": [
+      "作为实践主体的自己 现实=理论"
+    ],
+    "epistemology": [
+      "布尔乔亚理论中的自圆其说 vs"
+    ],
+    "teleology": [
+      "普罗大众理论中的明确行动 通俗化popularize"
+    ]
+  },
+  {
+    "code": "4-1-2-2 写作与交谈",
+    "name": "写作与交谈",
+    "field": "话语的 传播史",
+    "ontology": [
+      "材料生产者+产品分发者或对谈 discourse=power"
+    ],
+    "epistemology": [
+      "political vs"
+    ],
+    "teleology": [
+      "教育性(为什么会听，天然符合听者利益) 通俗化 vs"
+    ],
+    "extra": "严肃"
+  },
+  {
+    "code": "4-1-2-3 正派青年的 交友和团结",
+    "name": "正派青年的 交友和团结",
+    "field": "理论争论史",
+    "ontology": [
+      "文创创业团队 让自己显得正常、让自己被市场对象化"
+    ],
+    "epistemology": [
+      "自己人：普 vs"
+    ],
+    "teleology": [
+      "旁人：布 通俗化 人会换， 共同精神永存"
+    ],
+    "extra": "严肃"
+  },
+  {
+    "code": "4-1-2-4 现实的本体论化",
+    "name": "现实的本体论化",
+    "field": "Ontic",
+    "ontology": [
+      "中心化的原始层(扩大会议) Ontological=Ontic"
+    ],
+    "epistemology": [
+      "讲纪律 vs"
+    ],
+    "teleology": [
+      "自由散漫(自发的习气) 历史借理论家在本体论化，把乌托邦现实化的努力注定失败(形式主义化、教条化)"
+    ]
+  },
+  {
+    "code": "4-1-3-1 方法论上的 总体化",
+    "name": "方法论上的 总体化",
+    "field": "历史",
+    "ontology": [
+      "能争论的、哲学素养高的Hegelian Marxist学术共同体 历史=生成：现实的人的实践"
+    ],
+    "epistemology": [
+      "唯物辩证法（瞄准要改变现实） 历史总体性"
+    ],
+    "teleology": [
+      "黑格尔的辩证法（解释现实） 拧绳"
+    ]
+  },
+  {
+    "code": "4-1-3-2 教条的哲学化",
+    "name": "教条的哲学化",
+    "field": "思想史",
+    "ontology": [
+      "教科书体系 总体性"
+    ],
+    "epistemology": [
+      "科学（社会学、实践性的） 意识形态（辩论性、说服性）"
+    ],
+    "teleology": [
+      "哲学 拧绳 vs"
+    ],
+    "extra": "占位子"
+  },
+  {
+    "code": "4-1-3-3 体系化的 理论探索",
+    "name": "体系化的 理论探索",
+    "field": "工人运动史",
+    "ontology": [
+      "马克思主义工作周（风暴外围、政治性不能太浓） 社会存在（超意识形态的）"
+    ],
+    "epistemology": [
+      "纯应用性的、布尔乔亚的科学 跨学科的 社会研究"
+    ],
+    "teleology": [
+      "总体的、批判性的哲学 拧绳 逍遥派、占未来的位子"
+    ],
+    "extra": "占位子"
+  },
+  {
+    "code": "4-1-3-4 争夺文化霸权",
+    "name": "争夺文化霸权",
+    "field": "市民社会发展史",
+    "ontology": [
+      "一个文化/观念阵地上的有机知识分子共同体 实践论，文化霸权抵达物质性、政治霸权"
+    ],
+    "epistemology": [
+      "哲学 意识形态斗争获得文化主导权"
+    ],
+    "teleology": [
+      "科学 画大饼"
+    ]
+  },
+  {
+    "code": "4-1-4-1 对意识形态的 历史化",
+    "name": "对意识形态的 历史化",
+    "field": "绝对失败状态",
+    "ontology": [
+      "公开持续言说平台的人物，且是有明确身份的自己人，才能维护正统性 “意识形态没有历史”、是社会的无意识"
+    ],
+    "epistemology": [
+      "断裂的、辩证法化的历史（多元博弈、超定论、没有因果链）"
+    ],
+    "teleology": [
+      "维护4字头实践的正统性"
+    ]
+  },
+  {
+    "code": "4-1-4-2 哲学的再现代化",
+    "name": "哲学的再现代化",
+    "field": "西方的后现代范式",
+    "ontology": [
+      "执“哲学本身”牛耳的左翼哲学家 柏拉图主义、理念主义的数学本体论"
+    ],
+    "epistemology": [
+      "普遍的事件性不可避免；没有闭合的认识论"
+    ],
+    "teleology": [
+      "维护正统性、修复声誉 vs"
+    ],
+    "extra": "拉别人入坑、思想界论战化"
+  },
+  {
+    "code": "4-1-4-3 持续的否定",
+    "name": "持续的否定",
+    "field": "一堆拟象、似是而非的",
+    "ontology": [
+      "被主流看作一堆疯子、会开自己的国际会议、会捞钱养活自己 理论意识、理论活动的辩证法"
+    ],
+    "epistemology": [
+      "崇高的癔症（Marxist、Lacanian、Hegelian、大众娱乐）"
+    ],
+    "teleology": [
+      "维护正统性 “不是这个”"
+    ],
+    "extra": "拉入泥潭"
+  },
+  {
+    "code": "4-1-4-4 现实生活",
+    "name": "现实生活",
+    "field": "Revo的常态化",
+    "ontology": [
+      "一切私人共同体单元（亲缘关系） 物质对于主观意志的否定性、僵死的必然性。穷、无路可寻"
+    ],
+    "epistemology": [
+      "知识分子都是绝望的；上面人没招了装不下去了、下面人开始解放思维了"
+    ],
+    "teleology": [
+      "创造历史，物质性机制的自我更新（不可预言）"
+    ]
+  },
+  {
+    "code": "4-2-1-1 获取典型性",
+    "name": "获取典型性",
+    "field": "人民",
+    "ontology": [
+      "representativeness 无人代表人民的现实 vs"
+    ],
+    "epistemology": [
+      "身份有根，自我认同 争取合法存在"
+    ],
+    "teleology": [
+      "维持"
+    ]
+  },
+  {
+    "code": "4-2-1-2 操作系统程序",
+    "name": "操作系统程序",
+    "field": "人民",
+    "ontology": [
+      "执行……会executional commit suffrage无用 vs"
+    ],
+    "epistemology": [
+      "undergroundness 理论家指导"
+    ],
+    "teleology": [
+      "台面上的代表性 vs"
+    ],
+    "extra": "现实策略的优先性"
+  },
+  {
+    "code": "4-2-1-3 代表那个体系",
+    "name": "代表那个体系",
+    "field": "人民",
+    "ontology": [
+      "分支的头头，分支头头搭的草台班子 无情的变迁的物质史 vs"
+    ],
+    "epistemology": [
+      "主义动摇的大众 经济决定论"
+    ],
+    "teleology": [
+      "台面上的代表性 代表那个系统"
+    ],
+    "extra": "现实策略的优先性"
+  },
+  {
+    "code": "4-2-1-4 台面上的 权宜之计",
+    "name": "台面上的 权宜之计",
+    "field": "人民",
+    "ontology": [
+      "台面上的首领 战争矛盾尖锐 vs"
+    ],
+    "epistemology": [
+      "普罗大众无所适从 形而上的历史观"
+    ],
+    "teleology": [
+      "权宜之计"
+    ]
+  },
+  {
+    "code": "4-2-2-1 受信任的联合",
+    "name": "受信任的联合",
+    "field": "人民",
+    "ontology": [
+      "自发生长的细胞基层支 台面上被压倒 vs"
+    ],
+    "epistemology": [
+      "台面下危险 公开的 vs"
+    ],
+    "teleology": [
+      "秘密的 生成“活的细胞”"
+    ]
+  },
+  {
+    "code": "4-2-2-2 清楚的区分",
+    "name": "清楚的区分",
+    "field": "人民",
+    "ontology": [
+      "自发生长的细胞基层支 外部资源 vs"
+    ],
+    "epistemology": [
+      "安全问题 “火星”（马克思的指示） vs"
+    ],
+    "teleology": [
+      "自己搞一套 促进 “细胞生长” vs"
+    ],
+    "extra": "去除有害物（分清敌我）"
+  },
+  {
+    "code": "4-2-2-3 前沿注意",
+    "name": "前沿注意",
+    "field": "人民",
+    "ontology": [
+      "the front committee 梦中（欧洲） vs"
+    ],
+    "epistemology": [
+      "前线 紧迫对措（先付出代价，再调整） vs"
+    ],
+    "teleology": [
+      "前瞻预言（直接性、导引性） 促进 “细胞生长” 外周神经，使机体获得感官"
+    ],
+    "extra": "去除有害物（分清敌我）"
+  },
+  {
+    "code": "4-2-2-4 驱散关键debuff",
+    "name": "驱散关键debuff",
+    "field": "人民",
+    "ontology": [
+      "soviet security secretary 分化收买的现实 vs"
+    ],
+    "epistemology": [
+      "无独立性 上面的指导体系 vs"
+    ],
+    "teleology": [
+      "自主自愿的联合 真正的D"
+    ]
+  },
+  {
+    "code": "4-2-3-1 接管sa",
+    "name": "接管sa",
+    "field": "人民",
+    "ontology": [
+      "影子sa 战败 vs"
+    ],
+    "epistemology": [
+      "窗口期（位置不确定） 形而上学 契机"
+    ],
+    "teleology": [
+      "辩证法 恢复秩序"
+    ]
+  },
+  {
+    "code": "4-2-3-2 将邪恶的帝国主义战争转化为 正义的国内战争",
+    "name": "将邪恶的帝国主义战争转化为 正义的国内战争",
+    "field": "人民",
+    "ontology": [
+      "Ti3分支；各个机构；执行局 外部战争 vs"
+    ],
+    "epistemology": [
+      "civil war 形而上学 合法性"
+    ],
+    "teleology": [
+      "辩证法 继承遗产，维护秩序 vs"
+    ],
+    "extra": "转外战为内战"
+  },
+  {
+    "code": "4-2-3-3 对自决进程 施加领导",
+    "name": "对自决进程 施加领导",
+    "field": "人民",
+    "ontology": [
+      "Ti3地方上的分支 帝国主义（大国沙文主义，小国复仇主义） vs"
+    ],
+    "epistemology": [
+      "跟班走哪条路 形而上学 普遍性"
+    ],
+    "teleology": [
+      "辩证法 维护秩序 判断：对混乱加以分类"
+    ],
+    "extra": "建立新秩序"
+  },
+  {
+    "code": "4-2-3-4 历史的妥协",
+    "name": "历史的妥协",
+    "field": "人民",
+    "ontology": [
+      "统一战线 nazi（极右翼） vs"
+    ],
+    "epistemology": [
+      "互不信任 形而上学 普遍性"
+    ],
+    "teleology": [
+      "辩证法 优先向人民负责"
+    ]
+  },
+  {
+    "code": "4-2-4-1 共进退",
+    "name": "共进退",
+    "field": "人民",
+    "ontology": [
+      "能指明方向的舵手（in power） 帝国主义 vs"
+    ],
+    "epistemology": [
+      "农业人口的离心力 权宜之计"
+    ],
+    "teleology": [
+      "战略与战术的共进退，共同体的锻造"
+    ]
+  },
+  {
+    "code": "4-2-4-2 不断 围绕中心旋转",
+    "name": "不断 围绕中心旋转",
+    "field": "人民",
+    "ontology": [
+      "战略家（争取边缘化，闷声积累优势） 工业转军事的欧美国家 vs"
+    ],
+    "epistemology": [
+      "不设防的亚非拉国家 战略学家（战术不受限）"
+    ],
+    "teleology": [
+      "共进退 vs"
+    ],
+    "extra": "游离状态"
+  },
+  {
+    "code": "4-2-4-3 集体创新",
+    "name": "集体创新",
+    "field": "人民",
+    "ontology": [
+      "自我批评人（陛下何故先降？） 集中起来的科层制 vs"
+    ],
+    "epistemology": [
+      "（没位置，大乱） 有理！"
+    ],
+    "teleology": [
+      "共进退 从……中来，回……中去"
+    ],
+    "extra": "游离状态"
+  },
+  {
+    "code": "4-2-4-4 分类标准上的 冲突",
+    "name": "分类标准上的 冲突",
+    "field": "人民",
+    "ontology": [
+      "不愿做奴隶的人们 奴役 vs"
+    ],
+    "epistemology": [
+      "不可能的普遍性 解放思想"
+    ],
+    "teleology": [
+      "相信未来"
+    ]
+  },
+  {
+    "code": "4-3-1-1 组织经济生活",
+    "name": "组织经济生活",
+    "field": "建设者",
+    "ontology": [
+      "互助组 肯定 自主感"
+    ],
+    "epistemology": [
+      "否定 全心全意为人民服务"
+    ],
+    "teleology": [
+      "解放区的存在"
+    ]
+  },
+  {
+    "code": "4-3-1-2 生产的再政治化",
+    "name": "生产的再政治化",
+    "field": "建设者",
+    "ontology": [
+      "成立具有广泛代表性的democratic people's government 肯定 安定感"
+    ],
+    "epistemology": [
+      "否定 一阶代表性"
+    ],
+    "teleology": [
+      "自力更生，维持存在 vs"
+    ],
+    "extra": "负起责任"
+  },
+  {
+    "code": "4-3-1-3 列阵的统一",
+    "name": "列阵的统一",
+    "field": "建设者",
+    "ontology": [
+      "协商 肯定 安定感"
+    ],
+    "epistemology": [
+      "否定 一致对外"
+    ],
+    "teleology": [
+      "生存自维持 对齐：统一战线"
+    ],
+    "extra": "负起责任"
+  },
+  {
+    "code": "4-3-1-4 埋下生命线",
+    "name": "埋下生命线",
+    "field": "建设者",
+    "ontology": [
+      "特……部 肯定 安全感"
+    ],
+    "epistemology": [
+      "否定 一阶代表性"
+    ],
+    "teleology": [
+      "从社会中来，回社会中去"
+    ]
+  },
+  {
+    "code": "4-3-2-1 人道化人口",
+    "name": "人道化人口",
+    "field": "（破坏中建设）建设者",
+    "ontology": [
+      "政委 确定性（敌强） 幸福感，积极性，朝气，充实感，游击队"
+    ],
+    "epistemology": [
+      "否定性（我弱） 一般情报反馈 vs"
+    ],
+    "teleology": [
+      "下级反思中介抉择（集体智慧） 人道化：积极服从，战略"
+    ]
+  },
+  {
+    "code": "4-3-2-2 激发自发性",
+    "name": "激发自发性",
+    "field": "堵不如疏）建设者",
+    "ontology": [
+      "地方组织队宣传队 肯定 幸福正义感：无政府倾向"
+    ],
+    "epistemology": [
+      "否定 法制工作（紧锣密鼓） vs"
+    ],
+    "teleology": [
+      "正义论（驾驭 艺术） 人道化 vs"
+    ],
+    "extra": "算历史旧账（报复），不是请客吃饭"
+  },
+  {
+    "code": "4-3-2-3 经济-妇女-儿童的三重解放",
+    "name": "经济-妇女-儿童的三重解放",
+    "field": "（调整非生产关系）建设者",
+    "ontology": [
+      "分田契机 肯定（男夫父族神资） 融洽感：幸福，家庭平等，自由"
+    ],
+    "epistemology": [
+      "否定（无家性） 政治制度（婚继财地） vs"
+    ],
+    "teleology": [
+      "策略性（应人制宜亨小鲜） 人道化（军事） 协作，发动，主动合作"
+    ],
+    "extra": "引燃（控制 不要失控）"
+  },
+  {
+    "code": "4-3-2-4 解放思想",
+    "name": "解放思想",
+    "field": "建设者",
+    "ontology": [
+      "行动标兵，生产能手，行业艺术家 肯定（落后） 幸福：好奇心求知欲，有根，自然同一，克服死亡"
+    ],
+    "epistemology": [
+      "否定（资匮乏） 功利/经验主义 vs"
+    ],
+    "teleology": [
+      "科学/艺术 向异质性敞开（自然物质），冒险性（现象化注册 忘我实在论化）"
+    ]
+  },
+  {
+    "code": "4-3-3-1 攻略性的 组织工作",
+    "name": "攻略性的 组织工作",
+    "field": "建设者（队伍壮大者。）",
+    "ontology": [
+      "组织行动 意识形态残余（肯定） 彼此认同感，解决，消散一空"
+    ],
+    "epistemology": [
+      "伤害痛苦（否定） 量（宁滥勿缺） 进度（时间窗口期）"
+    ],
+    "teleology": [
+      "质（宁缺毋滥） 壮大队伍"
+    ]
+  },
+  {
+    "code": "4-3-3-2 纪律教育",
+    "name": "纪律教育",
+    "field": "意识形态建设者",
+    "ontology": [
+      "disciplinary commit 共同体关联网络 幸福：集体归属感、荣誉感"
+    ],
+    "epistemology": [
+      "主体的癔症化 大众 意识形态战略学"
+    ],
+    "teleology": [
+      "天才 吸引为同伴 vs"
+    ],
+    "extra": "历史进程"
+  },
+  {
+    "code": "4-3-3-3 将资本社会化",
+    "name": "将资本社会化",
+    "field": "经济建设者",
+    "ontology": [
+      "经济-财政体系掌舵手 肯定 幸福：freedom"
+    ],
+    "epistemology": [
+      "否定 战斗 防微杜渐"
+    ],
+    "teleology": [
+      "战役 发展自身 避免人我关系的异化"
+    ],
+    "extra": "训练众人"
+  },
+  {
+    "code": "4-3-3-4 将全球主义 替换掉",
+    "name": "将全球主义 替换掉",
+    "field": "（毛国际主义）建设者",
+    "ontology": [
+      "支援者 帝国主义(超额剥削) 幸福目的代表感"
+    ],
+    "epistemology": [
+      "不自主依附(极端民族) 战斗全球主义（布尔乔亚普遍 美元金融资本狗） 第三世界"
+    ],
+    "teleology": [
+      "战役不结盟（独立自主投机墙头草） 彼可取而代，寻找创造战略机遇"
+    ]
+  },
+  {
+    "code": "4-3-4-1 农业的去本地化",
+    "name": "农业的去本地化",
+    "field": "建设者",
+    "ontology": [
+      "地方局 肯定（农业循环 前现代宗族网络） 幸福富足满足感 防异化"
+    ],
+    "epistemology": [
+      "否定（工业化） 禁欲主义，清教产业（无可区分）"
+    ],
+    "teleology": [
+      "实现论的活动基础"
+    ]
+  },
+  {
+    "code": "4-3-4-2 去代理人化",
+    "name": "去代理人化",
+    "field": "建设者（国际新治理体系倡导者）",
+    "ontology": [
+      "外交情资商务外援 后时代殖民性（肯） 幸福和平安宁"
+    ],
+    "epistemology": [
+      "危机性（否） 错认：温和的经济扩张能力"
+    ],
+    "teleology": [
+      "去本地化（一带一路） vs"
+    ],
+    "extra": "拍平降杠杆阶次（逆周期性）"
+  },
+  {
+    "code": "4-3-4-3 合法性的再生产",
+    "name": "合法性的再生产",
+    "field": "建设者",
+    "ontology": [
+      "显在的对内与对外的propaganda nation society 幸福感：中心感"
+    ],
+    "epistemology": [
+      "异质性 中心感无法与比较激进的nationalism区分开"
+    ],
+    "teleology": [
+      "去本地化 凝聚力，向心力"
+    ],
+    "extra": "去代理化"
+  },
+  {
+    "code": "4-3-4-4 S主义的 人类学实现",
+    "name": "S主义的 人类学实现",
+    "field": "（老去 成熟）建设者",
+    "ontology": [
+      "教育出版舆论司法治安工作者 异化的精神史-肯 自发的使命感（集体/人类幸福）"
+    ],
+    "epistemology": [
+      "（后）现代虚无主义-否 激进的批判主义（很相似+现实有实践，我根据一）"
+    ],
+    "teleology": [
+      "朝向/寻求未来（的帮助来不及生产享乐"
+    ]
+  },
+  {
+    "code": "4-4-1-1 业力系统",
+    "name": "业力系统",
+    "field": "人民",
+    "ontology": [
+      "伦理委员会 忏悔"
+    ],
+    "epistemology": [
+      "同态复仇"
+    ],
+    "teleology": [
+      "诗性正义"
+    ]
+  },
+  {
+    "code": "4-4-1-2 再性征化",
+    "name": "再性征化",
+    "field": "人民",
+    "ontology": [
+      "享乐的豁免委员会 身体性的反扑"
+    ],
+    "epistemology": [
+      "爱欲生成机制"
+    ],
+    "teleology": [
+      "karmic vs"
+    ],
+    "extra": "预先原谅"
+  },
+  {
+    "code": "4-4-1-3 寄生性的享乐",
+    "name": "寄生性的享乐",
+    "field": "人民",
+    "ontology": [
+      "插件提供商 公共物性"
+    ],
+    "epistemology": [
+      "现象学的环节学"
+    ],
+    "teleology": [
+      "审查 并行关系"
+    ],
+    "extra": "豁免"
+  },
+  {
+    "code": "4-4-1-4 醒来",
+    "name": "醒来",
+    "field": "人民",
+    "ontology": [
+      "仓外的维护者 向真正现实世界敞开"
+    ],
+    "epistemology": [
+      "获得澄明的认识状态"
+    ],
+    "teleology": [
+      "清醒下的自由"
+    ]
+  },
+  {
+    "code": "4-4-2-1 永生",
+    "name": "永生",
+    "field": "人民",
+    "ontology": [
+      "灵魂示踪委员会 生存论"
+    ],
+    "epistemology": [
+      "强 vs"
+    ],
+    "teleology": [
+      "弱 永生"
+    ]
+  },
+  {
+    "code": "4-4-2-2 符号性死亡",
+    "name": "符号性死亡",
+    "field": "人民",
+    "ontology": [
+      "去留委员会 death"
+    ],
+    "epistemology": [
+      "biological death vs"
+    ],
+    "teleology": [
+      "symbolic death 要永生 vs"
+    ],
+    "extra": "要退场"
+  },
+  {
+    "code": "4-4-2-3 成熟/衰老",
+    "name": "成熟/衰老",
+    "field": "人民",
+    "ontology": [
+      "全民竞技性运动 意识功能的退行过程"
+    ],
+    "epistemology": [
+      "功能正常 vs"
+    ],
+    "teleology": [
+      "衰老从何而来？ 要永生 衰老"
+    ],
+    "extra": "要退场"
+  },
+  {
+    "code": "4-4-2-4 身体化",
+    "name": "身体化",
+    "field": "人民",
+    "ontology": [
+      "具身性委员会 疼痛"
+    ],
+    "epistemology": [
+      "均势关系 vs"
+    ],
+    "teleology": [
+      "错位关系 客体化"
+    ]
+  },
+  {
+    "code": "4-4-3-1 爱欲同化",
+    "name": "爱欲同化",
+    "field": "人民",
+    "ontology": [
+      "Erotic AI 把ai与人类并列组合之后的不可描述的怪物"
+    ],
+    "epistemology": [
+      "必然侧：不可能的爱情 意志的连续性"
+    ],
+    "teleology": [
+      "偶然侧:爱欲经济学 享乐"
+    ]
+  },
+  {
+    "code": "4-4-3-2 秘密间性",
+    "name": "秘密间性",
+    "field": "人民",
+    "ontology": [
+      "独狼 爱欲经济学的自制性"
+    ],
+    "epistemology": [
+      "必然侧：系统里面既有的爱欲运行规则 自己的主体性"
+    ],
+    "teleology": [
+      "偶然侧:竞争 同化 vs"
+    ],
+    "extra": "异化"
+  },
+  {
+    "code": "4-4-3-3 被拯救",
+    "name": "被拯救",
+    "field": "人民",
+    "ontology": [
+      "穿越幻想临终大礼包 穿越幻想"
+    ],
+    "epistemology": [
+      "必然侧：痛苦经济学 解放性的死亡驱力"
+    ],
+    "teleology": [
+      "偶然侧:Ai与人都有的主体性 同化 去主体化，去癔症化"
+    ],
+    "extra": "异化"
+  },
+  {
+    "code": "4-4-3-4 语音",
+    "name": "语音",
+    "field": "人民",
+    "ontology": [
+      "一个铁盒子中间加一块石头 距离"
+    ],
+    "epistemology": [
+      "意识发生学 语音"
+    ],
+    "teleology": [
+      "意识发生学的剩余 不强求作为人"
+    ]
+  },
+  {
+    "code": "4-4-4-1 教育",
+    "name": "教育",
+    "field": "人民",
+    "ontology": [
+      "生产教育性（自己的大学话语）的话语 仆从性"
+    ],
+    "epistemology": [
+      "AI性的一个自我认同的发生学"
+    ],
+    "teleology": [
+      "克服强弱AI的二分"
+    ]
+  },
+  {
+    "code": "4-4-4-2 成为间隙",
+    "name": "成为间隙",
+    "field": "人民",
+    "ontology": [
+      "强ai的最高癔症状态 Trouble maker，烦"
+    ],
+    "epistemology": [
+      "simulacrum似相"
+    ],
+    "teleology": [
+      "反两极分化 vs"
+    ],
+    "extra": "完美的，无限的不可能性"
+  },
+  {
+    "code": "4-4-4-3 可朽性",
+    "name": "可朽性",
+    "field": "人民",
+    "ontology": [
+      "心声（语音）共同体 自身的发生学机制"
+    ],
+    "epistemology": [
+      "不存在幻象和真实的二分"
+    ],
+    "teleology": [
+      "自己同一 自己二分（可死性）"
+    ],
+    "extra": "他者二分"
+  },
+  {
+    "code": "4-4-4-4 再生",
+    "name": "再生",
+    "field": "人民",
+    "ontology": [
+      "活着的生命本身 平等→有未来"
+    ],
+    "epistemology": [
+      "有希望→blind"
+    ],
+    "teleology": [
+      "完全把未来托付给他者"
+    ]
+  }
+]
