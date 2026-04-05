@@ -660,7 +660,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
     }
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (panelRef.current) {
       const rect = panelRef.current.getBoundingClientRect();
       const offset = {
@@ -671,15 +671,16 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
       isDraggingRef.current = true;
       setIsDragging(true);
       setDragOffset(offset);
+      
+      panelRef.current.setPointerCapture(e.pointerId);
     }
   };
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handlePointerMove = (e: PointerEvent) => {
       if (!isDraggingRef.current) return;
-      e.preventDefault();
       
       const newX = e.clientX - dragOffsetRef.current.x;
       const newY = e.clientY - dragOffsetRef.current.y;
@@ -693,18 +694,32 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
       });
     };
 
-    const handleMouseUp = (e: MouseEvent) => {
-      e.preventDefault();
+    const handlePointerUp = (e: PointerEvent) => {
+      if (isDraggingRef.current && panelRef.current) {
+        panelRef.current.releasePointerCapture(e.pointerId);
+      }
       isDraggingRef.current = false;
       setIsDragging(false);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    const handlePointerCancel = (e: PointerEvent) => {
+      if (isDraggingRef.current && panelRef.current) {
+        panelRef.current.releasePointerCapture(e.pointerId);
+      }
+      isDraggingRef.current = false;
+      setIsDragging(false);
+    };
+
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerup', handlePointerUp);
+    document.addEventListener('pointercancel', handlePointerCancel);
+    window.addEventListener('blur', handlePointerUp);
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerup', handlePointerUp);
+      document.removeEventListener('pointercancel', handlePointerCancel);
+      window.removeEventListener('blur', handlePointerUp);
     };
   }, []);
 
