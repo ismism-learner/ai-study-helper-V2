@@ -661,23 +661,37 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    const isButton = target.tagName === 'BUTTON' || !!target.closest('button');
+    const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+    
+    if (isButton || isInput) return;
+    
     if (panelRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      
       const rect = panelRef.current.getBoundingClientRect();
       const offset = {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
       };
+      
       dragOffsetRef.current = offset;
       isDraggingRef.current = true;
       setIsDragging(true);
       setDragOffset(offset);
       
-      panelRef.current.setPointerCapture(e.pointerId);
+      try {
+        panelRef.current.setPointerCapture(e.pointerId);
+      } catch (err) {
+        // Ignore pointer capture errors
+      }
     }
   };
 
   useEffect(() => {
-    if (typeof document === 'undefined') return;
+    if (typeof window === 'undefined') return;
 
     const handlePointerMove = (e: PointerEvent) => {
       if (!isDraggingRef.current) return;
@@ -696,29 +710,47 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
 
     const handlePointerUp = (e: PointerEvent) => {
       if (isDraggingRef.current && panelRef.current) {
-        panelRef.current.releasePointerCapture(e.pointerId);
+        try {
+          panelRef.current.releasePointerCapture(e.pointerId);
+        } catch (err) {
+          // Ignore
+        }
       }
       isDraggingRef.current = false;
       setIsDragging(false);
     };
 
-    const handlePointerCancel = (e: PointerEvent) => {
-      if (isDraggingRef.current && panelRef.current) {
-        panelRef.current.releasePointerCapture(e.pointerId);
-      }
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      
+      const newX = e.clientX - dragOffsetRef.current.x;
+      const newY = e.clientY - dragOffsetRef.current.y;
+      
+      const maxX = window.innerWidth - 380;
+      const maxY = window.innerHeight - 100;
+      
+      setPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY))
+      });
+    };
+
+    const handleMouseUp = () => {
       isDraggingRef.current = false;
       setIsDragging(false);
     };
 
-    document.addEventListener('pointermove', handlePointerMove);
-    document.addEventListener('pointerup', handlePointerUp);
-    document.addEventListener('pointercancel', handlePointerCancel);
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
     window.addEventListener('blur', handlePointerUp);
 
     return () => {
-      document.removeEventListener('pointermove', handlePointerMove);
-      document.removeEventListener('pointerup', handlePointerUp);
-      document.removeEventListener('pointercancel', handlePointerCancel);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('blur', handlePointerUp);
     };
   }, []);
@@ -751,6 +783,26 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
     return null;
   }
 
+  const handlePanelMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingRef.current) return;
+    
+    const newX = e.clientX - dragOffsetRef.current.x;
+    const newY = e.clientY - dragOffsetRef.current.y;
+    
+    const maxX = window.innerWidth - 380;
+    const maxY = window.innerHeight - 100;
+    
+    setPosition({
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY))
+    });
+  };
+
+  const handlePanelMouseUp = () => {
+    isDraggingRef.current = false;
+    setIsDragging(false);
+  };
+
   return (
     <>
       <div 
@@ -762,6 +814,9 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
           top: position.y,
           zIndex: 1000
         }}
+        onMouseMove={handlePanelMouseMove}
+        onMouseUp={handlePanelMouseUp}
+        onMouseLeave={handlePanelMouseUp}
       >
       <div 
         className="pdf-notes-header"
