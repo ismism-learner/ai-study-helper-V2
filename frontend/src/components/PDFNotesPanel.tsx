@@ -666,6 +666,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
         y: e.clientY - rect.top
       });
       setIsDragging(true);
+      e.preventDefault();
     }
   };
 
@@ -689,7 +690,9 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
   }, []);
 
   useEffect(() => {
-    if (isDragging && typeof document !== 'undefined') {
+    if (typeof document === 'undefined') return;
+    
+    if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       document.body.style.cursor = 'grabbing';
@@ -697,12 +700,10 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
     }
     
     return () => {
-      if (isDragging && typeof document !== 'undefined') {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-      }
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
