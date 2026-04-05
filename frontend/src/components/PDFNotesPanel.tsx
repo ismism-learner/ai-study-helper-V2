@@ -689,7 +689,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
   }, []);
 
   useEffect(() => {
-    if (isDragging) {
+    if (isDragging && typeof document !== 'undefined') {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       document.body.style.cursor = 'grabbing';
@@ -697,7 +697,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
     }
     
     return () => {
-      if (isDragging) {
+      if (isDragging && typeof document !== 'undefined') {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
         document.body.style.cursor = '';
