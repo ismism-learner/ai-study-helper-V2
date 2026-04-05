@@ -606,12 +606,6 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBack, on
                 </>
               ) : '图书馆'}
             </h2>
-            {!selectedTag && viewMode === 'grid' && (
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                共 {allBooks.length} 本书籍，{Array.isArray(booksByTag) ? booksByTag.filter(g => g.tag !== '未分类').length : 0} 个标签
-              </span>
-            )}
-
             {isSelectionMode && (
               <span style={{
                 fontSize: '12px', fontWeight: 600,
@@ -621,38 +615,6 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBack, on
                 已选 {selectedBookIds.size} 本
               </span>
             )}
-
-            <div className="view-toggle inline-toggle" style={{
-              display: 'flex',
-              background: 'var(--bg-light)',
-              borderRadius: '6px',
-              padding: '2px'
-            }}>
-              <button className={`toggle-btn ${viewMode === 'timeline' ? 'active' : ''}`}
-                onClick={() => setViewMode('timeline')}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '4px',
-                  padding: '4px 8px', background: viewMode === 'timeline' ? 'var(--bg-white)' : 'none',
-                  border: 'none', borderRadius: '4px', cursor: 'pointer',
-                  fontSize: '12px', color: viewMode === 'timeline' ? 'var(--primary-color)' : 'var(--text-secondary)',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <Calendar size={14} />{selectedTag ? '年表' : '按标签'}
-              </button>
-              <button className={`toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
-                onClick={() => setViewMode('grid')}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '4px',
-                  padding: '4px 8px', background: viewMode === 'grid' ? 'var(--bg-white)' : 'none',
-                  border: 'none', borderRadius: '4px', cursor: 'pointer',
-                  fontSize: '12px', color: viewMode === 'grid' ? 'var(--primary-color)' : 'var(--text-secondary)',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <Layers size={14} />{selectedTag ? '网格' : '全部'}
-              </button>
-            </div>
           </div>
           <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <select value={filterYear || ''}
@@ -1078,7 +1040,7 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBack, on
 
       {showQuarkModal && (
         <div className="modal-overlay" onClick={() => !quarkUploading && setShowQuarkModal(false)}>
-          <div className="quark-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 600, maxHeight: '80vh', overflow: 'auto' }}>
+          <div className="quark-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3><Cloud size={18} />上传到夸克网盘</h3>
               <button className="close-btn" onClick={() => !quarkUploading && setShowQuarkModal(false)} disabled={quarkUploading}>
@@ -1088,17 +1050,17 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBack, on
             <div className="modal-body">
               {quarkUploadResults.length === 0 ? (
                 <>
-                  <div className="quark-upload-info" style={{ marginBottom: 16 }}>
-                    <p style={{ margin: '0 0 8px 0', color: '#666' }}>
+                  <div className="quark-upload-info">
+                    <p>
                       将{selectedTag ? `"${selectedTag}"标签下的` : '所有'}书籍上传到夸克网盘，按标签分类存储。
                     </p>
-                    <p style={{ margin: 0, color: '#666' }}>
+                    <p>
                       将上传 {displayBooks.filter(b => !b.quark_upload_status || b.quark_upload_status === 'not_uploaded').length} 本未上传的书籍
                     </p>
                   </div>
-                  <div style={{ background: '#f8f9fa', padding: 12, borderRadius: 8, marginBottom: 16 }}>
-                    <h4 style={{ margin: '0 0 8px 0', fontSize: 14 }}>上传说明：</h4>
-                    <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: '#666' }}>
+                  <div className="quark-upload-tips">
+                    <h4>上传说明：</h4>
+                    <ul>
                       <li>书籍将按标签分类到「我的电子图书馆/标签名」文件夹</li>
                       <li>每个标签文件夹会生成一个分享链接</li>
                       <li>相同标签的书籍共享同一个文件夹链接</li>
@@ -1107,29 +1069,25 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBack, on
                 </>
               ) : (
                 <div className="quark-upload-results">
-                  <h4 style={{ margin: '0 0 12px 0', fontSize: 14 }}>上传结果：</h4>
+                  <h4>上传结果：</h4>
                   {quarkUploadResults.map((result, index) => (
-                    <div key={index} style={{
-                      padding: 12, marginBottom: 8, borderRadius: 8,
-                      background: result.success ? '#d4edda' : '#f8d7da',
-                      border: `1px solid ${result.success ? '#c3e6cb' : '#f5c6cb'}`
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        {result.success ? <CheckCircle size={16} color="#155724" /> : <XCircle size={16} color="#721c24" />}
-                        <span style={{ fontWeight: 500, color: result.success ? '#155724' : '#721c24' }}>{result.book_title}</span>
+                    <div key={index} className={`quark-result-item ${result.success ? 'success' : 'failed'}`}>
+                      <div className="quark-result-header">
+                        {result.success ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                        <span className="quark-result-title">{result.book_title}</span>
                       </div>
                       {result.success && result.share_url && (
-                        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          <a href={result.share_url} target="_blank" rel="noopener noreferrer" style={{ color: '#0066cc', fontSize: 12 }}>
+                        <div className="quark-result-share">
+                          <a href={result.share_url} target="_blank" rel="noopener noreferrer">
                             {result.share_url}<ExternalLink size={10} style={{ marginLeft: 4, verticalAlign: 'middle' }} />
                           </a>
-                          {result.share_password && <span style={{ fontSize: 12, color: '#666' }}>提取码: {result.share_password}</span>}
+                          {result.share_password && <span className="quark-result-password">提取码: {result.share_password}</span>}
                           <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: 11 }}
                             onClick={() => navigator.clipboard.writeText(result.share_url! + (result.share_password ? ` 提取码: ${result.share_password}` : ''))}
                           ><Copy size={12} />复制</button>
                         </div>
                       )}
-                      {!result.success && <div style={{ fontSize: 12, color: '#721c24', marginTop: 4 }}>{result.message}</div>}
+                      {!result.success && <div className="quark-result-error">{result.message}</div>}
                     </div>
                   ))}
                 </div>
