@@ -38,3 +38,39 @@ Thumbs.db
 
 # 忽略日志文件
 *.log
+
+# 忽略临时文件
+*.tmp
+*.temp
+*.bak
+*.backup
+*~
+
+# 忽略测试文件
+test*.pdf
+test*.py
+test*.js
+test*.html
+*_test.py
+*_test.js
+
+# 忽略迁移和检查脚本（一次性使用）
+backend/check_*.py
+backend/migrate_*.py
+backend/fix_*.py
+backend/restore_*.py
+backend/emergency_*.py
+backend/cleanup_*.py
+backend/regenerate_*.py
+backend/refresh_*.py
+backend/generate_*.py
+backend/import_*.py
+backend/init_*.py
+
+# 忽略数据备份
+backend/data_backup.json
+backend/document_sources.json
+
+# 忽略前端临时文件
+frontend/src/*.backup
+frontend/*.backup
