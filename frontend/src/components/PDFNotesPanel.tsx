@@ -90,6 +90,8 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
   const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
   const panelRef = useRef<HTMLDivElement>(null);
   const prevPageRef = useRef<number>(currentPage);
+  const isDraggingRef = useRef(false);
+  const dragOffsetRef = useRef<Position>({ x: 0, y: 0 });
 
   const [isQuickMode, setIsQuickMode] = useState(false);
   const [quickContent, setQuickContent] = useState('');
@@ -661,19 +663,26 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (panelRef.current) {
       const rect = panelRef.current.getBoundingClientRect();
-      setDragOffset({
+      const offset = {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
-      });
+      };
+      dragOffsetRef.current = offset;
+      isDraggingRef.current = true;
       setIsDragging(true);
+      setDragOffset(offset);
       e.preventDefault();
     }
   };
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (isDragging) {
-      const newX = e.clientX - dragOffset.x;
-      const newY = e.clientY - dragOffset.y;
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      
+      const newX = e.clientX - dragOffsetRef.current.x;
+      const newY = e.clientY - dragOffsetRef.current.y;
       
       const maxX = window.innerWidth - 380;
       const maxY = window.innerHeight - 100;
@@ -682,30 +691,27 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
         x: Math.max(0, Math.min(newX, maxX)),
         y: Math.max(0, Math.min(newY, maxY))
       });
-    }
-  }, [isDragging, dragOffset]);
+    };
 
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-  }, []);
+    const handleMouseUp = () => {
+      isDraggingRef.current = false;
+      setIsDragging(false);
+    };
 
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       document.body.style.cursor = 'grabbing';
       document.body.style.userSelect = 'none';
     }
-    
+
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     };
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+  }, [isDragging]);
 
   const getSectionTitle = (section: string): string => {
     switch (section) {
