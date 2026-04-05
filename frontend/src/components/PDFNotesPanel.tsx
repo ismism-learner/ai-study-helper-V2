@@ -765,7 +765,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
       >
       <div 
         className="pdf-notes-header"
-        onMouseDown={handleMouseDown}
+        onPointerDown={handlePointerDown}
         style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
