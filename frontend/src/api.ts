@@ -466,6 +466,40 @@ export const bookApi = {
   generateThumbnail: (bookId: string) => libraryApi.post<{ thumbnail: string }>(`/books/${bookId}/generate-thumbnail`),
 
   generateAllThumbnails: () => libraryApi.post<{ generated: number; failed: number; total: number }>('/books/generate-all-thumbnails'),
+
+  quickSearch: (keyword: string, tag?: string) => 
+    libraryApi.get<{ books: BookDocument[]; count: number; keyword: string; tag?: string }>('/books/quick-search', { 
+      params: { keyword, ...(tag ? { tag } : {}) } 
+    }),
+
+  batchTag: (bookIds: string[], tag: string, mode: 'add' | 'replace' | 'remove' = 'add') =>
+    libraryApi.post<{ updated_count: number; book_ids: string[]; tag: string; mode: string }>('/books/batch-tag', bookIds, {
+      params: { tag, mode }
+    }),
+
+  updateReadingProgress: (bookId: string, currentPage: number, readingSeconds?: number) =>
+    libraryApi.post<{
+      success: boolean;
+      last_read_page: number;
+      last_read_time: string;
+      total_reading_seconds: number;
+      reading_speed_pages_per_hour: number | null;
+    }>(`/books/${bookId}/reading-progress`, {
+      current_page: currentPage,
+      reading_seconds: readingSeconds || 0
+    }),
+
+  getRecentlyRead: (limit?: number) =>
+    libraryApi.get<BookDocument[]>('/books/recently-read', {
+      params: { limit: limit || 5 }
+    }),
+
+  getReadingStats: () =>
+    libraryApi.get<{
+      total_reading_hours: number;
+      books_with_progress: number;
+      average_reading_speed: number;
+    }>('/reading-stats'),
 };
 
 export const worldTimelineApi = {
@@ -926,6 +960,103 @@ export const pdfOcrApi = {
       error: string | null;
       result?: any;
     }>(`/pdf-ocr/paddle/task-status/${encodeURIComponent(filePath)}`),
+
+  makeSearchableAsync: (filePath: string, options?: {
+    start_page?: number;
+    end_page?: number;
+  }) =>
+    api.post<{
+      message: string;
+      file_path: string;
+      status: string;
+    }>(`/pdf-ocr/paddle/make-searchable-async/${encodeURIComponent(filePath)}`, null, {
+      params: options
+    }),
+
+  getMakeSearchableStatus: (filePath: string) =>
+    api.get<{
+      status: string;
+      progress: number;
+      current_page: number;
+      total_pages: number;
+      error: string | null;
+      message: string;
+      result?: any;
+    }>(`/pdf-ocr/paddle/make-searchable-status/${encodeURIComponent(filePath)}`),
+
+  extractTextAsync: (filePath: string, options?: {
+    start_page?: number;
+    end_page?: number;
+    concurrency?: number;
+  }) =>
+    api.post<{
+      message: string;
+      file_path: string;
+      status: string;
+    }>(`/pdf-ocr/paddle/extract-text-async/${encodeURIComponent(filePath)}`, null, {
+      params: options
+    }),
+
+  getExtractTextStatus: (filePath: string) =>
+    api.get<{
+      status: string;
+      progress: number;
+      current_page: number;
+      total_pages: number;
+      error: string | null;
+      message: string;
+      had_text: boolean;
+      text_content: string | null;
+      text_file_path: string | null;
+      pages?: Array<{ page_number: number; text: string }>;
+    }>(`/pdf-ocr/paddle/extract-text-status/${encodeURIComponent(filePath)}`),
+
+  hasOcrText: (filePath: string) =>
+    api.get<{
+      has_ocr_text: boolean;
+      text_file_path: string | null;
+      file_size?: number;
+      modified_time?: number;
+    }>(`/pdf-ocr/paddle/has-ocr-text/${encodeURIComponent(filePath)}`),
+
+  getOcrText: (filePath: string) =>
+    api.get<string>(`/pdf-ocr/paddle/ocr-text/${encodeURIComponent(filePath)}`),
+
+  getGpuStatus: () =>
+    api.get<{
+      gpu_utilization: number;
+      memory_used: number;
+      memory_total: number;
+      memory_percent: number;
+      concurrent_workers: number;
+    }>('/pdf-ocr/paddle/gpu-status'),
+
+  cancelOcr: (filePath: string) =>
+    api.post<{
+      success: boolean;
+      message: string;
+    }>(`/pdf-ocr/paddle/cancel-ocr/${encodeURIComponent(filePath)}`),
+
+  getOcrProgress: (filePath: string) =>
+    api.get<{
+      last_processed_page: number;
+      total_pages: number;
+      has_progress: boolean;
+    }>(`/pdf-ocr/paddle/ocr-progress/${encodeURIComponent(filePath)}`),
+
+  saveOcrText: (filePath: string, textContent: string) =>
+    api.post<{
+      success: boolean;
+      message: string;
+      text_file_path: string;
+    }>(`/pdf-ocr/paddle/save-ocr-text/${encodeURIComponent(filePath)}?text_content=${encodeURIComponent(textContent)}`),
+
+  deleteOcrText: (filePath: string) =>
+    api.delete<{
+      success: boolean;
+      message: string;
+      files?: string[];
+    }>(`/pdf-ocr/paddle/delete-ocr-text/${encodeURIComponent(filePath)}`),
 };
 
 export const backupApi = {
@@ -1033,6 +1164,12 @@ export const dashboardApi = {
       count: number;
     }>>('/dashboard/activity-heatmap'),
 
+  getUnarchivedTags: () =>
+    api.get<Array<{
+      name: string;
+      count: number;
+    }>>('/dashboard/unarchived-tags'),
+
   getMonthlyStats: () =>
     api.get<Array<{
       month: string;
@@ -1087,7 +1224,6 @@ export const quickNoteApi = {
     is_processed?: number;
     group_id?: string;
     source_document_id?: string;
-    source_page?: number;
     search?: string;
     skip?: number;
     limit?: number;
@@ -1144,6 +1280,85 @@ export const quickNoteApi = {
     api.put<QuickNote>(`/quick-notes/${noteId}/move-to-group`, null, {
       params: { group_id: groupId, group_name: groupName }
     }),
+};
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  due_date: string;
+  completed: number;
+  completed_at: string | null;
+  task_type: string;
+  target_value: number | null;
+  current_value: number;
+  priority: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskCreate {
+  title: string;
+  description?: string;
+  due_date: string;
+  task_type?: string;
+  target_value?: number;
+  priority?: string;
+}
+
+export const taskApi = {
+  list: (includeCompleted?: boolean) =>
+    api.get<Task[]>('/tasks', {
+      params: { include_completed: includeCompleted || false }
+    }),
+
+  create: (data: TaskCreate) =>
+    api.post<Task>('/tasks', data),
+
+  update: (taskId: string, data: Partial<TaskCreate & { completed?: number; current_value?: number }>) =>
+    api.put<Task>(`/tasks/${taskId}`, data),
+
+  delete: (taskId: string) =>
+    api.delete(`/tasks/${taskId}`),
+
+  complete: (taskId: string) =>
+    api.post<Task>(`/tasks/${taskId}/complete`),
+
+  uncomplete: (taskId: string) =>
+    api.post<Task>(`/tasks/${taskId}/uncomplete`),
+
+  upcoming: (days?: number) =>
+    api.get<Task[]>('/tasks/upcoming', {
+      params: { days: days || 7 }
+    }),
+
+  overdue: () =>
+    api.get<Task[]>('/tasks/overdue'),
+};
+
+export interface Activity {
+  id: string;
+  action_type: string;
+  description: string;
+  details: Record<string, any> | null;
+  book_id: string | null;
+  document_id: string | null;
+  created_at: string;
+}
+
+export const activityApi = {
+  list: (limit?: number) =>
+    api.get<Activity[]>('/activity', {
+      params: { limit: limit || 10 }
+    }),
+
+  stats: () =>
+    api.get<{
+      today_uploads: number;
+      today_archives: number;
+      today_notes: number;
+      today_tags: number;
+    }>('/activity/stats'),
 };
 
 export default api;

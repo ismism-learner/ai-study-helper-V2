@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { WorldTimelineEvent } from '../types';
 import { worldTimelineApi } from '../api';
 import { Calendar, Clock, Tag, Trash2, Edit3, Plus, ChevronUp, ChevronDown, Check } from 'lucide-react';
@@ -14,7 +14,7 @@ interface DocumentTimelineNotesProps {
 
 const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
   documentId,
-  onNoteClick: _onNoteClick,
+  onNoteClick,
   currentPage = 1,
 }) => {
   const [notes, setNotes] = useState<WorldTimelineEvent[]>([]);
@@ -40,6 +40,15 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
   const [tagFeedback, setTagFeedback] = useState<string | null>(null);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editingTags, setEditingTags] = useState<string[]>([]);
+  const tagFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (tagFeedbackTimeoutRef.current) {
+        clearTimeout(tagFeedbackTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     loadNotes();
@@ -153,6 +162,12 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
   };
 
   const handleNoteClick = (note: WorldTimelineEvent, e: React.MouseEvent) => {
+    // 如果按住 Ctrl/Cmd 键，调用 onNoteClick 回调跳转到页码
+    if ((e.ctrlKey || e.metaKey) && onNoteClick && note.page_number) {
+      onNoteClick(note);
+      return;
+    }
+    
     if (e.shiftKey && lastSelectedId) {
       const noteIds = notes.map(n => n.id);
       const lastIndex = noteIds.indexOf(lastSelectedId);
@@ -209,7 +224,10 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
       }
       
       setTagFeedback(`已为 ${selectedNotes.size} 个笔记添加标签 "${newTag}"`);
-      setTimeout(() => setTagFeedback(null), 2000);
+      if (tagFeedbackTimeoutRef.current) {
+        clearTimeout(tagFeedbackTimeoutRef.current);
+      }
+      tagFeedbackTimeoutRef.current = setTimeout(() => setTagFeedback(null), 2000);
       setTagInput('');
       loadNotes();
     } catch (error) {
@@ -232,7 +250,10 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
       }
       
       setTagFeedback(`已为 ${selectedNotes.size} 个笔记添加标签 "${tag}"`);
-      setTimeout(() => setTagFeedback(null), 2000);
+      if (tagFeedbackTimeoutRef.current) {
+        clearTimeout(tagFeedbackTimeoutRef.current);
+      }
+      tagFeedbackTimeoutRef.current = setTimeout(() => setTagFeedback(null), 2000);
       loadNotes();
     } catch (error) {
       console.error('Failed to add tag:', error);
@@ -261,7 +282,10 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
     try {
       await worldTimelineApi.updateDocumentDirectTimelineEvent(editingNoteId, { tags: editingTags });
       setTagFeedback('标签已更新');
-      setTimeout(() => setTagFeedback(null), 2000);
+      if (tagFeedbackTimeoutRef.current) {
+        clearTimeout(tagFeedbackTimeoutRef.current);
+      }
+      tagFeedbackTimeoutRef.current = setTimeout(() => setTagFeedback(null), 2000);
       setEditingNoteId(null);
       setEditingTags([]);
       loadNotes();
@@ -299,13 +323,13 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
   const getImportanceColor = (importance: string) => {
     switch (importance) {
       case 'high':
-        return '#ef4444';
+        return 'var(--danger-500)';
       case 'normal':
-        return '#3b82f6';
+        return 'var(--primary-500)';
       case 'low':
-        return '#10b981';
+        return 'var(--success-500)';
       default:
-        return '#6b7280';
+        return 'var(--text-muted)';
     }
   };
 
@@ -316,12 +340,12 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
   if (isLoading) {
     return (
       <div className="document-timeline-notes" style={{ padding: '16px' }}>
-        <div style={{ textAlign: 'center', color: '#6b7280', padding: '20px' }}>
+        <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
           <div className="loading-spinner" style={{
             width: '24px',
             height: '24px',
-            border: '2px solid #e5e7eb',
-            borderTopColor: '#3b82f6',
+            border: '2px solid var(--border-default)',
+            borderTopColor: 'var(--primary-500)',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite',
             margin: '0 auto 8px'
@@ -336,51 +360,68 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
 
   return (
     <div className="document-timeline-notes" style={{
-      background: '#f8f9fa',
+      background: 'var(--bg-elevated)',
       borderRadius: '8px',
-      overflow: 'hidden'
+      border: '1px solid var(--border-default)',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+      flexShrink: 0
     }}>
       <div style={{
-        padding: '12px 16px',
-        background: '#fff',
-        borderBottom: '1px solid #e5e7eb',
+        padding: '10px 12px',
+        background: 'var(--bg-surface)',
+        borderBottom: '1px solid var(--border-default)',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        flexShrink: 0,
+        flexWrap: 'wrap',
+        gap: 6
       }}>
         <h3 style={{
           margin: 0,
-          fontSize: '16px',
+          fontSize: '13px',
           fontWeight: 600,
           display: 'flex',
           alignItems: 'center',
-          gap: '8px'
+          gap: 6,
+          color: 'var(--text-primary)'
         }}>
-          <Calendar size={18} />
-          时间笔记
+          <span style={{ 
+            background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+            color: 'white',
+            padding: '1px 6px',
+            borderRadius: 3,
+            fontSize: 10,
+            fontWeight: 600
+          }}>
+            时间
+          </span>
+          <span>笔记</span>
           <span style={{
-            fontSize: '12px',
+            fontSize: '10px',
             fontWeight: 'normal',
-            color: '#6b7280',
-            background: '#e5e7eb',
-            padding: '2px 8px',
-            borderRadius: '12px'
+            color: 'var(--text-muted)',
+            background: 'var(--bg-light)',
+            padding: '1px 6px',
+            borderRadius: '8px'
           }}>
             {notes.length}
           </span>
           {selectedNotes.size > 0 && (
             <span style={{
-              fontSize: '12px',
-              background: '#8b5cf6',
+              fontSize: '10px',
+              background: 'var(--accent-500)',
               color: 'white',
-              padding: '2px 8px',
-              borderRadius: '12px'
+              padding: '1px 6px',
+              borderRadius: '8px'
             }}>
-              已选 {selectedNotes.size}
+              {selectedNotes.size}
             </span>
           )}
         </h3>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: 4 }}>
           {selectedNotes.size > 0 && (
             <button
               onClick={() => {
@@ -390,120 +431,122 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
                 }
               }}
               style={{
-                padding: '6px 12px',
-                background: showTagEditor ? '#8b5cf6' : '#f3f4f6',
-                color: showTagEditor ? 'white' : '#374151',
+                padding: '4px 8px',
+                background: showTagEditor ? 'var(--accent-500)' : 'var(--bg-light)',
+                color: showTagEditor ? 'white' : 'var(--text-primary)',
                 border: 'none',
                 borderRadius: '4px',
-                fontSize: '13px',
+                fontSize: '11px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px'
               }}
             >
-              <Tag size={14} />
-              标签
+              <Tag size={12} />
             </button>
           )}
           <button
             onClick={toggleSelectAll}
             style={{
-              padding: '6px 12px',
-              background: selectedNotes.size === notes.length ? '#10b981' : '#f3f4f6',
-              color: selectedNotes.size === notes.length ? 'white' : '#374151',
+              padding: '4px 8px',
+              background: selectedNotes.size === notes.length ? 'var(--success-500)' : 'var(--bg-light)',
+              color: selectedNotes.size === notes.length ? 'white' : 'var(--text-primary)',
               border: 'none',
               borderRadius: '4px',
-              fontSize: '13px',
+              fontSize: '11px',
               cursor: 'pointer'
             }}
           >
-            {selectedNotes.size === notes.length ? '取消全选' : '全选'}
+            {selectedNotes.size === notes.length ? '取消' : '全选'}
           </button>
           <button
             onClick={handleAddNote}
             style={{
-              padding: '6px 12px',
-              background: '#3b82f6',
+              padding: '4px 8px',
+              background: 'var(--primary-500)',
               color: 'white',
               border: 'none',
               borderRadius: '4px',
-              fontSize: '13px',
+              fontSize: '11px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '4px'
             }}
           >
-            <Plus size={14} />
-            添加
+            <Plus size={12} />
           </button>
           <button
             onClick={() => setIsAIModalOpen(true)}
             style={{
-              padding: '6px 12px',
-              background: '#8b5cf6',
+              padding: '4px 8px',
+              background: 'var(--accent-500)',
               color: 'white',
               border: 'none',
               borderRadius: '4px',
-              fontSize: '13px',
+              fontSize: '11px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '4px'
             }}
           >
-            AI生成
+            AI
           </button>
         </div>
       </div>
 
       {tagFeedback && (
         <div style={{
-          background: '#ecfdf5',
-          color: '#059669',
-          padding: '10px 16px',
-          fontSize: '13px',
+          background: 'var(--success-light)',
+          color: 'var(--success-600)',
+          padding: '6px 12px',
+          fontSize: '11px',
           display: 'flex',
           alignItems: 'center',
-          gap: '6px'
+          gap: '4px',
+          flexShrink: 0
         }}>
-          <Check size={14} />
+          <Check size={12} />
           {tagFeedback}
         </div>
       )}
 
       {showTagEditor && selectedNotes.size > 0 && (
         <div style={{
-          background: '#f8fafc',
-          padding: '12px 16px',
-          borderBottom: '1px solid #e5e7eb'
+          background: 'var(--bg-light)',
+          padding: '8px 12px',
+          borderBottom: '1px solid var(--border-default)',
+          flexShrink: 0
         }}>
-          <div style={{ fontSize: '13px', fontWeight: 500, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Tag size={14} />
-            为选中的 {selectedNotes.size} 个笔记添加标签
+          <div style={{ fontSize: '11px', fontWeight: 500, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Tag size={12} />
+            为 {selectedNotes.size} 个笔记添加标签
           </div>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
             <input
               type="text"
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleAddBatchTag()}
-              placeholder="输入标签后按回车添加"
+              placeholder="输入标签后按回车"
               style={{
                 flex: 1,
-                padding: '8px',
-                border: '1px solid #e5e7eb',
+                padding: '6px 8px',
+                border: '1px solid var(--border-default)',
                 borderRadius: '4px',
-                fontSize: '13px'
+                fontSize: '11px',
+                background: 'var(--bg-surface)',
+                color: 'var(--text-primary)'
               }}
             />
             <button
               onClick={handleAddBatchTag}
               disabled={!tagInput.trim()}
               style={{
-                padding: '8px 16px',
-                background: tagInput.trim() ? '#8b5cf6' : '#9ca3af',
+                padding: '6px 12px',
+                background: tagInput.trim() ? 'var(--accent-500)' : 'var(--text-muted)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '4px',
@@ -516,19 +559,20 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
           </div>
           {historyTags.length > 0 && (
             <div>
-              <span style={{ fontSize: '11px', color: '#9ca3af', marginRight: '8px' }}>快速选择:</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '8px' }}>快速选择:</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
                 {historyTags.slice(0, 8).map((tag) => (
                   <button
                     key={tag}
                     onClick={() => handleAddHistoryTagToSelected(tag)}
                     style={{
-                      background: '#fff',
-                      border: '1px solid #d1d5db',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-default)',
                       borderRadius: '12px',
                       padding: '2px 8px',
                       fontSize: '11px',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      color: 'var(--text-primary)'
                     }}
                   >
                     + {tag}
@@ -540,12 +584,12 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
         </div>
       )}
 
-      <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+      <div className="panel-content-scrollable" style={{ flex: 1, overflowY: 'auto' }}>
         {grouped.length === 0 ? (
           <div style={{
             textAlign: 'center',
             padding: '32px 16px',
-            color: '#6b7280'
+            color: 'var(--text-muted)'
           }}>
             <Calendar size={32} style={{ marginBottom: '8px', opacity: 0.5 }} />
             <p style={{ fontSize: '14px', margin: 0 }}>暂无时间笔记</p>
@@ -558,12 +602,12 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
             const isExpanded = expandedYears.has(group.year);
 
             return (
-              <div key={group.year} style={{ borderBottom: '1px solid #e5e7eb' }}>
+              <div key={group.year} style={{ borderBottom: '1px solid var(--border-default)' }}>
                 <div
                   onClick={() => toggleYear(group.year)}
                   style={{
                     padding: '10px 16px',
-                    background: '#f3f4f6',
+                    background: 'var(--bg-light)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
@@ -572,12 +616,12 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
                   }}
                 >
                   {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                  <span style={{ fontWeight: 600, fontSize: '14px' }}>
+                  <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>
                     {group.year === 0 ? '未知年份' : `${group.year}年`}
                   </span>
                   <span style={{
                     fontSize: '12px',
-                    color: '#6b7280',
+                    color: 'var(--text-muted)',
                     marginLeft: 'auto'
                   }}>
                     {group.notes.length} 条
@@ -596,11 +640,11 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
                           onClick={(e) => handleNoteClick(note, e)}
                           style={{
                             padding: '12px 16px',
-                            background: isSelected ? '#f0f9ff' : '#fff',
-                            borderTop: isSelected ? '2px solid #8b5cf6' : 'none',
-                            borderLeft: isSelected ? '2px solid #8b5cf6' : 'none',
-                            borderRight: isSelected ? '2px solid #8b5cf6' : 'none',
-                            borderBottom: isSelected ? '2px solid #8b5cf6' : '1px solid #f3f4f6',
+                            background: isSelected ? 'var(--primary-light)' : 'var(--bg-surface)',
+                            borderTop: isSelected ? '2px solid var(--accent-500)' : 'none',
+                            borderLeft: isSelected ? '2px solid var(--accent-500)' : 'none',
+                            borderRight: isSelected ? '2px solid var(--accent-500)' : 'none',
+                            borderBottom: isSelected ? '2px solid var(--accent-500)' : '1px solid var(--border-subtle)',
                             cursor: 'pointer',
                             transition: 'background 0.15s'
                           }}
@@ -615,8 +659,8 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
                               width: '18px',
                               height: '18px',
                               borderRadius: '4px',
-                              border: isSelected ? '2px solid #8b5cf6' : '2px solid #d1d5db',
-                              background: isSelected ? '#8b5cf6' : 'transparent',
+                              border: isSelected ? '2px solid var(--accent-500)' : '2px solid var(--border-default)',
+                              background: isSelected ? 'var(--accent-500)' : 'transparent',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -640,7 +684,8 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
                               fontSize: '14px',
                               fontWeight: 500,
                               flex: 1,
-                              lineHeight: 1.4
+                              lineHeight: 1.4,
+                              color: 'var(--text-primary)'
                             }}>
                               {note.event_title}
                             </h4>
@@ -653,7 +698,7 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
                                   border: 'none',
                                   cursor: 'pointer',
                                   borderRadius: '4px',
-                                  color: '#8b5cf6'
+                                  color: 'var(--accent-500)'
                                 }}
                                 title="编辑标签"
                               >
@@ -667,7 +712,7 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
                                   border: 'none',
                                   cursor: 'pointer',
                                   borderRadius: '4px',
-                                  color: '#6b7280'
+                                  color: 'var(--text-muted)'
                                 }}
                                 title="编辑"
                               >
@@ -681,7 +726,7 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
                                   border: 'none',
                                   cursor: 'pointer',
                                   borderRadius: '4px',
-                                  color: '#ef4444'
+                                  color: 'var(--danger-500)'
                                 }}
                                 title="删除"
                               >
@@ -694,7 +739,7 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
                             <p style={{
                               margin: '4px 0 8px 34px',
                               fontSize: '13px',
-                              color: '#6b7280',
+                              color: 'var(--text-secondary)',
                               lineHeight: 1.4,
                               display: '-webkit-box',
                               WebkitLineClamp: 2,
@@ -711,7 +756,7 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
                             gap: '12px',
                             marginLeft: '34px',
                             fontSize: '12px',
-                            color: '#9ca3af'
+                            color: 'var(--text-muted)'
                           }}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                               <Clock size={12} />
@@ -729,11 +774,11 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
                               marginTop: '10px',
                               marginLeft: '34px',
                               padding: '10px',
-                              background: '#f8fafc',
+                              background: 'var(--bg-light)',
                               borderRadius: '6px',
-                              border: '1px solid #e5e7eb'
+                              border: '1px solid var(--border-default)'
                             }}>
-                              <div style={{ fontSize: '12px', fontWeight: 500, marginBottom: '6px' }}>编辑标签</div>
+                              <div style={{ fontSize: '12px', fontWeight: 500, marginBottom: '6px', color: 'var(--text-primary)' }}>编辑标签</div>
                               <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
                                 <input
                                   type="text"
@@ -744,16 +789,18 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
                                   style={{
                                     flex: 1,
                                     padding: '6px',
-                                    border: '1px solid #e5e7eb',
+                                    border: '1px solid var(--border-default)',
                                     borderRadius: '4px',
-                                    fontSize: '12px'
+                                    fontSize: '12px',
+                                    background: 'var(--bg-surface)',
+                                    color: 'var(--text-primary)'
                                   }}
                                 />
                                 <button
                                   onClick={handleAddTagToNote}
                                   style={{
                                     padding: '6px 10px',
-                                    background: '#8b5cf6',
+                                    background: 'var(--accent-500)',
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '4px',
@@ -768,7 +815,7 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
                                   {editingTags.map((tag, index) => (
                                     <span key={index} style={{
-                                      background: '#8b5cf6',
+                                      background: 'var(--accent-500)',
                                       color: 'white',
                                       padding: '2px 8px',
                                       borderRadius: '12px',
@@ -800,7 +847,7 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
                                   onClick={handleSaveNoteTags}
                                   style={{
                                     padding: '6px 12px',
-                                    background: '#10b981',
+                                    background: 'var(--success-500)',
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '4px',
@@ -817,8 +864,8 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
                                   }}
                                   style={{
                                     padding: '6px 12px',
-                                    background: '#f3f4f6',
-                                    color: '#374151',
+                                    background: 'var(--bg-light)',
+                                    color: 'var(--text-primary)',
                                     border: 'none',
                                     borderRadius: '4px',
                                     fontSize: '12px',
@@ -844,8 +891,8 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
                                     style={{
                                       fontSize: '11px',
                                       padding: '2px 6px',
-                                      background: '#e0e7ff',
-                                      color: '#4338ca',
+                                      background: 'var(--primary-lighter)',
+                                      color: 'var(--primary-600)',
                                       borderRadius: '4px',
                                       display: 'flex',
                                       alignItems: 'center',

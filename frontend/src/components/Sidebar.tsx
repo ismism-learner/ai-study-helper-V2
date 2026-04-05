@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Document, Folder } from '../types';
-import { FileText, Trash2, Upload, Clock, Highlighter, Move, FolderOpen, X, Check, Home, FileText as FileTextIcon, Loader, Square, CheckSquare, Calendar, Sparkles } from 'lucide-react';
+import { FileText, Trash2, Upload, Clock, Highlighter, Move, FolderOpen, X, Check, Home, FileText as FileTextIcon, Loader, Square, CheckSquare, RefreshCw, AlertTriangle, Calendar, Sparkles } from 'lucide-react';
 import FolderManager from './FolderManager';
 import BatchTimelineGeneratePanel from './BatchTimelineGeneratePanel';
 
@@ -694,7 +694,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <button
               className="doc-action-btn timeline"
               onClick={() => setShowBatchTimeline(true)}
-              title="批量生成时间笔记"
+              title="批量生成年表"
             >
               <Sparkles size={14} />
             </button>
@@ -728,7 +728,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         {documents.length > 0 && (
           <div className="select-all-bar">
             <button
-              className="select-all-btn"
+              className={`select-all-btn ${selectedDocs.size === documents.filter(d => !d.framework_content).length && documents.filter(d => !d.framework_content).length > 0 ? 'active' : ''}`}
               onClick={() => {
                 const docsToSelect = documents.filter(d => !d.framework_content);
                 if (selectedDocs.size === docsToSelect.length && docsToSelect.length > 0) {
@@ -739,14 +739,15 @@ const Sidebar: React.FC<SidebarProps> = ({
               }}
             >
               {selectedDocs.size === documents.filter(d => !d.framework_content).length && documents.filter(d => !d.framework_content).length > 0 ? (
-                <CheckSquare size={16} />
+                <CheckSquare size={14} />
               ) : (
-                <Square size={16} />
+                <Square size={14} />
               )}
-              全选待处理
+              待处理
             </button>
+            <div className="divider-vertical" />
             <button
-              className="select-all-btn"
+              className={`select-all-btn ${selectedDocs.size === documents.filter(d => d.framework_content).length && documents.filter(d => d.framework_content).length > 0 ? 'active' : ''}`}
               onClick={() => {
                 const docsToSelect = documents.filter(d => d.framework_content);
                 if (selectedDocs.size === docsToSelect.length && docsToSelect.length > 0) {
@@ -757,14 +758,14 @@ const Sidebar: React.FC<SidebarProps> = ({
               }}
             >
               {selectedDocs.size === documents.filter(d => d.framework_content).length && documents.filter(d => d.framework_content).length > 0 ? (
-                <CheckSquare size={16} />
+                <CheckSquare size={14} />
               ) : (
-                <Square size={16} />
+                <Square size={14} />
               )}
-              全选已生成正文
+              已生成
             </button>
             <span className="selection-info">
-              已选 {selectedDocs.size} 个
+              {selectedDocs.size}
             </span>
           </div>
         )}
@@ -820,17 +821,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <div className="document-info">
                       <div className="document-name">
                         {doc.title}
-                        {hasFrameworkContent && (
-                          <span 
-                            className="content-badge"
-                            style={{
-                              background: hasTimelineNotes ? '#f3e8ff' : '#ecfdf5',
-                              color: hasTimelineNotes ? '#7c3aed' : '#059669'
-                            }}
-                          >
-                            {hasTimelineNotes ? '已生成时间笔记' : '已生成正文'}
-                          </span>
-                        )}
                       </div>
                       <div className="document-meta">
                         <span className="meta-item">
@@ -1137,7 +1127,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
       )}
 
-      {/* 批量生成时间笔记弹窗 */}
+      {/* 批量生成年表弹窗 */}
       {showBatchTimeline && (
         <BatchTimelineGeneratePanel
           onClose={() => setShowBatchTimeline(false)}

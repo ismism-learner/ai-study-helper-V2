@@ -149,9 +149,9 @@ const DocumentView: React.FC<DocumentViewProps> = ({ document: doc, highlightedK
             left: Math.min(explanationPopup.position.x, window.innerWidth - 320),
             top: explanationPopup.position.y + 20,
             transform: 'translateX(-50%)',
-            background: 'white',
+            background: 'var(--bg-elevated, #1e293b)',
             borderRadius: 12,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
             padding: 16,
             zIndex: 1001,
             minWidth: 280,
@@ -160,6 +160,7 @@ const DocumentView: React.FC<DocumentViewProps> = ({ document: doc, highlightedK
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
+            color: 'var(--text-primary, #e2e8f0)',
           }}
           onClick={(e) => e.stopPropagation()}
           onMouseEnter={() => {
@@ -179,12 +180,12 @@ const DocumentView: React.FC<DocumentViewProps> = ({ document: doc, highlightedK
             alignItems: 'center',
             marginBottom: 12,
             paddingBottom: 8,
-            borderBottom: '1px solid #e9ecef',
+            borderBottom: '1px solid var(--border-color, #334155)',
           }}>
             <div style={{
               fontSize: 13,
               fontWeight: 600,
-              color: '#667eea',
+              color: 'var(--primary-400, #818cf8)',
               display: 'flex',
               alignItems: 'center',
               gap: 6,
@@ -199,7 +200,7 @@ const DocumentView: React.FC<DocumentViewProps> = ({ document: doc, highlightedK
                 AI解释
               </span>
               {explanationPopup.isPinned && (
-                <span style={{ fontSize: 10, color: '#6c757d' }}>已固定</span>
+                <span style={{ fontSize: 10, color: 'var(--text-muted, #94a3b8)' }}>已固定</span>
               )}
             </div>
             <button
@@ -211,7 +212,7 @@ const DocumentView: React.FC<DocumentViewProps> = ({ document: doc, highlightedK
                 padding: 4,
                 display: 'flex',
                 alignItems: 'center',
-                color: '#6c757d',
+                color: 'var(--text-muted, #94a3b8)',
               }}
             >
               <X size={16} />
@@ -219,10 +220,10 @@ const DocumentView: React.FC<DocumentViewProps> = ({ document: doc, highlightedK
           </div>
           <div style={{
             fontSize: 12,
-            color: '#495057',
+            color: 'var(--text-secondary, #94a3b8)',
             marginBottom: 12,
             padding: '8px 12px',
-            background: '#f8f9fa',
+            background: 'var(--bg-light, #0f172a)',
             borderRadius: 6,
             fontStyle: 'italic',
           }}>
@@ -233,7 +234,7 @@ const DocumentView: React.FC<DocumentViewProps> = ({ document: doc, highlightedK
             overflow: 'auto',
             fontSize: 14,
             lineHeight: 1.6,
-            color: '#333',
+            color: 'var(--text-primary, #e2e8f0)',
           }}>
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {explanationPopup.highlight.explanation || ''}

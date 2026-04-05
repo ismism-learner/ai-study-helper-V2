@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from collections import defaultdict
 from app.database import get_db
-from app.models import Document, BookDocument, Country, DocumentTimelineEvent
+from app.models import Document, BookDocument, Country, DocumentTimelineEvent, WorldTimelineEvent
 
 router = APIRouter()
 
@@ -19,23 +19,20 @@ def get_dashboard_overview(db: Session = Depends(get_db)):
     today = datetime.utcnow().date()
     today_start = datetime.combine(today, datetime.min.time())
     today_end = datetime.combine(today, datetime.max.time())
-    
+
     total_documents = db.query(Document).count()
     total_books = db.query(BookDocument).count()
-    
+
     today_notes = db.query(DocumentTimelineEvent).filter(
         and_(
             DocumentTimelineEvent.created_at >= today_start,
             DocumentTimelineEvent.created_at <= today_end
         )
     ).count()
-    
-    archived_books = db.query(BookDocument).filter(
-        BookDocument.country_id.isnot(None)
-    ).count()
-    
-    unarchived_books = total_books - archived_books
-    
+
+    archived_books = _get_archived_books_count(db)
+    unarchived_books = _get_unarchived_books_count(db)
+
     return {
         "total_documents": total_documents,
         "total_books": total_books,
@@ -48,18 +45,44 @@ def get_dashboard_overview(db: Session = Depends(get_db)):
 @router.get("/archive-status")
 def get_archive_status(db: Session = Depends(get_db)):
     total_books = db.query(BookDocument).count()
-    
-    archived_books = db.query(BookDocument).filter(
-        BookDocument.country_id.isnot(None)
-    ).count()
-    
-    unarchived_books = total_books - archived_books
-    
+
+    archived_books = _get_archived_books_count(db)
+    unarchived_books = _get_unarchived_books_count(db)
+
     return {
         "total": total_books,
         "archived": archived_books,
         "unarchived": unarchived_books,
     }
+
+
+def _get_archived_books_count(db: Session) -> int:
+    books_with_notes = db.query(WorldTimelineEvent.book_id).filter(
+        WorldTimelineEvent.book_id.isnot(None)
+    ).distinct().count()
+    return books_with_notes
+
+
+def _get_unarchived_books_count(db: Session) -> int:
+    total_books = db.query(BookDocument).count()
+    books_with_notes = db.query(WorldTimelineEvent.book_id).filter(
+        WorldTimelineEvent.book_id.isnot(None)
+    ).distinct().count()
+    return total_books - books_with_notes
+
+
+def _is_book_archived(book: BookDocument, db: Session) -> bool:
+    notes_count = db.query(WorldTimelineEvent).filter(
+        WorldTimelineEvent.book_id == book.id
+    ).count()
+    return notes_count > 0
+
+
+def _is_book_unarchived(book: BookDocument, db: Session) -> bool:
+    notes_count = db.query(WorldTimelineEvent).filter(
+        WorldTimelineEvent.book_id == book.id
+    ).count()
+    return notes_count == 0
 
 
 @router.get("/country-distribution")
@@ -102,6 +125,32 @@ def get_tags_distribution(db: Session = Depends(get_db)):
     
     return [
         {"name": tag, "value": count}
+        for tag, count in sorted_tags
+    ]
+
+
+@router.get("/unarchived-tags")
+def get_unarchived_tags(db: Session = Depends(get_db)):
+    books_with_notes = db.query(WorldTimelineEvent.book_id).filter(
+        WorldTimelineEvent.book_id.isnot(None)
+    ).distinct().subquery()
+    
+    unarchived_books = db.query(BookDocument).filter(
+        BookDocument.tags.isnot(None),
+        ~BookDocument.id.in_(books_with_notes)
+    ).all()
+    
+    tag_counts = defaultdict(int)
+    for book in unarchived_books:
+        if book.tags:
+            for tag in book.tags:
+                if tag:
+                    tag_counts[tag] += 1
+    
+    sorted_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+    
+    return [
+        {"name": tag, "count": count}
         for tag, count in sorted_tags
     ]
 

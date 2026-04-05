@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON, Float
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
@@ -18,8 +18,22 @@ class Folder(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    parent = relationship("Folder", remote_side=[id], backref="children")
     documents = relationship("Document", back_populates="folder", cascade="all, delete-orphan")
+
+
+class ActivityLog(Base):
+    """活动日志 - 记录用户操作"""
+    __tablename__ = "activity_logs"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    action_type = Column(String, nullable=False)  # upload, archive, tag, note, read
+    description = Column(String, nullable=False)  # 操作描述
+    details = Column(JSON, nullable=True)  # 详细信息
+    
+    book_id = Column(String, ForeignKey("book_documents.id"), nullable=True)  # 关联的书籍
+    document_id = Column(String, ForeignKey("documents.id"), nullable=True)  # 关联的文档
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 class Document(Base):
@@ -175,6 +189,11 @@ class BookDocument(Base):
     is_primary = Column(Integer, default=1)
     duplicate_status = Column(String, default='unique')
     
+    last_read_page = Column(Integer, default=1)
+    last_read_time = Column(DateTime, nullable=True)
+    total_reading_seconds = Column(Integer, default=0)
+    reading_speed_pages_per_hour = Column(Float, nullable=True)
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -235,6 +254,7 @@ class DocumentTimelineEvent(Base):
     event_description = Column(Text, nullable=True)  # 事件描述
     importance = Column(String, default="normal")  # 重要性
     tags = Column(JSON, nullable=True)  # 标签
+    page_number = Column(Integer, nullable=True)  # 页码（用于跳转）
     # 关联到文档中的位置（字符偏移量）
     content_offset = Column(Integer, nullable=True)
     # 时间笔记增强字段
@@ -275,3 +295,24 @@ class QuickNote(Base):
 
     source_document = relationship("Document", foreign_keys=[source_document_id])
     converted_document = relationship("Document", foreign_keys=[converted_document_id])
+
+
+class Task(Base):
+    """任务与待办 - 管理学习计划和目标"""
+    __tablename__ = "tasks"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    title = Column(String, nullable=False)  # 任务标题
+    description = Column(Text, nullable=True)  # 任务描述
+    due_date = Column(DateTime, nullable=False)  # 截止日期
+    completed = Column(Integer, default=0)  # 是否完成: 0=未完成, 1=已完成
+    completed_at = Column(DateTime, nullable=True)  # 完成时间
+    
+    task_type = Column(String, default="general")  # 任务类型: general, reading, notes, custom
+    target_value = Column(Integer, nullable=True)  # 目标值（如：读多少页、做多少笔记）
+    current_value = Column(Integer, default=0)  # 当前进度值
+    
+    priority = Column(String, default="normal")  # 优先级: low, normal, high
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

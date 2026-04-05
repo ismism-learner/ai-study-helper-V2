@@ -102,11 +102,12 @@ class DocumentResponse(DocumentBase):
 
 class DocumentTimelineEventCreate(BaseModel):
     event_date: str
-    event_date_display: str
+    event_date_display: Optional[str] = None
     event_title: str
     event_description: Optional[str] = None
     importance: Optional[str] = "normal"
     tags: Optional[List[str]] = None
+    page_number: Optional[int] = None
     content_offset: Optional[int] = None
     source_type: Optional[str] = "text"
     source_content: Optional[str] = None

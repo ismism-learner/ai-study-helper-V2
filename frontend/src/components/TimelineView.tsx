@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { TimelineEntry, BookDocument, Country, TimePeriod } from '../types';
 import { BookOpen, Calendar, Trash2, ChevronUp, ChevronDown, Edit3, X, Save, MapPin, Clock, CheckSquare, Square, Plus, Tag, Cloud } from 'lucide-react';
@@ -91,6 +91,15 @@ const TimelineView: React.FC<TimelineViewProps> = ({
   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
   const [tagHistory, setTagHistory] = useState<string[]>([]);
   const [tagInputFocus, setTagInputFocus] = useState(false);
+  const tagInputFocusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (tagInputFocusTimeoutRef.current) {
+        clearTimeout(tagInputFocusTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const sortedTimeline = useMemo(() => 
     [...timeline].sort((a, b) => a.year - b.year), 
@@ -530,14 +539,15 @@ const TimelineView: React.FC<TimelineViewProps> = ({
               </div>
               
               {isExpanded && (
-                <div className="timeline-books">
-                  {entry.books.map(book => {
+                <div className="timeline-events-list">
+                  {entry.books.map((book, idx) => {
                     const isSelected = selectedBooks.has(book.id);
+                    const isLast = idx === entry.books.length - 1;
                     
                     return (
                       <div 
                         key={book.id}
-                        className={`timeline-book-item ${isSelected ? 'selected' : ''}`}
+                        className={`timeline-event-item ${isSelected ? 'selected' : ''}`}
                         onClick={(e) => {
                           if (editMode) {
                             toggleBookSelection(e, book.id);
@@ -546,105 +556,69 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                           }
                         }}
                       >
-                        {editMode && (
-                          <div className="book-checkbox">
-                            {isSelected ? (
-                              <CheckSquare size={20} className="checked" />
-                            ) : (
-                              <Square size={20} />
-                            )}
-                          </div>
-                        )}
-                        <div className="book-cover">
-                          {book.cover_image ? (
-                            <img src={book.cover_image} alt={book.title} />
-                          ) : book.file_path ? (
-                            pdfErrors.has(book.id) ? (
-                              <div className="book-cover-pdf-placeholder">
-                                <div className="pdf-icon">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                                    <polyline points="14 2 14 8 20 8"/>
-                                    <path d="M10 13v-1a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v1"/>
-                                    <path d="M10 17h4"/>
-                                  </svg>
-                                </div>
-                                <span className="pdf-label">PDF</span>
-                              </div>
-                            ) : (
-                              <div className="book-cover-pdf-preview">
-                                <Document
-                                  file={getPdfFirstPageUrl(book)}
-                                  onLoadError={() => setPdfErrors(prev => new Set([...prev, book.id]))}
-                                  options={pdfOptions}
-                                >
-                                  <Page pageNumber={1} width={80} height={110} />
-                                </Document>
-                              </div>
-                            )
-                          ) : (
-                            <div className="book-cover-placeholder">
-                              <BookOpen size={20} />
-                            </div>
-                          )}
+                        <div className="event-connector">
+                          <div className="connector-dot" />
+                          {!isLast && <div className="connector-line" />}
                         </div>
-                        <div className="book-info">
-                          <h4 className="book-title">
-                            {book.title}
-                            {book.quark_upload_status === 'uploaded' && (
-                              <span title="已上传到夸克网盘">
-                                <Cloud size={14} className="quark-uploaded-icon" />
-                              </span>
-                            )}
-                          </h4>
-                          {book.author && (
-                            <p className="book-author">{book.author}</p>
-                          )}
-                          {book.country?.name && (
-                            <p className="book-meta">
-                              <MapPin size={12} /> {book.country.name}
-                            </p>
-                          )}
-                          {(book.theme_year_start || book.theme_year_end) && (
-                            <p className="book-meta">
-                              <Clock size={12} /> 
-                              {book.theme_year_start && getYearLabel(book.theme_year_start)}
-                              {book.theme_year_start && book.theme_year_end && ' - '}
-                              {book.theme_year_end && getYearLabel(book.theme_year_end)}
-                            </p>
-                          )}
-                          {book.tags && book.tags.length > 0 && (
-                            <div className="book-tags">
-                              {book.tags.slice(0, 3).map((tag, index) => (
-                                <span key={index} className="book-tag">
-                                  <Tag size={10} />
-                                  {tag}
-                                </span>
-                              ))}
-                              {book.tags.length > 3 && (
-                                <span className="book-tag more">+{book.tags.length - 3}</span>
+                        <div className={`event-content-card event-card ${editMode ? 'importance-medium' : ''}`}>
+                          {editMode && (
+                            <div style={{ position: 'absolute', top: 10, right: 10 }}>
+                              {isSelected ? (
+                                <CheckSquare size={18} style={{ color: 'var(--primary-color)' }} />
+                              ) : (
+                                <Square size={18} style={{ color: 'var(--text-muted)' }} />
                               )}
                             </div>
                           )}
-                        </div>
-                        {!editMode && (
-                          <div className="book-actions">
-                            <button
-                              className="action-btn edit-btn"
-                              onClick={(e) => handleEditClick(e, book)}
-                              title="编辑"
-                            >
-                              <Edit3 size={16} />
-                            </button>
-                            <button
-                              className="action-btn delete-btn"
-                              onClick={(e) => handleDeleteClick(e, book.id, book.title)}
-                              title="删除"
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                          <div className="event-date-badge">
+                            <Calendar size={11} />
+                            {getYearLabel(entry.year)}
+                            {book.author && <span style={{ marginLeft: 4 }}>{book.author}</span>}
                           </div>
-                        )}
+                          <h4 className="event-name">{book.title}</h4>
+                          {(book.tags && book.tags.length > 0) && (
+                            <div className="event-tag-list">
+                              {book.tags.slice(0, 4).map((tag, i) => (
+                                <span key={i} className="tag-item">{tag}</span>
+                              ))}
+                              {book.tags.length > 4 && (
+                                <span className="tag-item">+{book.tags.length - 4}</span>
+                              )}
+                            </div>
+                          )}
+                          {!editMode && (
+                            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                              <button
+                                className="action-btn edit-btn"
+                                onClick={(e) => handleEditClick(e, book)}
+                                title="编辑"
+                                style={{
+                                  width: 26, height: 26, display: 'flex',
+                                  alignItems: 'center', justifyContent: 'center',
+                                  border: 'none', background: 'none',
+                                  color: 'var(--text-muted)', cursor: 'pointer',
+                                  borderRadius: 4,
+                                }}
+                              >
+                                <Edit3 size={14} />
+                              </button>
+                              <button
+                                className="action-btn delete-btn"
+                                onClick={(e) => handleDeleteClick(e, book.id, book.title)}
+                                title="删除"
+                                style={{
+                                  width: 26, height: 26, display: 'flex',
+                                  alignItems: 'center', justifyContent: 'center',
+                                  border: 'none', background: 'none',
+                                  color: 'var(--text-muted)', cursor: 'pointer',
+                                  borderRadius: 4,
+                                }}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -879,7 +853,12 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                       setShowTagSuggestions(e.target.value.length > 0);
                     }}
                     onFocus={() => setTagInputFocus(true)}
-                    onBlur={() => setTimeout(() => setTagInputFocus(false), 200)}
+                    onBlur={() => {
+                      if (tagInputFocusTimeoutRef.current) {
+                        clearTimeout(tagInputFocusTimeoutRef.current);
+                      }
+                      tagInputFocusTimeoutRef.current = setTimeout(() => setTagInputFocus(false), 200);
+                    }}
                     onKeyPress={(e) => {
                       if (e.key === 'Enter' && newTag.trim()) {
                         e.preventDefault();

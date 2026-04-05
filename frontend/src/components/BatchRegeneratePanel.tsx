@@ -291,7 +291,7 @@ const BatchRegeneratePanel: React.FC<BatchRegeneratePanelProps> = ({
               </div>
 
               <div className="results-list">
-                {results.map((result) => (
+                {results.map((result, index) => (
                   <div 
                     key={result.id} 
                     className={`result-item ${result.success ? 'success' : 'failed'}`}

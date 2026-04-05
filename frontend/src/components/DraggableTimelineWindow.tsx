@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { 
   X, 
   Minimize2, 
@@ -6,7 +6,10 @@ import {
   Check, 
   Save, 
   Tag, 
-  Plus,
+  Plus, 
+  ChevronDown, 
+  ChevronUp, 
+  Search,
   Calendar,
   Sparkles,
   Loader,
@@ -47,6 +50,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
   const [tagInput, setTagInput] = useState('');
   const [historyTags, setHistoryTags] = useState<string[]>([]);
   const [historyTagDropdownOpen, setHistoryTagDropdownOpen] = useState(false);
+  const [historyTagSearchQuery, setHistoryTagSearchQuery] = useState('');
   const historyTagDropdownRef = useRef<HTMLDivElement>(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -79,6 +83,14 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
       console.error('Failed to load history tags:', error);
     }
   };
+
+  const filteredHistoryTags = useMemo(() => {
+    if (!historyTagSearchQuery.trim()) {
+      return historyTags;
+    }
+    const query = historyTagSearchQuery.toLowerCase();
+    return historyTags.filter(tag => tag.toLowerCase().includes(query));
+  }, [historyTags, historyTagSearchQuery]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.window-controls') || 
@@ -275,6 +287,13 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
     setTimeout(() => setTagFeedback(null), 2000);
   };
 
+  const removeEventTag = (eventIndex: number, tag: string) => {
+    const newEventTags = new Map(eventTags);
+    const currentTags = newEventTags.get(eventIndex) || [];
+    newEventTags.set(eventIndex, currentTags.filter(t => t !== tag));
+    setEventTags(newEventTags);
+  };
+
   if (!isOpen) return null;
 
   const isProcessing = isGenerating || isSaving;
@@ -288,9 +307,9 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
         left: position.x,
         top: position.y,
         zIndex: 9999,
-        background: 'white',
+        background: 'var(--bg-elevated, #1e293b)',
         borderRadius: '12px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
         width: isMinimized ? '320px' : '400px',
         maxHeight: isMinimized ? 'auto' : '600px',
         overflow: 'hidden',
@@ -298,6 +317,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
         transition: isDragging ? 'none' : 'width 0.2s ease, max-height 0.2s ease',
         display: 'flex',
         flexDirection: 'column',
+        color: 'var(--text-primary, #e2e8f0)',
       }}
     >
       <div
@@ -518,10 +538,10 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
           {noEventsFound && !isGenerating && (
             <div style={{ textAlign: 'center', padding: '20px' }}>
               <AlertCircle size={32} style={{ margin: '0 auto 12px', color: '#f59e0b' }} />
-              <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 12px' }}>
+              <p style={{ color: 'var(--text-secondary, #94a3b8)', fontSize: '13px', margin: '0 0 12px' }}>
                 未识别到时间相关事件
               </p>
-              <p style={{ color: '#9ca3af', fontSize: '11px', margin: 0 }}>
+              <p style={{ color: 'var(--text-muted, #64748b)', fontSize: '11px', margin: 0 }}>
                 该文档可能不包含历史时间信息
               </p>
               <button
@@ -532,11 +552,12 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
                 style={{
                   marginTop: '12px',
                   padding: '6px 12px',
-                  background: '#f3f4f6',
-                  border: '1px solid #e5e7eb',
+                  background: 'var(--bg-surface, #334155)',
+                  border: '1px solid var(--border-color, #475569)',
                   borderRadius: '4px',
                   cursor: 'pointer',
                   fontSize: '12px',
+                  color: 'var(--text-primary, #e2e8f0)',
                 }}
               >
                 重新生成
@@ -650,9 +671,9 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
                           key={tag}
                           onClick={() => handleAddHistoryTagToSelected(tag)}
                           style={{
-                            background: '#fff',
-                            color: '#374151',
-                            border: '1px solid #d1d5db',
+                            background: 'var(--bg-surface, #334155)',
+                            color: 'var(--text-primary, #e2e8f0)',
+                            border: '1px solid var(--border-color, #475569)',
                             borderRadius: '10px',
                             padding: '1px 6px',
                             fontSize: '10px',
@@ -670,7 +691,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
               <div style={{
                 flex: 1,
                 overflowY: 'auto',
-                border: '1px solid #e5e7eb',
+                border: '1px solid var(--border-color, #334155)',
                 borderRadius: '6px',
                 maxHeight: '200px',
               }}>
@@ -684,8 +705,8 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
                       onClick={(e) => handleEventClick(index, e)}
                       style={{
                         padding: '8px',
-                        background: isSelected ? '#f0f9ff' : '#fff',
-                        borderBottom: '1px solid #f3f4f6',
+                        background: isSelected ? 'var(--primary-light, rgba(139, 92, 246, 0.2))' : 'var(--bg-surface, #1e293b)',
+                        borderBottom: '1px solid var(--border-subtle, #1e293b)',
                         cursor: 'pointer',
                       }}
                     >
@@ -707,11 +728,11 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
                           {event.event_title}
                         </span>
                       </div>
-                      <div style={{ fontSize: '11px', color: '#6b7280', marginLeft: '20px', marginBottom: '4px' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary, #94a3b8)', marginLeft: '20px', marginBottom: '4px' }}>
                         {event.event_description.slice(0, 60)}{event.event_description.length > 60 ? '...' : ''}
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginLeft: '20px' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: '#9ca3af' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: 'var(--text-muted, #64748b)' }}>
                           <Calendar size={10} />
                           {event.event_date_display}
                         </span>

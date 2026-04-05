@@ -40,6 +40,15 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
   const [historyTagDropdownOpen, setHistoryTagDropdownOpen] = useState(false);
   const [historyTagSearchQuery, setHistoryTagSearchQuery] = useState('');
   const historyTagDropdownRef = useRef<HTMLDivElement>(null);
+  const tagFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (tagFeedbackTimeoutRef.current) {
+        clearTimeout(tagFeedbackTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -197,7 +206,10 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
     setBatchTagInput('');
     
     setTagFeedback(`已为 ${selectedEvents.size} 个事件添加标签 "${newTag}"`);
-    setTimeout(() => setTagFeedback(null), 2000);
+    if (tagFeedbackTimeoutRef.current) {
+      clearTimeout(tagFeedbackTimeoutRef.current);
+    }
+    tagFeedbackTimeoutRef.current = setTimeout(() => setTagFeedback(null), 2000);
   };
 
   const handleAddHistoryTagToSelected = (tag: string) => {
@@ -213,7 +225,10 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
     setEventTags(newEventTags);
     
     setTagFeedback(`已为 ${selectedEvents.size} 个事件添加标签 "${tag}"`);
-    setTimeout(() => setTagFeedback(null), 2000);
+    if (tagFeedbackTimeoutRef.current) {
+      clearTimeout(tagFeedbackTimeoutRef.current);
+    }
+    tagFeedbackTimeoutRef.current = setTimeout(() => setTagFeedback(null), 2000);
   };
 
   const removeEventTag = (eventIndex: number, tag: string) => {
@@ -239,23 +254,24 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
       zIndex: 1000,
     }}>
       <div className="ai-timeline-notes-modal" style={{
-        background: 'white',
+        background: 'var(--bg-elevated, #1e293b)',
         borderRadius: '12px',
         width: '90%',
         maxWidth: '900px',
         maxHeight: '90vh',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
+        color: 'var(--text-primary, #e2e8f0)',
       }}>
         <div className="modal-header" style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '16px 20px',
-          borderBottom: '1px solid #e5e7eb',
+          borderBottom: '1px solid var(--border-color, #334155)',
         }}>
-          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary, #e2e8f0)' }}>
             <Sparkles size={20} style={{ color: '#8b5cf6' }} />
             AI生成时间笔记
           </h3>
@@ -270,6 +286,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              color: 'var(--text-muted, #94a3b8)',
             }}
           >
             <X size={20} />
@@ -428,10 +445,10 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                       left: 0,
                       right: 0,
                       marginTop: '4px',
-                      background: 'white',
-                      border: '1px solid #e5e7eb',
+                      background: 'var(--bg-elevated, #1e293b)',
+                      border: '1px solid var(--border-color, #334155)',
                       borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
                       zIndex: 100,
                       maxHeight: '300px',
                       display: 'flex',
@@ -439,10 +456,10 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                     }}>
                       <div style={{
                         padding: '10px 12px',
-                        borderBottom: '1px solid #e5e7eb',
+                        borderBottom: '1px solid var(--border-color, #334155)',
                         position: 'sticky',
                         top: 0,
-                        background: 'white',
+                        background: 'var(--bg-elevated, #1e293b)',
                         borderRadius: '8px 8px 0 0'
                       }}>
                         <div style={{
@@ -450,10 +467,10 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                           alignItems: 'center',
                           gap: '8px',
                           padding: '8px 12px',
-                          background: '#f8fafc',
+                          background: 'var(--bg-surface, #0f172a)',
                           borderRadius: '6px'
                         }}>
-                          <Search size={14} style={{ color: '#6b7280' }} />
+                          <Search size={14} style={{ color: 'var(--text-muted, #94a3b8)' }} />
                           <input
                             type="text"
                             placeholder="搜索历史标签..."
@@ -465,7 +482,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                               outline: 'none',
                               flex: 1,
                               fontSize: '13px',
-                              color: '#374151'
+                              color: 'var(--text-primary, #e2e8f0)'
                             }}
                           />
                           {historyTagSearchQuery && (

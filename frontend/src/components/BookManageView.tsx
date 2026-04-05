@@ -11,7 +11,7 @@ import ConfirmDialog from './ConfirmDialog';
 import EditBookBody, { EditBookFormData } from './EditBookBody';
 
 interface BookManageViewProps {
-  country: Country;
+  country?: Country | null;
   onBack: () => void;
   onBookSelect: (book: BookDocument) => void;
 }
@@ -120,7 +120,7 @@ const BookManageView: React.FC<BookManageViewProps> = ({ country, onBack, onBook
   useEffect(() => {
     loadData();
     loadTagHistory();
-  }, [country.id]);
+  }, [country?.id]);
 
   const loadTagHistory = () => {
     const stored = localStorage.getItem('tagHistory');
@@ -143,14 +143,20 @@ const BookManageView: React.FC<BookManageViewProps> = ({ country, onBack, onBook
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [booksRes, periodsRes, countriesRes] = await Promise.all([
-        countryApi.getBooks(country.id),
-        timePeriodApi.list(country.id),
-        countryApi.list(),
-      ]);
-      setBooks(booksRes.data);
-      setTimePeriods(periodsRes.data);
-      setCountries(countriesRes.data);
+      const promises: Promise<any>[] = [];
+      if (country) {
+        promises.push(countryApi.getBooks(country.id));
+        promises.push(timePeriodApi.list(country.id));
+      } else {
+        promises.push(bookApi.list());
+        promises.push(timePeriodApi.list());
+      }
+      promises.push(countryApi.list());
+
+      const results = await Promise.all(promises);
+      setBooks(results[0].data);
+      setTimePeriods(results[1].data);
+      setCountries(results[2].data);
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
@@ -305,13 +311,13 @@ const BookManageView: React.FC<BookManageViewProps> = ({ country, onBack, onBook
 
   const handleCreatePeriod = async () => {
     if (!newPeriodForm.name) return;
-    
+
     try {
       await timePeriodApi.create({
         name: newPeriodForm.name,
         start_year: newPeriodForm.start_year ? parseInt(newPeriodForm.start_year) : undefined,
         end_year: newPeriodForm.end_year ? parseInt(newPeriodForm.end_year) : undefined,
-        country_id: country.id,
+        country_id: country?.id,
       });
       setShowNewPeriodModal(false);
       setNewPeriodForm({ name: '', start_year: '', end_year: '' });
@@ -518,7 +524,7 @@ const BookManageView: React.FC<BookManageViewProps> = ({ country, onBack, onBook
         </button>
         
         <div className="header-info">
-          <h2>{country.name} - 图书管理</h2>
+          <h2>{country ? `${country.name} - 图书管理` : '图书管理'}</h2>
           <span className="book-count">{books.length} 本书籍</span>
         </div>
       </div>

@@ -1,117 +1,74 @@
 import React, { useState, useEffect } from 'react';
-import { Country, BookDocument, Document } from '../types';
-import { countryApi } from '../api';
-import CountryDetailView from './CountryDetailView';
+import { BookDocument, Document } from '../types';
+import { bookApi } from '../api';
+import TagLibraryView from './TagLibraryView';
 import BookUploadModal from './BookUploadModal';
 import DocumentManager from './DocumentManager';
-import BookManagementPanel from './BookManagementPanel';
 import TimelinePanel from './TimelinePanel';
 import DashboardPanel from './DashboardPanel';
 import BookReaderView from './BookReaderView';
-import { Globe, Library, FileText, BookMarked, Clock } from 'lucide-react';
+import EpubReaderView from './EpubReaderView';
+import { Library, FileText, Clock, Tag } from 'lucide-react';
 
-type ViewType = 'map' | 'country' | 'documents' | 'bookManagement' | 'timeline' | 'bookReader';
+type ViewType = 'map' | 'tagLibrary' | 'documents' | 'timeline' | 'bookReader';
 
 interface LibraryViewProps {
   currentView: ViewType;
   setCurrentView: (view: ViewType) => void;
-  selectedCountry: Country | null;
-  setSelectedCountry: (country: Country | null) => void;
+  selectedTag: string | null;
+  setSelectedTag: (tag: string | null) => void;
   selectedBook: BookDocument | null;
   setSelectedBook: (book: BookDocument | null) => void;
-  onDocumentSelect?: (document: Document) => void;
+  onDocumentSelect?: (document: Document, page?: number) => void;
 }
 
-const LibraryView: React.FC<LibraryViewProps> = ({ 
-  currentView, 
-  setCurrentView, 
-  selectedCountry, 
-  setSelectedCountry, 
-  selectedBook, 
+const LibraryView: React.FC<LibraryViewProps> = ({
+  currentView,
+  setCurrentView,
+  selectedTag,
+  setSelectedTag,
+  selectedBook,
   setSelectedBook,
   onDocumentSelect
 }) => {
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [recentCountries, setRecentCountries] = useState<Country[]>([]);
+  const [totalBooks, setTotalBooks] = useState(0);
+  const [tagCount, setTagCount] = useState(0);
   const [timelineRefresh, setTimelineRefresh] = useState(false);
+  const [previousView, setPreviousView] = useState<ViewType>('map');
+  const [initialPage, setInitialPage] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    loadCountries();
-    loadRecentCountries();
+    loadStats();
   }, []);
 
-  const loadCountries = async () => {
+  const loadStats = async () => {
     try {
-      const response = await countryApi.list();
-      setCountries(response.data);
+      const response = await bookApi.list();
+      setTotalBooks(response.data.length);
+
+      const tagSet = new Set<string>();
+      response.data.forEach((book: BookDocument) => {
+        book.tags?.forEach(tag => tagSet.add(tag));
+      });
+      setTagCount(tagSet.size);
     } catch (error) {
-      console.error('Failed to load countries:', error);
+      console.error('Failed to load stats:', error);
     }
   };
 
-  const loadRecentCountries = () => {
-    const stored = localStorage.getItem('recentCountries');
-    if (stored) {
-      try {
-        setRecentCountries(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to parse recent countries:', e);
-      }
-    }
-  };
-
-  const saveRecentCountry = (country: Country) => {
-    const updated = [country, ...recentCountries.filter(c => c.id !== country.id)].slice(0, 5);
-    setRecentCountries(updated);
-    localStorage.setItem('recentCountries', JSON.stringify(updated));
-  };
-
-  const handleCountryClick = (country: Country) => {
-    setSelectedCountry(country);
-    setCurrentView('country');
-    saveRecentCountry(country);
-  };
-
-  const handleBookSelect = (book: BookDocument) => {
+  const handleBookSelect = (book: BookDocument, page?: number) => {
+    setPreviousView(currentView);
     setSelectedBook(book);
+    setInitialPage(page);
     setCurrentView('bookReader');
   };
 
-  const handleDocumentSelect = (document: Document) => {
+  const handleDocumentSelect = (document: Document, page?: number) => {
     if (onDocumentSelect) {
-      onDocumentSelect(document);
+      onDocumentSelect(document, page);
       setTimelineRefresh(prev => !prev);
     }
-  };
-
-  const handleBackToMap = () => {
-    setSelectedCountry(null);
-    setCurrentView('map');
-  };
-
-  const renderStats = () => {
-    const totalBooks = countries.reduce((sum, c) => sum + c.book_count, 0);
-    const countriesWithBooks = countries.filter(c => c.book_count > 0).length;
-
-    return (
-      <div className="library-stats">
-        <div className="stat-card">
-          <Library size={24} />
-          <div className="stat-info">
-            <span className="stat-value">{totalBooks}</span>
-            <span className="stat-label">总书籍数</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <Globe size={24} />
-          <div className="stat-info">
-            <span className="stat-value">{countriesWithBooks}</span>
-            <span className="stat-label">覆盖国家</span>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -120,72 +77,57 @@ const LibraryView: React.FC<LibraryViewProps> = ({
         {currentView === 'map' && (
           <div className="map-view-container">
             <div className="map-sidebar">
-              {renderStats()}
-              
-              <div className="sidebar-section">
-                <h3>作者国籍数据管理</h3>
-                <div className="country-list">
-                  {countries
-                    .filter(c => c.book_count > 0)
-                    .sort((a, b) => b.book_count - a.book_count)
-                    .slice(0, 8)
-                    .map(country => (
-                      <button
-                        key={country.id}
-                        className="country-item"
-                        onClick={() => handleCountryClick(country)}
-                      >
-                        <span className="country-name">{country.name}</span>
-                        <span className="book-badge">{country.book_count}</span>
-                      </button>
-                    ))}
+              <div className="library-stats">
+                <div className="stat-card">
+                  <Library size={24} />
+                  <div className="stat-info">
+                    <span className="stat-value">{totalBooks}</span>
+                    <span className="stat-label">总书籍数</span>
+                  </div>
+                </div>
+                <div className="stat-card">
+                  <Tag size={24} />
+                  <div className="stat-info">
+                    <span className="stat-value">{tagCount}</span>
+                    <span className="stat-label">标签数</span>
+                  </div>
                 </div>
               </div>
 
               <div className="sidebar-section">
-                <h3>文档管理</h3>
+                <h3>图书馆</h3>
                 <button
                   className="doc-management-btn"
-                  onClick={() => setCurrentView('documents')}
+                  onClick={() => { setSelectedTag(null); setCurrentView('tagLibrary'); }}
+                  style={{ width: '100%', justifyContent: 'center' }}
                 >
-                  <FileText size={18} />
-                  <span>文档管理</span>
+                  <Library size={18} />
+                  <span>查看全部书籍</span>
                 </button>
               </div>
 
               <div className="sidebar-section">
-                <h3>基础书籍管理</h3>
-                <button
-                  className="doc-management-btn"
-                  onClick={() => setCurrentView('bookManagement')}
-                >
-                  <BookMarked size={18} />
-                  <span>书籍管理</span>
-                </button>
-              </div>
-
-              <div className="sidebar-section">
-                <h3>时间轴</h3>
+                <h3>年表</h3>
                 <button
                   className="doc-management-btn timeline-entry-btn"
                   onClick={() => setCurrentView('timeline')}
                 >
                   <Clock size={18} />
-                  <span>时间轴浏览</span>
+                  <span>年表浏览</span>
                 </button>
               </div>
             </div>
 
             <div className="map-main" style={{ overflow: 'auto' }}>
-              <DashboardPanel />
+              <DashboardPanel onBookSelect={handleBookSelect} />
             </div>
           </div>
         )}
 
-        {currentView === 'country' && selectedCountry && (
-          <CountryDetailView
-            country={selectedCountry}
-            onBack={handleBackToMap}
+        {currentView === 'tagLibrary' && (
+          <TagLibraryView
+            selectedTag={selectedTag}
+            onBack={() => { setSelectedTag(null); setCurrentView('map'); }}
             onBookSelect={handleBookSelect}
           />
         )}
@@ -196,13 +138,6 @@ const LibraryView: React.FC<LibraryViewProps> = ({
             onDocumentClick={(doc) => {
               console.log('Document clicked:', doc);
             }}
-          />
-        )}
-
-        {currentView === 'bookManagement' && (
-          <BookManagementPanel
-            onBack={() => setCurrentView('map')}
-            onBookSelect={handleBookSelect}
           />
         )}
 
@@ -217,9 +152,12 @@ const LibraryView: React.FC<LibraryViewProps> = ({
         {currentView === 'bookReader' && selectedBook && (
           <BookReaderView
             book={selectedBook}
+            initialPage={initialPage}
             onBack={() => {
               setSelectedBook(null);
-              setCurrentView('map');
+              setInitialPage(undefined);
+              setCurrentView(previousView);
+              if (previousView !== 'map') setSelectedTag(null);
             }}
           />
         )}
@@ -227,10 +165,9 @@ const LibraryView: React.FC<LibraryViewProps> = ({
 
       {showUploadModal && (
         <BookUploadModal
-          countryId={selectedCountry?.id}
           onClose={() => setShowUploadModal(false)}
           onSuccess={() => {
-            loadCountries();
+            loadStats();
             setShowUploadModal(false);
           }}
         />

@@ -15,7 +15,7 @@ import LibraryView from './components/LibraryView';
 import { FileText, Edit3, BookOpen, Settings, Upload, ChevronDown, GripVertical, Library, FileQuestion, ChevronRight, Cloud, X, CheckCircle, XCircle, Loader2, Copy, ExternalLink } from 'lucide-react';
 import philosophyData from '../philosophy-data.json';
 
-type LibraryViewType = 'map' | 'country' | 'documents' | 'bookManagement' | 'timeline' | 'bookReader';
+type LibraryViewType = 'map' | 'tagLibrary' | 'documents' | 'timeline' | 'bookReader';
 
 type TabType = 'framework' | 'edit' | 'view';
 type MainViewType = 'documents' | 'library';
@@ -90,7 +90,7 @@ function App() {
   
   // LibraryView 状态
   const [libraryView, setLibraryView] = useState<LibraryViewType>('map');
-  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedBook, setSelectedBook] = useState<BookDocument | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   
@@ -99,20 +99,20 @@ function App() {
   
   const renderLibraryBreadcrumbs = () => {
     const path = [];
-    
+
     path.push({
-      label: '世界地图',
+      label: '图书馆',
       onClick: () => {
-        setSelectedCountry(null);
+        setSelectedTag(null);
         setSelectedBook(null);
         setLibraryView('map');
       },
       isCurrent: libraryView === 'map'
     });
-    
-    if (libraryView === 'country') {
+
+    if (libraryView === 'tagLibrary' && selectedTag) {
       path.push({
-        label: selectedCountry?.name || '国家详情',
+        label: selectedTag,
         onClick: () => {
           setLibraryView('map');
         },
@@ -134,16 +134,9 @@ function App() {
       });
     }
     
-    if (libraryView === 'bookManagement') {
-      path.push({
-        label: '书籍管理',
-        isCurrent: true
-      });
-    }
-    
     if (libraryView === 'timeline') {
       path.push({
-        label: '时间轴',
+        label: '年表',
         isCurrent: true
       });
     }
@@ -328,7 +321,7 @@ function App() {
     loadDocuments(folderId);
   };
 
-  const handleSelectDocument = async (id: string) => {
+  const handleSelectDocument = async (id: string, page?: number) => {
     try {
       const response = await documentApi.get(id);
       const docWithHighlights = {
@@ -337,6 +330,11 @@ function App() {
       };
       setActiveDocument(docWithHighlights);
       setActiveTab('framework');
+      
+      // 如果有页码信息，存储起来供 DocumentTimelineNotes 使用
+      if (page) {
+        (window as any).__timelineJumpPage = page;
+      }
     } catch (error) {
       console.error('Failed to load document:', error);
     }
@@ -731,33 +729,20 @@ function App() {
 
         <div className={`main-content ${mainView === 'library' ? 'full-width' : ''}`}>
           {mainView === 'library' ? (
-            <LibraryView 
+            <LibraryView
               currentView={libraryView}
               setCurrentView={setLibraryView}
-              selectedCountry={selectedCountry}
-              setSelectedCountry={setSelectedCountry}
+              selectedTag={selectedTag}
+              setSelectedTag={setSelectedTag}
               selectedBook={selectedBook}
               setSelectedBook={setSelectedBook}
-              onDocumentSelect={(document) => {
+              onDocumentSelect={(document, page) => {
                 setMainView('documents');
-                handleSelectDocument(document.id);
+                handleSelectDocument(document.id, page);
               }}
             />
           ) : activeDocument ? (
           <>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 15 }}>
-              <span
-                style={{
-                  padding: '4px 12px',
-                  background: '#e9ecef',
-                  borderRadius: 4,
-                  fontSize: 12,
-                }}
-              >
-                {activeDocument.highlights?.length || 0} 个标记
-              </span>
-            </div>
-
             <div className="tabs">
               <button
                 className={`tab ${activeTab === 'framework' ? 'active' : ''}`}
@@ -794,7 +779,7 @@ function App() {
             </div>
 
             <div style={{ display: 'flex', gap: 20 }}>
-              <div style={{ flex: 1 }}>
+              <div className="main-content-with-right-panel" style={{ flex: 1 }}>
                 {activeTab === 'framework' && (
                   <FrameworkView
                     document={activeDocument}
@@ -844,19 +829,14 @@ function App() {
                   documentId={activeDocument.id}
                   currentPage={currentPage}
                   onTimelineEventAdded={() => {
-                    // 时间笔记添加后，刷新时间笔记列表
-                    // DocumentTimelineNotes 组件会自动刷新
                   }}
                   onTimelineEventUpdated={() => {
-                    // 时间笔记更新后，刷新时间笔记列表
-                    // DocumentTimelineNotes 组件会自动刷新
                   }}
                 />
                 <DocumentTimelineNotes
                   documentId={activeDocument.id}
                   currentPage={currentPage}
                   onNoteClick={(note) => {
-                    // 点击时间笔记时，可以跳转到对应页码或显示详情
                     console.log('Note clicked:', note);
                   }}
                 />

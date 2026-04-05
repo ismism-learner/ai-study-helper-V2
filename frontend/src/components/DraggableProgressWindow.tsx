@@ -92,14 +92,15 @@ const DraggableProgressWindow: React.FC<DraggableProgressWindowProps> = ({
         left: position.x,
         top: position.y,
         zIndex: 9999,
-        background: 'white',
+        background: 'var(--bg-elevated, #1e293b)',
         borderRadius: '12px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
         width: isMinimized ? '280px' : '380px',
         maxHeight: isMinimized ? 'auto' : '500px',
         overflow: 'hidden',
         cursor: isDragging ? 'grabbing' : 'default',
         transition: isDragging ? 'none' : 'width 0.2s ease',
+        color: 'var(--text-primary, #e2e8f0)',
       }}
     >
       <div

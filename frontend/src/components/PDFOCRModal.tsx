@@ -1,0 +1,452 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { X, Loader2, CheckCircle, AlertCircle, FileText, XCircle, Cpu, Edit3, Save } from 'lucide-react';
+import { pdfOcrApi } from '../api';
+
+interface PDFOCRModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  filePath: string;
+  bookTitle: string;
+  onOCRComplete: (textContent: string) => void;
+}
+
+interface OCRStatus {
+  status: string;
+  progress: number;
+  current_page: number;
+  total_pages: number;
+  error: string | null;
+  message: string;
+  had_text: boolean;
+  text_content: string | null;
+  text_file_path: string | null;
+}
+
+interface GPUStatus {
+  gpu_utilization: number;
+  memory_used: number;
+  memory_total: number;
+  memory_percent: number;
+  concurrent_workers: number;
+}
+
+const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
+  isOpen,
+  onClose,
+  filePath,
+  bookTitle,
+  onOCRComplete
+}) => {
+  const onOCRCompleteRef = useRef(onOCRComplete);
+  
+  useEffect(() => {
+    onOCRCompleteRef.current = onOCRComplete;
+  }, [onOCRComplete]);
+  
+  const [status, setStatus] = useState<OCRStatus>({
+    status: 'idle',
+    progress: 0,
+    current_page: 0,
+    total_pages: 0,
+    error: null,
+    message: '准备开始 OCR 处理...',
+    had_text: false,
+    text_content: null,
+    text_file_path: null
+  });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [gpuStatus, setGpuStatus] = useState<GPUStatus | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedText, setEditedText] = useState('');
+  const [concurrency, setConcurrency] = useState(1);
+
+  const startOCR = useCallback(async () => {
+    if (!filePath) return;
+    
+    setIsProcessing(true);
+    setStatus({
+      status: 'initializing',
+      progress: 0,
+      current_page: 0,
+      total_pages: 0,
+      error: null,
+      message: '正在启动 OCR 处理...',
+      had_text: false,
+      text_content: null,
+      text_file_path: null
+    });
+
+    try {
+      await pdfOcrApi.extractTextAsync(filePath, { concurrency });
+    } catch (error: any) {
+      setStatus(prev => ({
+        ...prev,
+        status: 'failed',
+        error: error.response?.data?.detail || error.message || '启动 OCR 处理失败'
+      }));
+      setIsProcessing(false);
+    }
+  }, [filePath, concurrency]);
+
+  const cancelOCR = useCallback(async () => {
+    if (!filePath) return;
+    
+    try {
+      await pdfOcrApi.cancelOcr(filePath);
+      setStatus(prev => ({
+        ...prev,
+        status: 'cancelled',
+        message: '已取消处理'
+      }));
+      setIsProcessing(false);
+    } catch (error: any) {
+      console.error('Failed to cancel OCR:', error);
+    }
+  }, [filePath]);
+
+  const pollStatus = useCallback(async () => {
+    if (!filePath) return;
+
+    try {
+      const response = await pdfOcrApi.getExtractTextStatus(filePath);
+      const newStatus = response.data;
+      
+      setStatus({
+        status: newStatus.status,
+        progress: newStatus.progress,
+        current_page: newStatus.current_page,
+        total_pages: newStatus.total_pages,
+        error: newStatus.error,
+        message: newStatus.message,
+        had_text: newStatus.had_text || false,
+        text_content: newStatus.text_content,
+        text_file_path: newStatus.text_file_path || null
+      });
+
+      if (newStatus.status === 'completed') {
+        setIsProcessing(false);
+        console.log('OCR completed, text_content length:', newStatus.text_content?.length);
+        console.log('OCR completed, text_file_path:', newStatus.text_file_path);
+        
+        let textToUse = newStatus.text_content;
+        
+        if (!textToUse && newStatus.text_file_path) {
+          console.log('text_content is empty, trying to read from file...');
+          try {
+            const textResponse = await pdfOcrApi.getOcrText(filePath);
+            textToUse = textResponse.data;
+            console.log('Read text from file, length:', textToUse?.length);
+          } catch (e) {
+            console.error('Failed to read OCR text file:', e);
+          }
+        }
+        
+        if (textToUse && typeof textToUse === 'string') {
+          setEditedText(textToUse);
+          setStatus(prev => ({ ...prev, text_content: textToUse }));
+          setTimeout(() => {
+            console.log('Calling onOCRComplete with text length:', textToUse?.length);
+            onOCRCompleteRef.current(textToUse);
+          }, 300);
+        } else {
+          console.log('No text available after all attempts');
+          setTimeout(() => {
+            onOCRCompleteRef.current('');
+          }, 300);
+        }
+      } else if (newStatus.status === 'failed' || newStatus.status === 'cancelled') {
+        setIsProcessing(false);
+      }
+    } catch (error: any) {
+      console.error('Failed to poll OCR status:', error);
+    }
+  }, [filePath]);
+
+  const pollGpuStatus = useCallback(async () => {
+    try {
+      const response = await pdfOcrApi.getGpuStatus();
+      setGpuStatus(response.data);
+    } catch (error) {
+      console.error('Failed to get GPU status:', error);
+    }
+  }, []);
+
+  const handleSaveText = useCallback(async () => {
+    if (!filePath || !editedText) return;
+    
+    try {
+      await pdfOcrApi.saveOcrText(filePath, editedText);
+      onOCRCompleteRef.current(editedText);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to save OCR text:', error);
+    }
+  }, [filePath, editedText]);
+
+  useEffect(() => {
+    if (isOpen && isProcessing) {
+      const interval = setInterval(pollStatus, 1000);
+      const gpuInterval = setInterval(pollGpuStatus, 2000);
+      return () => {
+        clearInterval(interval);
+        clearInterval(gpuInterval);
+      };
+    }
+  }, [isOpen, isProcessing, pollStatus, pollGpuStatus]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setStatus({
+        status: 'idle',
+        progress: 0,
+        current_page: 0,
+        total_pages: 0,
+        error: null,
+        message: '准备开始 OCR 处理...',
+        had_text: false,
+        text_content: null,
+        text_file_path: null
+      });
+      setIsProcessing(false);
+      setIsEditing(false);
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const getStatusIcon = () => {
+    switch (status.status) {
+      case 'idle':
+        return <FileText size={48} className="status-icon" />;
+      case 'completed':
+        return <CheckCircle size={48} className="status-icon success" />;
+      case 'failed':
+      case 'cancelled':
+        return <AlertCircle size={48} className="status-icon error" />;
+      default:
+        return <Loader2 size={48} className="status-icon spinning" />;
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (status.status) {
+      case 'idle':
+        return 'var(--color-text-secondary)';
+      case 'completed':
+        return 'var(--color-success)';
+      case 'failed':
+      case 'cancelled':
+        return 'var(--color-error)';
+      default:
+        return 'var(--color-primary)';
+    }
+  };
+
+  return (
+    <div className="pdf-ocr-modal-overlay">
+      <div className="pdf-ocr-modal">
+        <div className="pdf-ocr-modal-header">
+          <h3>
+            <FileText size={20} />
+            OCR 文字识别
+          </h3>
+          <button 
+            className="close-btn" 
+            onClick={onClose}
+            disabled={isProcessing && status.status !== 'completed' && status.status !== 'failed' && status.status !== 'cancelled'}
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="pdf-ocr-modal-content">
+          <div className="book-info">
+            <span className="label">文档：</span>
+            <span className="title">{bookTitle}</span>
+          </div>
+
+          {gpuStatus && isProcessing && (
+            <div className="gpu-status-panel">
+              <div className="gpu-status-header">
+                <Cpu size={16} />
+                <span>GPU 状态</span>
+              </div>
+              <div className="gpu-status-content">
+                <div className="gpu-metric">
+                  <span className="metric-label">GPU 使用率</span>
+                  <div className="metric-bar">
+                    <div 
+                      className="metric-fill gpu-util" 
+                      style={{ width: `${gpuStatus.gpu_utilization}%` }}
+                    />
+                  </div>
+                  <span className="metric-value">{gpuStatus.gpu_utilization.toFixed(1)}%</span>
+                </div>
+                <div className="gpu-metric">
+                  <span className="metric-label">显存使用</span>
+                  <div className="metric-bar">
+                    <div 
+                      className="metric-fill gpu-mem" 
+                      style={{ width: `${gpuStatus.memory_percent}%` }}
+                    />
+                  </div>
+                  <span className="metric-value">
+                    {(gpuStatus.memory_used / 1024).toFixed(1)}GB / {(gpuStatus.memory_total / 1024).toFixed(1)}GB
+                  </span>
+                </div>
+                <div className="gpu-metric">
+                  <span className="metric-label">并行数</span>
+                  <span className="metric-value workers">{gpuStatus.concurrent_workers}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="status-display">
+            {getStatusIcon()}
+            
+            <div className="status-message" style={{ color: getStatusColor() }}>
+              {status.status === 'idle' 
+                ? '请选择并行数量，然后点击"开始处理"' 
+                : (status.had_text ? 'PDF 已包含文字层，无需 OCR 处理' : status.message)}
+            </div>
+
+            {status.error && (
+              <div className="error-message">
+                {status.error}
+              </div>
+            )}
+
+            {isProcessing && status.total_pages > 0 && (
+              <div className="progress-section">
+                <div className="progress-bar-container">
+                  <div 
+                    className="progress-bar" 
+                    style={{ width: `${status.progress}%` }}
+                  />
+                </div>
+                <div className="progress-text">
+                  {status.current_page} / {status.total_pages} 页 ({status.progress}%)
+                </div>
+              </div>
+            )}
+          </div>
+
+          {status.status === 'idle' && !isProcessing && (
+            <div className="concurrency-panel">
+              <div className="concurrency-label">
+                <Cpu size={18} />
+                <span>并行数量</span>
+              </div>
+              <div className="concurrency-selector">
+                {[1, 2, 3, 4, 5].map((num) => (
+                  <button
+                    key={num}
+                    className={`concurrency-btn ${concurrency === num ? 'active' : ''}`}
+                    onClick={() => setConcurrency(num)}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+              <div className="concurrency-hint">
+                数值越大处理越快，但 GPU 负载越高
+              </div>
+            </div>
+          )}
+
+          {status.status === 'completed' && status.text_content && (
+            <div className="ocr-text-preview">
+              <div className="ocr-text-header">
+                <span>识别结果</span>
+                <div className="ocr-text-actions">
+                  {isEditing ? (
+                    <>
+                      <button className="btn-icon" onClick={() => setIsEditing(false)}>
+                        <X size={16} />
+                        取消
+                      </button>
+                      <button className="btn-icon save" onClick={handleSaveText}>
+                        <Save size={16} />
+                        保存
+                      </button>
+                    </>
+                  ) : (
+                    <button className="btn-icon" onClick={() => setIsEditing(true)}>
+                      <Edit3 size={16} />
+                      编辑
+                    </button>
+                  )}
+                </div>
+              </div>
+              {isEditing ? (
+                <textarea
+                  className="ocr-text-editor"
+                  value={editedText}
+                  onChange={(e) => setEditedText(e.target.value)}
+                />
+              ) : (
+                <div className="ocr-text-content">
+                  <pre>{status.text_content}</pre>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="ocr-info">
+            <p>
+              OCR 处理会识别扫描型 PDF 中的文字。
+              处理完成后，右侧将显示可复制粘贴的文字内容。
+            </p>
+          </div>
+        </div>
+
+        <div className="pdf-ocr-modal-footer">
+          {status.status === 'idle' && !isProcessing && (
+            <>
+              <button className="btn btn-secondary" onClick={onClose}>
+                取消
+              </button>
+              <button className="btn btn-primary" onClick={startOCR}>
+                开始处理
+              </button>
+            </>
+          )}
+          {status.status === 'completed' && (
+            <button className="btn btn-primary" onClick={onClose}>
+              完成
+            </button>
+          )}
+          {status.status === 'failed' && (
+            <>
+              <button className="btn btn-secondary" onClick={onClose}>
+                取消
+              </button>
+              <button className="btn btn-primary" onClick={startOCR}>
+                重试
+              </button>
+            </>
+          )}
+          {status.status === 'cancelled' && (
+            <>
+              <button className="btn btn-secondary" onClick={onClose}>
+                关闭
+              </button>
+              <button className="btn btn-primary" onClick={startOCR}>
+                继续处理
+              </button>
+            </>
+          )}
+          {isProcessing && status.status !== 'completed' && status.status !== 'failed' && status.status !== 'cancelled' && (
+            <button className="btn btn-danger" onClick={cancelOCR}>
+              <XCircle size={16} />
+              取消处理
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PDFOCRModal;

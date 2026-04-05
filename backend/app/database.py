@@ -22,4 +22,5 @@ def get_db():
 
 
 def init_db():
+    from app.models import ActivityLog, Task
     Base.metadata.create_all(bind=engine)

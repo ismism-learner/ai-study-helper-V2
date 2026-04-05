@@ -4,14 +4,14 @@ from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 from app.database import get_db
-from app.models import WorldTimelineEvent, BookDocument, Document, DocumentTimelineEvent
+from app.models import WorldTimelineEvent, BookDocument, Document, DocumentTimelineEvent, ActivityLog
 
 router = APIRouter()
 
 
 class TimelineEventCreate(BaseModel):
     event_date: str  # 格式：YYYY-MM-DD 或 YYYY-MM 或 YYYY
-    event_date_display: str  # 显示格式
+    event_date_display: Optional[str] = None  # 显示格式
     page_number: int
     event_title: str
     event_description: Optional[str] = None
@@ -110,25 +110,41 @@ def create_timeline_event(
     db: Session = Depends(get_db)
 ):
     """为指定书籍创建新的时间节点记录"""
-    book = db.query(BookDocument).filter(BookDocument.id == book_id).first()
-    if not book:
-        raise HTTPException(status_code=404, detail="Book not found")
+    try:
+        book = db.query(BookDocument).filter(BookDocument.id == book_id).first()
+        if not book:
+            raise HTTPException(status_code=404, detail="Book not found")
 
-    event = WorldTimelineEvent(
-        book_id=book_id,
-        event_date=data.event_date,
-        event_date_display=data.event_date_display,
-        page_number=data.page_number,
-        event_title=data.event_title,
-        event_description=data.event_description,
-        importance=data.importance or "normal",
-        tags=data.tags
-    )
-    db.add(event)
-    db.commit()
-    db.refresh(event)
+        event = WorldTimelineEvent(
+            book_id=book_id,
+            event_date=data.event_date,
+            event_date_display=data.event_date_display or data.event_date,
+            page_number=data.page_number,
+            event_title=data.event_title,
+            event_description=data.event_description,
+            importance=data.importance or "normal",
+            tags=data.tags
+        )
+        db.add(event)
+        db.commit()
+        db.refresh(event)
+        
+        book_title = book.title if book else "未知书籍"
+        activity = ActivityLog(
+            action_type='note',
+            description=f'在《{book_title}》第{data.page_number}页添加了笔记',
+            book_id=book_id
+        )
+        db.add(activity)
+        db.commit()
 
-    return _build_event_response(event)
+        return _build_event_response(event)
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Error creating timeline event: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create timeline event: {str(e)}")
 
 
 @router.put("/timeline-events/{event_id}", response_model=TimelineEventResponse)
@@ -138,29 +154,36 @@ def update_timeline_event(
     db: Session = Depends(get_db)
 ):
     """更新时间节点记录"""
-    event = db.query(WorldTimelineEvent).filter(WorldTimelineEvent.id == event_id).first()
-    if not event:
-        raise HTTPException(status_code=404, detail="Timeline event not found")
+    try:
+        event = db.query(WorldTimelineEvent).filter(WorldTimelineEvent.id == event_id).first()
+        if not event:
+            raise HTTPException(status_code=404, detail="Timeline event not found")
 
-    if data.event_date is not None:
-        event.event_date = data.event_date
-    if data.event_date_display is not None:
-        event.event_date_display = data.event_date_display
-    if data.page_number is not None:
-        event.page_number = data.page_number
-    if data.event_title is not None:
-        event.event_title = data.event_title
-    if data.event_description is not None:
-        event.event_description = data.event_description
-    if data.importance is not None:
-        event.importance = data.importance
-    if data.tags is not None:
-        event.tags = data.tags
+        if data.event_date is not None:
+            event.event_date = data.event_date
+        if data.event_date_display is not None:
+            event.event_date_display = data.event_date_display
+        if data.page_number is not None:
+            event.page_number = data.page_number
+        if data.event_title is not None:
+            event.event_title = data.event_title
+        if data.event_description is not None:
+            event.event_description = data.event_description
+        if data.importance is not None:
+            event.importance = data.importance
+        if data.tags is not None:
+            event.tags = data.tags
 
-    db.commit()
-    db.refresh(event)
+        db.commit()
+        db.refresh(event)
 
-    return _build_event_response(event)
+        return _build_event_response(event)
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Error updating timeline event: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update timeline event: {str(e)}")
 
 
 @router.delete("/timeline-events/{event_id}")
@@ -293,7 +316,7 @@ def get_all_timeline_events(db: Session = Depends(get_db)):
             "document_id": event.document_id,
             "event_date": event.event_date,
             "event_date_display": event.event_date_display,
-            "page_number": None,  # DocumentTimelineEvent 没有 page_number 字段
+            "page_number": event.page_number,
             "event_title": event.event_title,
             "event_description": event.event_description,
             "importance": event.importance,

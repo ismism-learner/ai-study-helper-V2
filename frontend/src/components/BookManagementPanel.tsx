@@ -54,6 +54,10 @@ const BookManagementPanel: React.FC<BookManagementPanelProps> = ({ onBack, onBoo
   const [showBatchClassifyModal, setShowBatchClassifyModal] = useState(false);
   const [showTagModal, setShowTagModal] = useState(false);
   const [showNewPeriodModal, setShowNewPeriodModal] = useState(false);
+  const [showQuickTagModal, setShowQuickTagModal] = useState(false);
+  const [quickTagKeyword, setQuickTagKeyword] = useState('');
+  const [quickTagResults, setQuickTagResults] = useState<BookDocument[]>([]);
+  const [quickTagSearchLoading, setQuickTagSearchLoading] = useState(false);
   const [editingBook, setEditingBook] = useState<BookDocument | null>(null);
   
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
@@ -113,6 +117,55 @@ const BookManagementPanel: React.FC<BookManagementPanelProps> = ({ onBack, onBoo
     setLastSelectedIndex(null);
   }, [searchTerm, filterCountry, filterPeriod, filterArchiveStatus]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showQuickTagModal) {
+        setShowQuickTagModal(false);
+        setQuickTagKeyword('');
+        setQuickTagResults([]);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showQuickTagModal]);
+
+  const handleQuickTagSearch = async () => {
+    if (!quickTagKeyword.trim()) return;
+    
+    setQuickTagSearchLoading(true);
+    try {
+      const response = await bookApi.quickSearch(quickTagKeyword.trim());
+      setQuickTagResults(response.data.books);
+    } catch (error) {
+      console.error('Quick tag search failed:', error);
+    } finally {
+      setQuickTagSearchLoading(false);
+    }
+  };
+
+  const handleQuickTagApply = async (tag: string) => {
+    if (quickTagResults.length === 0 || !tag.trim()) return;
+    
+    const bookIds = quickTagResults.map(b => b.id);
+    
+    try {
+      await bookApi.batchTag(bookIds, tag.trim(), 'add');
+      saveTagToHistory(tag.trim());
+      setShowQuickTagModal(false);
+      setQuickTagKeyword('');
+      setQuickTagResults([]);
+      loadData();
+    } catch (error) {
+      console.error('Batch tag failed:', error);
+      alert('批量打标签失败');
+    }
+  };
+
+  const handleQuickTagSelectAll = () => {
+    setSelectedBooks(new Set(quickTagResults.map(b => b.id)));
+  };
+
   const loadData = async (isBackgroundUpdate = false) => {
     if (isBackgroundUpdate) {
       setIsBackgroundUpdating(true);
@@ -138,7 +191,11 @@ const BookManagementPanel: React.FC<BookManagementPanelProps> = ({ onBack, onBoo
   };
 
   const unarchivedBooks = useMemo(() => {
-    return books.filter(b => !b.theme_year_start);
+    return books.filter(b => b.notes_count === 0);
+  }, [books]);
+
+  const archivedBooks = useMemo(() => {
+    return books.filter(b => b.notes_count > 0);
   }, [books]);
 
   const allTags = useMemo(() => {
@@ -160,9 +217,9 @@ const BookManagementPanel: React.FC<BookManagementPanelProps> = ({ onBack, onBoo
       
       let matchesArchive = true;
       if (filterArchiveStatus === 'unarchived') {
-        matchesArchive = !book.theme_year_start;
+        matchesArchive = book.notes_count === 0;
       } else if (filterArchiveStatus === 'archived') {
-        matchesArchive = !!book.theme_year_start;
+        matchesArchive = book.notes_count > 0;
       }
       
       return matchesSearch && matchesCountry && matchesPeriod && matchesArchive;
@@ -520,9 +577,13 @@ const BookManagementPanel: React.FC<BookManagementPanelProps> = ({ onBack, onBoo
             <BookOpen size={14} />
             {books.length} 本书籍
           </span>
+          <span className="stat-item success">
+            <FileText size={14} />
+            {archivedBooks.length} 本有笔记
+          </span>
           <span className="stat-item warning">
             <AlertCircle size={14} />
-            {unarchivedBooks.length} 本未归档
+            {unarchivedBooks.length} 本无笔记
           </span>
         </div>
       </div>
@@ -678,7 +739,7 @@ const BookManagementPanel: React.FC<BookManagementPanelProps> = ({ onBack, onBoo
               {filteredBooks.map((book, index) => (
                 <div
                   key={book.id}
-                  className={`table-row ${selectedBooks.has(book.id) ? 'selected' : ''} ${!book.country_id || !book.time_period_id ? 'unarchived' : ''}`}
+                  className={`table-row ${selectedBooks.has(book.id) ? 'selected' : ''} ${book.notes_count === 0 ? 'unarchived' : ''}`}
                 >
                   <div className="col-checkbox">
                     <button
@@ -703,9 +764,14 @@ const BookManagementPanel: React.FC<BookManagementPanelProps> = ({ onBack, onBoo
                         <Cloud size={14} className="quark-uploaded-icon" />
                       </span>
                     )}
-                    {(!book.country_id || !book.time_period_id) && (
-                      <span className="warning-indicator" title="未归档">
+                    {book.notes_count === 0 && (
+                      <span className="warning-indicator" title="无笔记">
                         <AlertCircle size={12} />
+                      </span>
+                    )}
+                    {book.notes_count > 0 && (
+                      <span className="notes-count-badge" title={`${book.notes_count} 条笔记`}>
+                        {book.notes_count}
                       </span>
                     )}
                   </div>
@@ -1165,6 +1231,115 @@ const BookManagementPanel: React.FC<BookManagementPanelProps> = ({ onBack, onBoo
                 disabled={!newPeriodForm.name}
               >
                 创建
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showQuickTagModal && (
+        <div className="modal-overlay" onClick={() => setShowQuickTagModal(false)}>
+          <div className="quick-tag-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>
+                <Tag size={18} />
+                快速打标签
+              </h3>
+              <button className="close-btn" onClick={() => {
+                setShowQuickTagModal(false);
+                setQuickTagKeyword('');
+                setQuickTagResults([]);
+              }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="quick-tag-search">
+                <div className="search-input-row">
+                  <input
+                    type="text"
+                    placeholder="输入关键词搜索书名或作者..."
+                    value={quickTagKeyword}
+                    onChange={(e) => setQuickTagKeyword(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleQuickTagSearch();
+                      }
+                    }}
+                    autoFocus
+                  />
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleQuickTagSearch}
+                    disabled={quickTagSearchLoading || !quickTagKeyword.trim()}
+                  >
+                    {quickTagSearchLoading ? <Loader size={14} className="spinning" /> : <Search size={14} />}
+                    搜索
+                  </button>
+                </div>
+              </div>
+
+              {quickTagResults.length > 0 && (
+                <div className="quick-tag-results">
+                  <div className="results-header">
+                    <span>找到 {quickTagResults.length} 本书籍</span>
+                    <button className="btn btn-secondary btn-sm" onClick={handleQuickTagSelectAll}>
+                      全选
+                    </button>
+                  </div>
+                  <div className="results-list">
+                    {quickTagResults.map(book => (
+                      <div key={book.id} className="result-item">
+                        <div className="result-title">{book.title}</div>
+                        <div className="result-author">{book.author || '未知作者'}</div>
+                        <div className="result-tags">
+                          {(book.tags || []).map((tag, i) => (
+                            <span key={i} className="mini-tag">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="quick-tag-input">
+                    <input
+                      type="text"
+                      placeholder="输入标签名，按 Enter 应用..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const target = e.target as HTMLInputElement;
+                          handleQuickTagApply(target.value);
+                          target.value = '';
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {tagHistory.length > 0 && (
+                    <div className="tag-history">
+                      <label>历史标签（点击应用）：</label>
+                      <div className="history-tags">
+                        {tagHistory.slice(0, 10).map((tag, i) => (
+                          <button
+                            key={i}
+                            className="history-tag-btn"
+                            onClick={() => handleQuickTagApply(tag)}
+                          >
+                            {tag}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <span className="hint-text">提示：输入标签后按 Enter 应用</span>
+              <button className="btn btn-secondary" onClick={() => setShowQuickTagModal(false)}>
+                关闭
               </button>
             </div>
           </div>

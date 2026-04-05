@@ -105,73 +105,74 @@ const HighlightPanel: React.FC<HighlightPanelProps> = ({
       onMouseLeave={handleMouseLeave}
     >
       <div className="highlight-panel-header">
-        <h3 style={{ margin: 0 }}>高亮标记</h3>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ 
+            background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+            color: 'white',
+            padding: '1px 6px',
+            borderRadius: 3,
+            fontSize: 10,
+            fontWeight: 600
+          }}>
+            高亮
+          </span>
+          <span>标记</span>
+          <span style={{
+            fontSize: '10px',
+            fontWeight: 'normal',
+            color: 'var(--text-muted)',
+            background: 'var(--bg-light)',
+            padding: '1px 6px',
+            borderRadius: '8px'
+          }}>
+            {highlights.length}
+          </span>
+        </h3>
+        <div className="header-actions">
           <button
             className="btn btn-secondary"
             onClick={() => setIsTimelineNoteModalOpen(true)}
-            style={{ padding: '6px 12px', fontSize: 13 }}
             disabled={!documentId}
+            title="添加时间笔记"
           >
-            <Clock size={14} style={{ marginRight: 4 }} />
-            添加时间笔记
+            <Clock size={12} />
           </button>
           {showDeleteModeButton && setIsDeleteMode && (
             <button
               className={`btn ${isDeleteMode ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => setIsDeleteMode(!isDeleteMode)}
-              style={{ padding: '6px 12px', fontSize: 13 }}
+              title={isDeleteMode ? '退出删改模式' : '删改模式'}
             >
-              <Edit3 size={14} style={{ marginRight: 4 }} />
-              {isDeleteMode ? '退出删改' : '删改模式'}
+              <Edit3 size={12} />
             </button>
           )}
         </div>
       </div>
 
-      {highlights.length === 0 ? (
-        <p style={{ color: '#6c757d', textAlign: 'center', padding: '20px 0' }}>
-          暂无高亮标记，请在文档中选中文本后点击"高亮标记"按钮
-        </p>
-      ) : (
+      <div className="panel-content-scrollable" style={{ padding: 10, overflowY: 'auto' }}>
+        {highlights.length === 0 ? (
+          <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0', fontSize: 12 }}>
+            暂无高亮标记
+          </p>
+        ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {highlights.map((highlight) => (
             <div
               key={highlight.id}
               id={`explanation-${highlight.id}`}
-              style={{
-                border: '1px solid #e9ecef',
-                borderRadius: 8,
-                overflow: 'hidden',
-              }}
+              className="highlight-item-card"
             >
               <div
-                style={{
-                  padding: '12px 16px',
-                  background: highlight.explanation ? '#f8f9fa' : '#fff3cd',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                }}
+                className={`highlight-item-header ${highlight.explanation ? 'has-explanation' : ''}`}
                 onClick={() => setExpandedId(expandedId === highlight.id ? null : highlight.id)}
               >
                 <div style={{ flex: 1 }}>
-                  <span style={{ fontWeight: 500, color: '#495057' }}>
+                  <span className="highlight-text-preview">
                     "{highlight.highlighted_text.substring(0, 50)}
                     {highlight.highlighted_text.length > 50 ? '...' : ''}"
                   </span>
                   {highlight.explanation && (
-                    <span
-                      style={{
-                        marginLeft: 8,
-                        padding: '2px 8px',
-                        background: '#28a745',
-                        color: 'white',
-                        borderRadius: 4,
-                        fontSize: 12,
-                      }}
-                    >
+                    <span className="explanation-badge">
                       已解释
                     </span>
                   )}
@@ -186,7 +187,7 @@ const HighlightPanel: React.FC<HighlightPanelProps> = ({
               </div>
 
               {expandedId === highlight.id && (
-                <div style={{ padding: 16, borderTop: '1px solid #e9ecef' }}>
+                <div className="highlight-item-content">
                   {highlight.explanation ? (
                     <div className="explanation-panel">
                       <h3>AI 解释</h3>
@@ -197,10 +198,8 @@ const HighlightPanel: React.FC<HighlightPanelProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div style={{ textAlign: 'center', padding: 20 }}>
-                      <p style={{ color: '#6c757d', marginBottom: 16 }}>
-                        点击下方按钮生成AI解释
-                      </p>
+                    <div className="explanation-placeholder">
+                      <p>点击下方按钮生成AI解释</p>
                       <button
                         className="btn btn-primary"
                         onClick={() => handleExplain(highlight)}
@@ -250,7 +249,8 @@ const HighlightPanel: React.FC<HighlightPanelProps> = ({
             </div>
           ))}
         </div>
-      )}
+        )}
+      </div>
       
       <TimelineNoteModal
         isOpen={isTimelineNoteModalOpen}

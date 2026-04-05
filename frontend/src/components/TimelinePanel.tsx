@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BookDocument, Document } from '../types';
 import { bookApi, documentApi, worldTimelineApi } from '../api';
-import { Clock, Tag, BookOpen, Filter, Calendar, X, FileText, Eye, EyeOff, ChevronDown, ChevronUp, Search, Download } from 'lucide-react';
+import { Clock, Tag, BookOpen, Filter, Calendar, X, FileText, ChevronDown, ChevronUp, Search, Download } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
 
 interface TimelineEvent {
@@ -19,8 +19,8 @@ interface TimelineEvent {
 }
 
 interface TimelinePanelProps {
-  onBookSelect: (book: BookDocument) => void;
-  onDocumentSelect?: (document: Document) => void;
+  onBookSelect: (book: BookDocument, page?: number) => void;
+  onDocumentSelect?: (document: Document, page?: number) => void;
   refresh?: boolean;
 }
 
@@ -100,7 +100,6 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
   const [colorPickerTag, setColorPickerTag] = useState<string | null>(null);
   const [colorPickerPosition, setColorPickerPosition] = useState({ x: 0, y: 0 });
   const colorPickerRef = useRef<HTMLDivElement>(null);
-  const [showBooks, setShowBooks] = useState(true);
   const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
   const [tagSearchQuery, setTagSearchQuery] = useState('');
   const tagDropdownRef = useRef<HTMLDivElement>(null);
@@ -114,7 +113,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
     if (books.length > 0 || documents.length > 0) {
       extractEventsAndTags();
     }
-  }, [books, documents, showBooks]);
+  }, [books, documents]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -140,7 +139,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
     try {
       const [booksResponse, docsResponse, timelineEventsResponse] = await Promise.all([
         bookApi.list({}),
-        documentApi.list({}),
+        documentApi.list({ limit: 1000 }),
         worldTimelineApi.getAllTimelineEvents()
       ]);
       setBooks(booksResponse.data);
@@ -225,48 +224,8 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
     const tagSet = new Set<string>();
     const eventList: TimelineEvent[] = [];
 
-    if (showBooks) {
-      books.forEach(book => {
-        if (book.tags) {
-          book.tags.forEach(tag => tagSet.add(tag));
-        }
-
-        if (book.year_start || book.theme_year_start) {
-          const year = book.theme_year_start || book.year_start || 0;
-          eventList.push({
-            id: `book-${book.id}-start`,
-            year,
-            title: book.title,
-            description: `${book.author ? `作者: ${book.author}` : ''} ${book.description || ''}`.trim(),
-            sourceId: book.id,
-            sourceTitle: book.title,
-            sourceType: 'book',
-            tags: book.tags || [],
-            page: 1,
-          });
-        }
-
-        if (book.time_periods && book.time_periods.length > 0) {
-          book.time_periods.forEach((tp, index) => {
-            if (tp.theme_year_start) {
-              eventList.push({
-                id: `book-${book.id}-tp-${index}`,
-                year: tp.theme_year_start,
-                title: tp.description || `时期 ${index + 1}`,
-                description: `《${book.title}》中的时期`,
-                sourceId: book.id,
-                sourceTitle: book.title,
-                sourceType: 'book',
-                tags: book.tags || [],
-                page: tp.start_page || undefined,
-              });
-            }
-          });
-        }
-      });
-    }
-
-    // 始终显示 world_timeline_events（用户记录的笔记事件）
+    // 只显示真实的事件（WorldTimelineEvent 和 DocumentTimelineEvent）
+    // 不再将书籍本身作为事件显示
     const worldEvents = (window as any).__worldEvents || [];
     worldEvents.forEach((event: TimelineEvent) => {
       eventList.push(event);
@@ -275,23 +234,11 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
       }
     });
 
-    // 始终显示 documents 事件
+    // 文档本身不作为事件显示，只作为事件的来源
+    // 但保留文档的标签用于筛选
     documents.forEach(doc => {
       if (doc.tags) {
         doc.tags.forEach(tag => tagSet.add(tag));
-      }
-
-      if (doc.content_year_start) {
-        eventList.push({
-          id: `doc-${doc.id}`,
-          year: doc.content_year_start,
-          title: doc.title,
-          description: `${doc.author ? `作者: ${doc.author}` : ''} ${doc.description || ''}`.trim(),
-          sourceId: doc.id,
-          sourceTitle: doc.title,
-          sourceType: 'document',
-          tags: doc.tags || [],
-        });
       }
     });
 
@@ -343,21 +290,27 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
   };
 
   const handleEventClick = (event: TimelineEvent) => {
+    console.log('handleEventClick called:', event);
     if (event.sourceType === 'book') {
       const book = books.find(b => b.id === event.sourceId);
       if (book) {
-        onBookSelect(book);
+        onBookSelect(book, event.page);
+      } else {
+        console.log('Book not found:', event.sourceId);
       }
     } else if (event.sourceType === 'document') {
       const doc = documents.find(d => d.id === event.sourceId);
+      console.log('Looking for document:', event.sourceId, 'found:', doc);
       if (doc && onDocumentSelect) {
-        onDocumentSelect(doc);
+        onDocumentSelect(doc, event.page);
       } else {
         // 如果找不到文档，尝试从 bookToDocMap 查找
         const bookToDocMap = (window as any).__bookToDocMap || {};
         const associatedDoc = Object.values(bookToDocMap).find((d: any) => d.id === event.sourceId);
         if (associatedDoc && onDocumentSelect) {
-          onDocumentSelect(associatedDoc as Document);
+          onDocumentSelect(associatedDoc as Document, event.page);
+        } else {
+          console.log('Document not found in documents array or bookToDocMap');
         }
       }
     }
@@ -457,7 +410,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
     title.style.textAlign = 'center';
     title.style.color = '#374151';
     title.style.marginBottom = '30px';
-    title.textContent = '时间轴事件 PDF 导出';
+    title.textContent = '年表 PDF 导出';
     pdfContent.appendChild(title);
     
     // 添加导出信息
@@ -570,7 +523,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
     // 配置 PDF 选项
     const opt = {
       margin: 10,
-      filename: `时间轴事件_${new Date().toISOString().slice(0, 10)}.pdf`,
+      filename: `年表_${new Date().toISOString().slice(0, 10)}.pdf`,
       image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: { scale: 2 },
       jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
@@ -693,11 +646,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
     <div className="timeline-panel">
       <div className="timeline-filters">
         <div className="filter-section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <h4 style={{ margin: 0 }}>
-              <Filter size={14} />
-              按标签筛选（可多选，右键更改颜色）
-            </h4>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '8px' }}>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <button
                 onClick={handleExportPDF}
@@ -741,28 +690,6 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
                   清除 ({selectedTags.length})
                 </button>
               )}
-              <button
-                className="toggle-books-btn"
-                onClick={() => setShowBooks(!showBooks)}
-                title={showBooks ? "隐藏书籍事件" : "显示书籍事件"}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '4px 8px',
-                  background: showBooks ? 'var(--primary-color)' : 'var(--bg-light)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '4px',
-                  color: showBooks ? 'white' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  transition: 'all 0.2s ease',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {showBooks ? <Eye size={12} /> : <EyeOff size={12} />}
-                {showBooks ? '书籍' : '已隐藏'}
-              </button>
             </div>
           </div>
           
@@ -780,7 +707,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
               style={{
                 width: '100%',
                 padding: '10px 14px',
-                background: tagDropdownOpen ? 'var(--bg-light)' : 'white',
+                background: tagDropdownOpen ? 'var(--bg-elevated)' : 'var(--bg-surface)',
                 border: '1px solid var(--border-color)',
                 borderRadius: '6px',
                 cursor: 'pointer',
@@ -812,7 +739,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
                   left: 0,
                   right: 0,
                   marginTop: '4px',
-                  background: 'white',
+                  background: 'var(--bg-surface)',
                   border: '1px solid var(--border-color)',
                   borderRadius: '8px',
                   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
@@ -829,7 +756,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
                     borderBottom: '1px solid var(--border-color)',
                     position: 'sticky',
                     top: 0,
-                    background: 'white',
+                    background: 'var(--bg-surface)',
                     borderRadius: '8px 8px 0 0'
                   }}
                 >
@@ -838,7 +765,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
                     alignItems: 'center',
                     gap: '8px',
                     padding: '8px 12px',
-                    background: 'var(--bg-light)',
+                    background: 'var(--bg-muted)',
                     borderRadius: '6px'
                   }}>
                     <Search size={14} style={{ color: 'var(--text-secondary)' }} />
@@ -1030,8 +957,8 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
         {isLoading ? null : totalEvents === 0 ? (
           <div className="empty-state">
             <Clock size={48} />
-            <p>暂无时间轴事件</p>
-            <small>为书籍或文档添加年份信息和标签后，事件将显示在这里</small>
+            <p>暂无年表</p>
+            <small>在阅读书籍时记录事件笔记，事件将显示在这里</small>
           </div>
         ) : selectedTags.length === 0 ? (
           <div className="timeline-grid">

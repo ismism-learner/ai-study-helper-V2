@@ -93,8 +93,8 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
   isGenerating,
   streamingContent,
   generatingDocumentId,
-  generatingDocIds: _generatingDocIds = new Set(),
-  streamingContents: _streamingContents = new Map(),
+  generatingDocIds = new Set(),
+  streamingContents = new Map(),
   onHighlightCreated,
   onHighlightDeleted,
   onFrameworkUpdate,
@@ -1010,18 +1010,19 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
             left: selection.position.x,
             top: selection.position.y,
             transform: 'translate(-50%, -100%)',
-            background: 'white',
+            background: 'var(--bg-elevated, #1e293b)',
             borderRadius: 8,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
             padding: 12,
             zIndex: 1000,
             display: 'flex',
             flexDirection: 'column',
             gap: 8,
             minWidth: 200,
+            color: 'var(--text-primary, #e2e8f0)',
           }}
         >
-          <div style={{ fontSize: 12, color: '#6c757d', marginBottom: 4 }}>
+          <div style={{ fontSize: 12, color: 'var(--text-muted, #94a3b8)', marginBottom: 4 }}>
             选中文本: "{selection.text.substring(0, 30)}{selection.text.length > 30 ? '...' : ''}"
           </div>
 
@@ -1075,19 +1076,20 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
             left: highlightMenu.position.x,
             top: highlightMenu.position.y,
             transform: 'translate(-50%, -100%)',
-            background: 'white',
+            background: 'var(--bg-elevated, #1e293b)',
             borderRadius: 8,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
             padding: 12,
             zIndex: 1000,
             display: 'flex',
             flexDirection: 'column',
             gap: 8,
             minWidth: 180,
+            color: 'var(--text-primary, #e2e8f0)',
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
+          <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4, color: 'var(--text-primary, #e2e8f0)' }}>
             "{highlightMenu.highlight.highlighted_text.substring(0, 25)}{highlightMenu.highlight.highlighted_text.length > 25 ? '...' : ''}"
           </div>
           <button
@@ -1123,9 +1125,9 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
             left: Math.min(explanationPopup.position.x, window.innerWidth - 320),
             top: explanationPopup.position.y + 20,
             transform: 'translateX(-50%)',
-            background: 'white',
+            background: 'var(--bg-elevated, #1e293b)',
             borderRadius: 12,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
             padding: 16,
             zIndex: 1001,
             minWidth: 280,
@@ -1134,6 +1136,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
+            color: 'var(--text-primary, #e2e8f0)',
           }}
           onClick={(e) => e.stopPropagation()}
           onMouseEnter={() => {
@@ -1153,12 +1156,12 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
             alignItems: 'center',
             marginBottom: 12,
             paddingBottom: 8,
-            borderBottom: '1px solid #e9ecef',
+            borderBottom: '1px solid var(--border-color, #334155)',
           }}>
             <div style={{
               fontSize: 13,
               fontWeight: 600,
-              color: '#667eea',
+              color: 'var(--primary-400, #818cf8)',
               display: 'flex',
               alignItems: 'center',
               gap: 6,
@@ -1173,7 +1176,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
                 AI解释
               </span>
               {explanationPopup.isPinned && (
-                <span style={{ fontSize: 10, color: '#6c757d' }}>已固定</span>
+                <span style={{ fontSize: 10, color: 'var(--text-muted, #94a3b8)' }}>已固定</span>
               )}
             </div>
             <button
@@ -1185,7 +1188,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
                 padding: 4,
                 display: 'flex',
                 alignItems: 'center',
-                color: '#6c757d',
+                color: 'var(--text-muted, #94a3b8)',
               }}
             >
               <X size={16} />
@@ -1193,10 +1196,10 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
           </div>
           <div style={{
             fontSize: 12,
-            color: '#495057',
+            color: 'var(--text-secondary, #94a3b8)',
             marginBottom: 12,
             padding: '8px 12px',
-            background: '#f8f9fa',
+            background: 'var(--bg-light, #0f172a)',
             borderRadius: 6,
             fontStyle: 'italic',
           }}>
@@ -1207,7 +1210,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
             overflow: 'auto',
             fontSize: 14,
             lineHeight: 1.6,
-            color: '#333',
+            color: 'var(--text-primary, #e2e8f0)',
           }}>
             <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeRaw, rehypeKatex]}>
               {explanationPopup.highlight.explanation || ''}

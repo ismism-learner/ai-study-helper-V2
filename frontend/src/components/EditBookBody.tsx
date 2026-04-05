@@ -62,6 +62,15 @@ const EditBookBody: React.FC<EditBookBodyProps> = ({
   const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [tagInputValue, setTagInputValue] = useState('');
   const tagDropdownRef = useRef<HTMLDivElement>(null);
+  const tagDropdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (tagDropdownTimeoutRef.current) {
+        clearTimeout(tagDropdownTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     onDataChange?.(formData);
@@ -381,7 +390,12 @@ const EditBookBody: React.FC<EditBookBodyProps> = ({
               onFocus={() => {
                 setShowTagDropdown(true);
               }}
-              onBlur={() => setTimeout(() => setShowTagDropdown(false), 200)}
+              onBlur={() => {
+                if (tagDropdownTimeoutRef.current) {
+                  clearTimeout(tagDropdownTimeoutRef.current);
+                }
+                tagDropdownTimeoutRef.current = setTimeout(() => setShowTagDropdown(false), 200);
+              }}
             />
             <button
               type="button"

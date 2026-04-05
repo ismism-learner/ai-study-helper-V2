@@ -667,11 +667,12 @@ def create_document_timeline_event(
     event = DocumentTimelineEvent(
         document_id=doc_id,
         event_date=data.event_date,
-        event_date_display=data.event_date_display,
+        event_date_display=data.event_date_display or data.event_date,
         event_title=data.event_title,
         event_description=data.event_description,
         importance=data.importance or "normal",
         tags=data.tags,
+        page_number=data.page_number,
         content_offset=data.content_offset
     )
     db.add(event)

@@ -115,7 +115,7 @@ export const QuickNoteManager: React.FC<QuickNoteManagerProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<'all' | 'unprocessed' | 'processed'>('all');
-  const [selectedGroup, _setSelectedGroup] = useState<string | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingResults, setProcessingResults] = useState<QuickNoteAIResult[] | null>(null);
@@ -162,6 +162,14 @@ export const QuickNoteManager: React.FC<QuickNoteManagerProps> = ({
       }
       return newSet;
     });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedNotes.size === notes.length) {
+      setSelectedNotes(new Set());
+    } else {
+      setSelectedNotes(new Set(notes.map(n => n.id)));
+    }
   };
 
   const handleBatchProcess = async () => {

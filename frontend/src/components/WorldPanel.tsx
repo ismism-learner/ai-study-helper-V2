@@ -289,7 +289,7 @@ const WorldPanel: React.FC<WorldPanelProps> = ({ book, currentPage, onJumpToPage
 
   const handleTagClick = (tag: string) => {
     setSearchQuery(prev => prev ? `${prev}, ${tag}` : tag);
-    setShowSearchTagDropdown(false);
+    setShowTagDropdown(false);
   };
 
   return (
@@ -473,8 +473,8 @@ const WorldPanel: React.FC<WorldPanelProps> = ({ book, currentPage, onJumpToPage
                   <div style={{
                     marginTop: '4px',
                     padding: '8px',
-                    background: '#fff',
-                    border: '1px solid #d1d5db',
+                    background: 'var(--bg-elevated, #1e293b)',
+                    border: '1px solid var(--border-color, #334155)',
                     borderRadius: '4px',
                     maxHeight: '200px',
                     overflowY: 'auto'
@@ -497,9 +497,9 @@ const WorldPanel: React.FC<WorldPanelProps> = ({ book, currentPage, onJumpToPage
                               }
                             }}
                             style={{
-                              background: isAdded ? '#8b5cf6' : '#fff',
-                              color: isAdded ? 'white' : '#374151',
-                              border: '1px solid #d1d5db',
+                              background: isAdded ? '#8b5cf6' : 'var(--bg-surface, #334155)',
+                              color: isAdded ? 'white' : 'var(--text-primary, #e2e8f0)',
+                              border: '1px solid var(--border-color, #475569)',
                               borderRadius: '12px',
                               padding: '2px 8px',
                               fontSize: '11px',

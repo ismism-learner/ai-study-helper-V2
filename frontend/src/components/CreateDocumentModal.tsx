@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { CreateDocumentRequest } from '../types';
 import { Upload, FileText, X, Check, Loader } from 'lucide-react';
 import { documentApi } from '../api';
@@ -35,6 +35,15 @@ const CreateDocumentModal: React.FC<CreateDocumentModalProps> = ({
   const [isBatchUploading, setIsBatchUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleFileSelect = (file: File) => {
     const ext = file.name.split('.').pop()?.toLowerCase();
@@ -88,7 +97,10 @@ const CreateDocumentModal: React.FC<CreateDocumentModalProps> = ({
       
       onBatchUploadComplete();
       
-      setTimeout(() => onClose(), 500);
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+      closeTimeoutRef.current = setTimeout(() => onClose(), 500);
       
     } catch (error: any) {
       console.error('Batch upload error:', error);

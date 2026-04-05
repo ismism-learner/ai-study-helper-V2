@@ -215,6 +215,12 @@ export interface BookDocument {
   quark_upload_status: string | null;
   quark_upload_time: string | null;
   
+  page_count: number | null;
+  notes_count: number;
+  last_read_page: number;
+  last_read_time: string | null;
+  total_reading_seconds: number;
+  reading_speed_pages_per_hour: number | null;
   time_periods: BookTimePeriod[];
   country: Country | null;
   category: Category | null;
@@ -314,6 +320,19 @@ export interface WorldTimelineEvent {
   tags: string[] | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface CreateDocumentTimelineEventRequest {
+  event_date: string;
+  event_date_display: string;
+  event_title: string;
+  event_description?: string;
+  importance?: 'low' | 'normal' | 'high';
+  tags?: string[];
+  content_offset?: number;
+  source_type?: string;
+  source_content?: string;
+  ai_generated?: number;
 }
 
 export interface CreateTimelineEventRequest {

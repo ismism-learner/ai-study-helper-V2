@@ -14,6 +14,8 @@ from app.routers.pdf_ocr import router as pdf_ocr_router
 from app.routers.backup import router as backup_router
 from app.routers.dashboard import router as dashboard_router
 from app.routers.quick_notes import router as quick_notes_router
+from app.routers.tasks import router as tasks_router
+from app.routers.activity import router as activity_router
 from app.services.document_sync_service import document_source_config, DocumentSyncService
 from app.services.backup_service import backup_service
 import os
@@ -53,6 +55,8 @@ app.include_router(pdf_ocr_router, prefix="/api/pdf-ocr", tags=["pdf-ocr"])
 app.include_router(backup_router, prefix="/api/backup", tags=["backup"])
 app.include_router(dashboard_router, prefix="/api/dashboard", tags=["dashboard"])
 app.include_router(quick_notes_router, prefix="/api", tags=["quick-notes"])
+app.include_router(tasks_router, prefix="/api/tasks", tags=["tasks"])
+app.include_router(activity_router, prefix="/api/activity", tags=["activity"])
 
 
 def preload_paddleocr():

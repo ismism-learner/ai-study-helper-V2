@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { 
   X, 
   Calendar, 
   Check, 
   Play, 
+  Pause, 
   CheckSquare, 
   Square,
   FileText,
@@ -11,7 +12,11 @@ import {
   ChevronDown,
   ChevronUp,
   Search,
-  Settings
+  Settings,
+  Minimize2,
+  Maximize2,
+  Loader,
+  AlertCircle
 } from 'lucide-react';
 import { worldTimelineApi } from '../api';
 import DraggableProgressWindow from './DraggableProgressWindow';
@@ -26,7 +31,7 @@ interface DocumentItem {
 interface ProgressItem {
   id: string;
   title: string;
-  status: 'pending' | 'processing' | 'success' | 'error' | 'no_events';
+  status: 'pending' | 'processing' | 'success' | 'error';
   eventCount?: number;
   error?: string;
 }
@@ -276,6 +281,7 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
 
   const successCount = results.filter(r => r.success).length;
   const failedCount = results.filter(r => !r.success).length;
+  const isComplete = !generating && results.length > 0;
 
   return (
     <>

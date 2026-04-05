@@ -13,7 +13,7 @@ import re
 import hashlib
 from PIL import Image
 from app.database import get_db
-from app.models import Country, Category, TimePeriod, BookDocument
+from app.models import Country, Category, TimePeriod, BookDocument, WorldTimelineEvent
 
 router = APIRouter()
 
@@ -192,6 +192,11 @@ class BookDocumentResponse(BaseModel):
     quark_file_id: Optional[str] = None
     quark_upload_status: Optional[str] = None
     quark_upload_time: Optional[datetime] = None
+    notes_count: int = 0
+    last_read_page: int = 1
+    last_read_time: Optional[datetime] = None
+    total_reading_seconds: int = 0
+    reading_speed_pages_per_hour: Optional[float] = None
     time_periods: List[BookTimePeriodResponse] = []
     country: Optional[CountryResponse] = None
     category: Optional[CategoryResponse] = None
@@ -657,6 +662,15 @@ async def upload_book(
         db.commit()
         db.refresh(db_book)
         
+        from app.models import ActivityLog
+        activity = ActivityLog(
+            action_type='upload',
+            description=f'上传了书籍《{title}》',
+            book_id=db_book.id
+        )
+        db.add(activity)
+        db.commit()
+        
         if theme_year_start is not None or theme_year_end is not None:
             from app.models import BookTimePeriod
             book_time_period = BookTimePeriod(
@@ -705,8 +719,8 @@ async def upload_book_with_path(
         raise HTTPException(status_code=400, detail="No file selected")
     
     file_ext = os.path.splitext(file.filename)[1].lower()
-    if file_ext not in ['.pdf', '.epub', '.txt', '.doc', '.docx']:
-        raise HTTPException(status_code=400, detail=f"Only PDF, EPUB, TXT, DOC and DOCX files are supported, got {file_ext}")
+    if file_ext not in ['.pdf', '.epub']:
+        raise HTTPException(status_code=400, detail=f"Only PDF and EPUB files are supported for books. For documents (.doc, .docx, .txt, .md), please use the document upload endpoint. Got {file_ext}")
     
     # 根据相对路径创建文件夹层级结构
     folder_id = None
@@ -1099,6 +1113,147 @@ def get_all_tags(db: Session = Depends(get_db)):
                     tag_set.add(tag)
     
     return {"tags": sorted(list(tag_set))}
+
+
+@router.get("/books/quick-search")
+def quick_search_books(
+    keyword: str = "",
+    tag: str = None,
+    db: Session = Depends(get_db)
+):
+    """
+    快速搜索书籍 - 用于快速打标签功能
+    tag参数：
+    - None: 全局搜索（需要keyword）
+    - "__untagged__": 搜索未分类书籍（没有标签的）
+    - 其他值: 搜索该标签下的书籍
+    """
+    if tag == "__untagged__":
+        books = db.query(BookDocument).filter(
+            (BookDocument.tags.is_(None)) | (BookDocument.tags == [])
+        ).all()
+        
+        if keyword and keyword.strip():
+            keyword = keyword.strip()
+            books = [b for b in books if 
+                keyword.lower() in (b.title or '').lower() or 
+                keyword.lower() in (b.author or '').lower()
+            ]
+    elif tag:
+        books = db.query(BookDocument).filter(
+            BookDocument.tags.contains([tag])
+        ).all()
+        
+        if keyword and keyword.strip():
+            keyword = keyword.strip()
+            books = [b for b in books if 
+                keyword.lower() in (b.title or '').lower() or 
+                keyword.lower() in (b.author or '').lower()
+            ]
+    else:
+        if not keyword or len(keyword.strip()) == 0:
+            return {"books": [], "count": 0}
+        
+        keyword = keyword.strip()
+        
+        books = db.query(BookDocument).filter(
+            (BookDocument.title.ilike(f"%{keyword}%")) |
+            (BookDocument.author.ilike(f"%{keyword}%"))
+        ).all()
+    
+    return {
+        "books": [_build_book_response(book, db) for book in books],
+        "count": len(books),
+        "keyword": keyword if keyword else "",
+        "tag": tag
+    }
+
+
+@router.post("/books/batch-tag")
+def batch_tag_books(
+    book_ids: List[str],
+    tag: str,
+    mode: str = "add",
+    db: Session = Depends(get_db)
+):
+    """
+    批量给书籍打标签
+    mode: add - 添加标签, replace - 替换标签, remove - 移除标签
+    """
+    if not tag or not tag.strip():
+        raise HTTPException(status_code=400, detail="Tag cannot be empty")
+    
+    tag = tag.strip()
+    updated_books = []
+    
+    for book_id in book_ids:
+        book = db.query(BookDocument).filter(BookDocument.id == book_id).first()
+        if not book:
+            continue
+        
+        current_tags = book.tags or []
+        
+        if mode == "add":
+            new_tags = list(set(current_tags + [tag]))
+        elif mode == "remove":
+            new_tags = [t for t in current_tags if t != tag]
+        elif mode == "replace":
+            new_tags = [tag]
+        else:
+            raise HTTPException(status_code=400, detail=f"Invalid mode: {mode}")
+        
+        book.tags = new_tags if new_tags else None
+        updated_books.append(book.id)
+    
+    db.commit()
+    
+    return {
+        "updated_count": len(updated_books),
+        "book_ids": updated_books,
+        "tag": tag,
+        "mode": mode
+    }
+
+
+@router.get("/books/recently-read")
+def get_recently_read_books(
+    limit: int = 5,
+    db: Session = Depends(get_db)
+):
+    books = db.query(BookDocument).filter(
+        BookDocument.last_read_time.isnot(None)
+    ).order_by(BookDocument.last_read_time.desc()).limit(limit).all()
+    
+    return [_build_book_response(book, db) for book in books]
+
+
+@router.get("/reading-stats")
+def get_reading_stats(db: Session = Depends(get_db)):
+    total_reading_seconds = db.query(BookDocument).with_entities(
+        BookDocument.total_reading_seconds
+    ).all()
+    
+    total_seconds = sum(r[0] or 0 for r in total_reading_seconds)
+    
+    books_with_progress = db.query(BookDocument).filter(
+        BookDocument.last_read_time.isnot(None)
+    ).count()
+    
+    avg_speed_result = db.query(BookDocument).with_entities(
+        BookDocument.reading_speed_pages_per_hour
+    ).filter(BookDocument.reading_speed_pages_per_hour.isnot(None)).all()
+    
+    avg_speed = 0
+    if avg_speed_result:
+        speeds = [r[0] for r in avg_speed_result if r[0]]
+        if speeds:
+            avg_speed = sum(speeds) / len(speeds)
+    
+    return {
+        "total_reading_hours": round(total_seconds / 3600, 1),
+        "books_with_progress": books_with_progress,
+        "average_reading_speed": round(avg_speed, 1)
+    }
 
 
 @router.get("/books/{book_id}", response_model=BookDocumentResponse)
@@ -1564,6 +1719,23 @@ def _build_book_response(book: BookDocument, db: Session) -> BookDocumentRespons
         for tp in book.time_periods
     ]
 
+    notes_count = db.query(WorldTimelineEvent).filter(
+        WorldTimelineEvent.book_id == book.id
+    ).count()
+
+    page_count = book.page_count
+    if not page_count and book.file_path:
+        try:
+            from app.services.duplicate_detector import duplicate_detector
+            resolved_path = resolve_file_path(book.file_path)
+            if resolved_path and os.path.exists(resolved_path):
+                page_count = duplicate_detector.get_page_count(resolved_path)
+                if page_count and page_count != book.page_count:
+                    book.page_count = page_count
+                    db.commit()
+        except Exception:
+            pass
+
     return BookDocumentResponse(
         id=book.id,
         title=book.title,
@@ -1595,11 +1767,16 @@ def _build_book_response(book: BookDocument, db: Session) -> BookDocumentRespons
         author_era_description=book.author_era_description,
         file_hash_sha256=book.file_hash_sha256,
         content_hash_simhash=book.content_hash_simhash,
-        page_count=book.page_count,
+        page_count=page_count,
         quark_share_url=book.quark_share_url,
         quark_file_id=book.quark_file_id,
         quark_upload_status=book.quark_upload_status,
         quark_upload_time=book.quark_upload_time,
+        notes_count=notes_count,
+        last_read_page=book.last_read_page or 1,
+        last_read_time=book.last_read_time,
+        total_reading_seconds=book.total_reading_seconds or 0,
+        reading_speed_pages_per_hour=book.reading_speed_pages_per_hour,
         time_periods=time_periods,
         country=country,
         category=category,
@@ -1784,4 +1961,44 @@ def sync_existing_files(db: Session = Depends(get_db)):
     return {
         "message": f"Updated {updated_count} existing books",
         "total_files": scanned.total_files
+    }
+
+
+class ReadingProgressUpdate(BaseModel):
+    current_page: int
+    reading_seconds: Optional[int] = 0
+
+
+@router.post("/books/{book_id}/reading-progress")
+def update_reading_progress(
+    book_id: str,
+    progress: ReadingProgressUpdate,
+    db: Session = Depends(get_db)
+):
+    book = db.query(BookDocument).filter(BookDocument.id == book_id).first()
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+    
+    book.last_read_page = progress.current_page
+    book.last_read_time = datetime.utcnow()
+    
+    if progress.reading_seconds and progress.reading_seconds > 0:
+        book.total_reading_seconds = (book.total_reading_seconds or 0) + progress.reading_seconds
+        
+        if book.page_count and book.page_count > 0:
+            pages_read = progress.current_page
+            if pages_read > 0:
+                total_hours = (book.total_reading_seconds or 0) / 3600.0
+                if total_hours > 0.1:
+                    book.reading_speed_pages_per_hour = pages_read / total_hours
+    
+    db.commit()
+    db.refresh(book)
+    
+    return {
+        "success": True,
+        "last_read_page": book.last_read_page,
+        "last_read_time": book.last_read_time,
+        "total_reading_seconds": book.total_reading_seconds,
+        "reading_speed_pages_per_hour": book.reading_speed_pages_per_hour
     }

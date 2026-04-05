@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Check, X, RefreshCw, Play, Pause, SkipForward } from 'lucide-react';
 
 interface BatchOptimizePanelProps {
@@ -38,6 +38,15 @@ const BatchOptimizePanel: React.FC<BatchOptimizePanelProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const processTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (processTimeoutRef.current) {
+        clearTimeout(processTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const processNext = useCallback(async (startIndex: number) => {
     if (startIndex >= paragraphs.length) {
@@ -70,7 +79,10 @@ const BatchOptimizePanel: React.FC<BatchOptimizePanelProps> = ({
 
       if (!isPaused && startIndex + 1 < paragraphs.length) {
         setCurrentIndex(startIndex + 1);
-        setTimeout(() => processNext(startIndex + 1), 500);
+        if (processTimeoutRef.current) {
+          clearTimeout(processTimeoutRef.current);
+        }
+        processTimeoutRef.current = setTimeout(() => processNext(startIndex + 1), 500);
       }
     } catch (error) {
       console.error('Optimization failed:', error);

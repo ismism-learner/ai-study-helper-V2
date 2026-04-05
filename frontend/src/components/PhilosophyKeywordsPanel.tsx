@@ -150,7 +150,7 @@ const PhilosophyKeywordsPanel: React.FC<PhilosophyKeywordsPanelProps> = ({
         <span className="philosophy-match-count">{matches.length}</span>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div className="panel-content-scrollable" style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 8, overflowY: 'auto' }}>
         {matches.map((match) => (
           <div
             key={match.code}

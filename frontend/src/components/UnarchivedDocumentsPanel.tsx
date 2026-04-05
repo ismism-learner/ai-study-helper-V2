@@ -28,7 +28,7 @@ interface UnarchivedDocumentsPanelProps {
 interface MissingInfo {
   tags: boolean;
   author: boolean;
-  contentLocation: boolean;
+  description: boolean;
   timeAttribute: boolean;
 }
 
@@ -48,7 +48,7 @@ const UnarchivedDocumentsPanel: React.FC<UnarchivedDocumentsPanelProps> = ({
     content_year_end: string;
   }>({ tags: '', author: '', description: '', content_country_id: '', content_year_start: '', content_year_end: '' });
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'missing-tags' | 'missing-author' | 'missing-location' | 'missing-time'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'missing-tags' | 'missing-author' | 'missing-description' | 'missing-time'>('all');
   
   const [countries, setCountries] = useState<Country[]>([]);
   const [timePeriods, setTimePeriods] = useState<TimePeriod[]>([]);
@@ -77,10 +77,7 @@ const UnarchivedDocumentsPanel: React.FC<UnarchivedDocumentsPanelProps> = ({
       const response = await documentApi.list({ archive_status: 'unarchived_doc' });
       const unarchived = response.data.filter((doc: Document) => {
         const hasNoTags = !doc.tags || doc.tags.length === 0;
-        const hasNoAuthor = !doc.author || doc.author.trim() === '';
-        const hasNoContentLocation = !doc.description || doc.description.trim() === '';
-        const hasNoTimeAttribute = !doc.content_year_start && !doc.content_year_end;
-        return hasNoTags || hasNoAuthor || hasNoContentLocation || hasNoTimeAttribute;
+        return hasNoTags;
       });
       setDocuments(unarchived);
     } catch (error) {
@@ -103,7 +100,7 @@ const UnarchivedDocumentsPanel: React.FC<UnarchivedDocumentsPanelProps> = ({
     return {
       tags: !doc.tags || doc.tags.length === 0,
       author: !doc.author || doc.author.trim() === '',
-      contentLocation: !doc.description || doc.description.trim() === '',
+      description: !doc.description || doc.description.trim() === '',
       timeAttribute: !doc.content_year_start && !doc.content_year_end
     };
   };
@@ -157,7 +154,7 @@ const UnarchivedDocumentsPanel: React.FC<UnarchivedDocumentsPanelProps> = ({
 
     try {
       const tags = editForm.tags.split(',').map(t => t.trim()).filter(Boolean);
-      
+
       const updateData: any = {
         tags: tags.length > 0 ? tags : undefined,
         author: editForm.author || undefined,
@@ -166,16 +163,13 @@ const UnarchivedDocumentsPanel: React.FC<UnarchivedDocumentsPanelProps> = ({
         content_year_start: editForm.content_year_start ? parseInt(editForm.content_year_start) : undefined,
         content_year_end: editForm.content_year_end ? parseInt(editForm.content_year_end) : undefined,
       };
-      
-      const hasAllInfo = tags.length > 0 && editForm.author && editForm.description && 
-        (editForm.content_year_start || editForm.content_year_end);
-      
-      if (hasAllInfo) {
+
+      if (tags.length > 0) {
         updateData.archive_status = 'archived_doc';
       }
-      
+
       await documentApi.update(editingDoc.id, updateData);
-      
+
       setEditingDoc(null);
       loadUnarchivedDocuments();
       onArchiveComplete?.();
@@ -206,8 +200,8 @@ const UnarchivedDocumentsPanel: React.FC<UnarchivedDocumentsPanelProps> = ({
           return missing.tags;
         case 'missing-author':
           return missing.author;
-        case 'missing-location':
-          return missing.contentLocation;
+        case 'missing-description':
+          return missing.description;
         case 'missing-time':
           return missing.timeAttribute;
       }
@@ -221,7 +215,7 @@ const UnarchivedDocumentsPanel: React.FC<UnarchivedDocumentsPanelProps> = ({
     const missingItems = [];
     if (missing.tags) missingItems.push('标签');
     if (missing.author) missingItems.push('作者');
-    if (missing.contentLocation) missingItems.push('内容描述');
+    if (missing.description) missingItems.push('描述');
     if (missing.timeAttribute) missingItems.push('时间属性');
     return missingItems.join('、');
   };
@@ -249,7 +243,7 @@ const UnarchivedDocumentsPanel: React.FC<UnarchivedDocumentsPanelProps> = ({
           未归档文档
           <span className="count-badge">{documents.length}</span>
         </h2>
-        <p className="subtitle">以下文档缺少标签、作者、内容描述或时间属性信息</p>
+        <p className="subtitle">以下文档缺少标签信息，添加标签后即可归档</p>
       </div>
 
       <div className="panel-toolbar">
@@ -274,7 +268,7 @@ const UnarchivedDocumentsPanel: React.FC<UnarchivedDocumentsPanelProps> = ({
             <option value="all">全部</option>
             <option value="missing-tags">缺少标签</option>
             <option value="missing-author">缺少作者</option>
-            <option value="missing-location">缺少内容描述</option>
+            <option value="missing-description">缺少描述</option>
             <option value="missing-time">缺少时间属性</option>
           </select>
         </div>
@@ -342,23 +336,23 @@ const UnarchivedDocumentsPanel: React.FC<UnarchivedDocumentsPanelProps> = ({
                       </div>
                     </div>
 
-                    <div className={`form-group ${missing.contentLocation ? 'missing' : ''}`}>
+                    <div className={`form-group ${missing.description ? 'missing' : ''}`}>
                       <label>
                         <MapPin size={14} />
-                        内容发生地 / 描述
+                        描述
                       </label>
                       <textarea
                         value={editForm.description}
                         onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                        placeholder="描述文档内容发生地或主要内容"
+                        placeholder="描述文档主要内容"
                         rows={3}
                       />
                     </div>
 
-                    <div className={`form-group ${missing.timeAttribute ? 'missing' : ''}`}>
+                    <div className="form-group">
                       <label>
                         <Globe size={14} />
-                        内容发生地（国家/地区）
+                        内容发生地（可选）
                       </label>
                       <select
                         value={editForm.content_country_id}
@@ -452,9 +446,9 @@ const UnarchivedDocumentsPanel: React.FC<UnarchivedDocumentsPanelProps> = ({
                       </span>
                     </div>
                     <div className="info-row">
-                      <span className={`info-item ${!missing.contentLocation ? 'filled' : 'empty'}`}>
+                      <span className={`info-item ${!missing.description ? 'filled' : 'empty'}`}>
                         <MapPin size={14} />
-                        {doc.description ? doc.description.substring(0, 50) + (doc.description.length > 50 ? '...' : '') : '无内容描述'}
+                        {doc.description ? doc.description.substring(0, 50) + (doc.description.length > 50 ? '...' : '') : '无描述'}
                       </span>
                     </div>
                     <div className="info-row">
