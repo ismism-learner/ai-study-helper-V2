@@ -697,10 +697,12 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
     }
     
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
+      if (isDragging) {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
