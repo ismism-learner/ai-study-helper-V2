@@ -47,6 +47,7 @@ class QuarkUploadResponse(BaseModel):
 
 class QuarkUploadByTagRequest(BaseModel):
     tag: str
+    secondary_tag: Optional[str] = None
     book_ids: Optional[List[str]] = None
     country_id: Optional[str] = None
     remote_folder: Optional[str] = "/我的电子图书馆"
@@ -57,6 +58,7 @@ class QuarkUploadByTagResponse(BaseModel):
     success: bool
     message: str
     tag: str
+    secondary_tag: Optional[str] = None
     folder_path: str
     share_url: Optional[str] = None
     share_password: Optional[str] = None
@@ -251,7 +253,12 @@ def upload_by_tag_to_quark(
         )
     
     tag_folder_name = re.sub(r'[<>:"/\\|?*]', '_', request.tag)
-    folder_path = f"{request.remote_folder}/{tag_folder_name}".replace("//", "/")
+    
+    if request.secondary_tag:
+        secondary_folder_name = re.sub(r'[<>:"/\\|?*]', '_', request.secondary_tag)
+        folder_path = f"{request.remote_folder}/{tag_folder_name}/{secondary_folder_name}".replace("//", "/")
+    else:
+        folder_path = f"{request.remote_folder}/{tag_folder_name}".replace("//", "/")
     
     success, result = quark_service.ensure_remote_folder(folder_path)
     if not success:
@@ -351,6 +358,7 @@ def upload_by_tag_to_quark(
         success=uploaded_count > 0 or skipped_count > 0,
         message=f"Uploaded {uploaded_count} books, skipped {skipped_count} already uploaded books to {folder_path}",
         tag=request.tag,
+        secondary_tag=request.secondary_tag,
         folder_path=folder_path,
         share_url=share_url,
         share_password=share_password,
