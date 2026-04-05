@@ -671,7 +671,6 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
       isDraggingRef.current = true;
       setIsDragging(true);
       setDragOffset(offset);
-      e.preventDefault();
     }
   };
 
@@ -680,6 +679,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDraggingRef.current) return;
+      e.preventDefault();
       
       const newX = e.clientX - dragOffsetRef.current.x;
       const newY = e.clientY - dragOffsetRef.current.y;
@@ -693,25 +693,20 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
       });
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: MouseEvent) => {
+      e.preventDefault();
       isDraggingRef.current = false;
       setIsDragging(false);
     };
 
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = 'grabbing';
-      document.body.style.userSelect = 'none';
-    }
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
     };
-  }, [isDragging]);
+  }, []);
 
   const getSectionTitle = (section: string): string => {
     switch (section) {
