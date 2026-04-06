@@ -1156,6 +1156,34 @@ async def batch_generate_content(
     }
 
 
+import re
+from typing import List as TypingList
+
+
+class TimelineNoteParseResult(BaseModel):
+    event_date: str
+    event_date_display: str
+    event_title: str
+    event_description: str
+    tags: Optional[List[str]] = None
+
+
+class SaveTimelineNotesBatchRequest(BaseModel):
+    events: List[TimelineNoteParseResult]
+    default_tags: Optional[List[str]] = None
+
+
+class AIGenerateTimelineNotesRequest(BaseModel):
+    custom_prompt: Optional[str] = None
+    content: Optional[str] = None
+
+
+class AIGenerateTimelineNotesResponse(BaseModel):
+    raw_output: str
+    parsed_events: List[TimelineNoteParseResult]
+    total_events: int
+
+
 class AIGenerateTimelineNotesFromContentRequest(BaseModel):
     content: str
     custom_prompt: Optional[str] = None
@@ -1202,34 +1230,6 @@ async def ai_generate_timeline_notes_from_content(
         print(f"Error generating timeline notes: {type(e).__name__}: {error_msg}")
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"生成时间笔记失败: {error_msg}")
-
-
-import re
-from typing import List as TypingList
-
-
-class TimelineNoteParseResult(BaseModel):
-    event_date: str
-    event_date_display: str
-    event_title: str
-    event_description: str
-    tags: Optional[List[str]] = None
-
-
-class SaveTimelineNotesBatchRequest(BaseModel):
-    events: List[TimelineNoteParseResult]
-    default_tags: Optional[List[str]] = None
-
-
-class AIGenerateTimelineNotesRequest(BaseModel):
-    custom_prompt: Optional[str] = None
-    content: Optional[str] = None
-
-
-class AIGenerateTimelineNotesResponse(BaseModel):
-    raw_output: str
-    parsed_events: List[TimelineNoteParseResult]
-    total_events: int
 
 
 def parse_timeline_notes_output(output: str) -> List[TimelineNoteParseResult]:
