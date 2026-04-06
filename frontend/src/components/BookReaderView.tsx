@@ -83,6 +83,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const ocrPanelRef = useRef<HTMLDivElement>(null);
   const pdfScrollRef = useRef<HTMLDivElement>(null);
+  const readerContentRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const currentPageRef = useRef<number>(1);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -162,7 +163,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
 
   useEffect(() => {
     const updateWidth = () => {
-      const container = showOCRPanel ? pdfScrollRef.current : scrollContainerRef.current;
+      const container = showOCRPanel ? pdfScrollRef.current : readerContentRef.current;
       if (container) {
         setContainerWidth(container.clientWidth - 40);
       }
@@ -174,7 +175,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   }, [showOCRPanel]);
 
   useEffect(() => {
-    const container = showOCRPanel ? pdfScrollRef.current : scrollContainerRef.current;
+    const container = showOCRPanel ? pdfScrollRef.current : readerContentRef.current;
     if (container) {
       setContainerWidth(container.clientWidth - 40);
     }
@@ -188,7 +189,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     setErrorDetails(null);
     setRetryCount(0);
     
-    const targetPage = book.last_read_page || 1;
+    const targetPage = initialPage || book.last_read_page || 1;
     
     const initialVisible = new Set<number>();
     for (let i = 1; i <= Math.min(BUFFER_PAGES + 2, numPages); i++) {
@@ -202,7 +203,8 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     if (targetPage > 1 && targetPage <= numPages) {
       const scrollToTarget = () => {
         const pageElement = pageRefs.current.get(targetPage);
-        if (pageElement && scrollContainerRef.current) {
+        const scrollContainer = showOCRPanel ? pdfScrollRef.current : readerContentRef.current;
+        if (pageElement && scrollContainer) {
           isScrollingProgrammatically.current = true;
           pageElement.scrollIntoView({ behavior: 'instant', block: 'start' });
           setCurrentPage(targetPage);
@@ -574,16 +576,17 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     if (pageNumber < 1 || pageNumber > numPages) return;
     
     const pageElement = pageRefs.current.get(pageNumber);
-    if (pageElement && scrollContainerRef.current) {
+    const scrollContainer = showOCRPanel ? pdfScrollRef.current : readerContentRef.current;
+    if (pageElement && scrollContainer) {
       isScrollingProgrammatically.current = true;
-      scrollContainerRef.current.scrollTop = pageElement.offsetTop - 20;
+      scrollContainer.scrollTop = pageElement.offsetTop - 20;
       setCurrentPage(pageNumber);
       currentPageRef.current = pageNumber;
       setTimeout(() => {
         isScrollingProgrammatically.current = false;
       }, 100);
     }
-  }, [numPages]);
+  }, [numPages, showOCRPanel]);
 
   const handlePrevPage = useCallback(() => {
     const newPage = currentPageRef.current - 1;
@@ -640,7 +643,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   }, [handleKeyDown]);
 
   useEffect(() => {
-    const scrollContainer = showOCRPanel ? pdfScrollRef.current : scrollContainerRef.current;
+    const scrollContainer = showOCRPanel ? pdfScrollRef.current : readerContentRef.current;
     if (!scrollContainer || numPages === 0) return;
 
     const handleScroll = () => {
@@ -675,7 +678,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   }, [numPages, showOCRPanel]);
 
   useEffect(() => {
-    const scrollContainer = showOCRPanel ? pdfScrollRef.current : scrollContainerRef.current;
+    const scrollContainer = showOCRPanel ? pdfScrollRef.current : readerContentRef.current;
     if (numPages === 0 || !scrollContainer) return;
 
     if (observerRef.current) {
@@ -936,7 +939,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
         </div>
       </div>
 
-      <div className={`reader-content ${showOCRPanel ? 'with-ocr' : ''}`}>
+      <div className={`reader-content ${showOCRPanel ? 'with-ocr' : ''}`} ref={readerContentRef}>
         {!fileUrl && (
           <div className="pdf-placeholder">
             <FileText size={80} strokeWidth={1} />
@@ -1200,6 +1203,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
         <PDFNotesPanel
           documentId={book.id}
           bookId={book.id}
+          bookTags={book.tags || undefined}
           currentPage={currentPage}
           onClose={() => setShowPDFNotes(false)}
           onNoteClick={(note) => scrollToPage(note.page_number)}

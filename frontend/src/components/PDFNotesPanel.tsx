@@ -29,6 +29,7 @@ interface PDFNotesPanelProps {
   documentId: string;
   document?: Document;
   bookId?: string;  // 书籍ID，用于书籍阅读器场景
+  bookTags?: string[];  // 书籍标签，用于时间笔记
   currentPage: number;
   onNoteClick?: (note: PDFNote) => void;
   onClose?: () => void;
@@ -38,6 +39,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
   documentId,
   document,
   bookId,  // 新增：书籍ID
+  bookTags,  // 新增：书籍标签
   currentPage,
   onNoteClick,
   onClose,
@@ -283,9 +285,38 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
     setIsLoading(true);
     try {
       const storedNotes = localStorage.getItem(`pdf_notes_${documentId}`);
-      if (storedNotes) {
-        setNotes(JSON.parse(storedNotes));
-      } else {
+      let localNotes: PDFNote[] = storedNotes ? JSON.parse(storedNotes) : [];
+      
+      if (bookId) {
+        try {
+          const eventsResponse = await worldTimelineApi.getBookTimelineEvents(bookId);
+          const timelineEvents = eventsResponse.data || [];
+          
+          const timelineNotes: PDFNote[] = timelineEvents.map((event: any) => ({
+            id: `timeline-${event.id}`,
+            title: event.event_title,
+            content: event.event_description || '',
+            page_number: event.page_number,
+            created_at: event.created_at || new Date().toISOString(),
+            tags: event.tags || [],
+            event_date: event.event_date,
+            event_date_display: event.event_date_display,
+            timeline_event_id: event.id,
+          }));
+          
+          const localNoteIds = new Set(localNotes.map(n => n.id));
+          const newTimelineNotes = timelineNotes.filter((tn: PDFNote) => !localNoteIds.has(tn.id));
+          
+          if (newTimelineNotes.length > 0) {
+            localNotes = [...localNotes, ...newTimelineNotes];
+            localStorage.setItem(`pdf_notes_${documentId}`, JSON.stringify(localNotes));
+          }
+        } catch (error) {
+          console.error('Failed to load timeline events:', error);
+        }
+      }
+      
+      if (localNotes.length === 0) {
         const mockNotes: PDFNote[] = [
           {
             id: '1',
@@ -312,9 +343,11 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
             tags: ['提示'],
           },
         ];
-        setNotes(mockNotes);
+        localNotes = mockNotes;
         localStorage.setItem(`pdf_notes_${documentId}`, JSON.stringify(mockNotes));
       }
+      
+      setNotes(localNotes);
     } catch (error) {
       console.error('Failed to load notes:', error);
     } finally {
@@ -375,6 +408,33 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
 
   const handleConfirmDelete = async () => {
     try {
+      const noteToDelete = notes.find(note => note.id === deleteConfirm.noteId);
+      
+      if (noteToDelete?.timeline_event_id) {
+        try {
+          await worldTimelineApi.deleteTimelineEvent(noteToDelete.timeline_event_id);
+        } catch (error) {
+          console.error('Failed to delete timeline event:', error);
+        }
+      }
+      
+      if (noteToDelete?.event_date) {
+        try {
+          if (bookId) {
+            const events = await worldTimelineApi.getBookTimelineEvents(bookId);
+            const matchingEvent = events.data.find(e => 
+              e.event_title === noteToDelete.title && 
+              e.event_date === noteToDelete.event_date
+            );
+            if (matchingEvent) {
+              await worldTimelineApi.deleteTimelineEvent(matchingEvent.id);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to delete matching timeline event:', error);
+        }
+      }
+      
       const updatedNotes = notes.filter(note => note.id !== deleteConfirm.noteId);
       saveNotes(updatedNotes);
     } catch (error) {
@@ -674,7 +734,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
   };
 
   const handleGenerateTimelineNotes = async () => {
-    const content = currentQuickNote?.content || '';
+    const content = currentQuickNote?.content || quickContent;
     if (!content.trim()) {
       alert('请先输入笔记内容');
       return;
@@ -700,6 +760,92 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
     }
   };
 
+  const handleBatchTimelineGenerate = async () => {
+    if (selectedQuickNotes.size === 0) {
+      alert('请先选择要处理的笔记');
+      return;
+    }
+
+    setIsGeneratingTimeline(true);
+    let totalEvents = 0;
+    let processedNotes = 0;
+    const newNotesToAdd: PDFNote[] = [];
+
+    try {
+      const selectedNotesArray = allUnprocessedQuickNotes.filter(qn => 
+        selectedQuickNotes.has(qn.id)
+      );
+
+      for (const qn of selectedNotesArray) {
+        if (!qn.content.trim()) continue;
+
+        try {
+          const response = await worldTimelineApi.aiGenerateTimelineNotesFromContent(qn.content);
+          
+          if (response.data.parsed_events.length > 0) {
+            for (const event of response.data.parsed_events) {
+              const newNote: PDFNote = {
+                id: `timeline-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                title: event.event_title,
+                content: event.event_description,
+                page_number: qn.source_page || currentPage,
+                created_at: new Date().toISOString(),
+                tags: bookTags || [],
+                event_date: event.event_date,
+                event_date_display: event.event_date_display,
+              };
+
+              newNotesToAdd.push(newNote);
+
+              const timelineData = {
+                event_date: event.event_date,
+                event_date_display: event.event_date_display,
+                page_number: qn.source_page || currentPage,
+                event_title: event.event_title,
+                event_description: event.event_description,
+                importance: 'normal' as const,
+                tags: bookTags || []
+              };
+
+              if (bookId) {
+                await worldTimelineApi.createTimelineEvent(bookId, timelineData);
+              } else {
+                await worldTimelineApi.createDocumentDirectTimelineEvent(documentId, timelineData);
+              }
+
+              totalEvents++;
+            }
+
+            await quickNoteApi.update(qn.id, { is_processed: 1 });
+            processedNotes++;
+          }
+        } catch (error) {
+          console.error(`Failed to process note ${qn.id}:`, error);
+        }
+      }
+
+      if (newNotesToAdd.length > 0) {
+        const updatedNotes = [...notes, ...newNotesToAdd];
+        saveNotes(updatedNotes);
+      }
+
+      loadQuickNotes();
+      loadAllUnprocessedQuickNotes();
+      setSelectedQuickNotes(new Set());
+      
+      if (totalEvents > 0) {
+        alert(`成功处理 ${processedNotes} 条笔记，生成 ${totalEvents} 条时间事件`);
+      } else {
+        alert('未识别到时间事件，请确保内容包含明确的时间信息');
+      }
+    } catch (error) {
+      console.error('Failed to batch generate timeline notes:', error);
+      alert('批量生成时间笔记失败');
+    } finally {
+      setIsGeneratingTimeline(false);
+    }
+  };
+
   const handleSaveTimelineNotes = async () => {
     if (!timelineResults || selectedTimelineEvents.size === 0) {
       alert('请先选择要保存的事件');
@@ -712,25 +858,33 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
       ).filter(Boolean);
 
       for (const event of eventsToSave) {
-        await quickNoteApi.create({
-          content: `${event.event_title}\n\n${event.event_description}`,
-          source_page: currentPage,
-          document_id: documentId,
+        const timelineData = {
           event_date: event.event_date,
           event_date_display: event.event_date_display,
-          tags: []
-        });
+          page_number: currentPage,
+          event_title: event.event_title,
+          event_description: event.event_description,
+          importance: 'normal' as const,
+          tags: bookTags || []
+        };
+
+        if (bookId) {
+          await worldTimelineApi.createTimelineEvent(bookId, timelineData);
+        } else {
+          await worldTimelineApi.createDocumentDirectTimelineEvent(documentId, timelineData);
+        }
       }
 
-      alert(`成功保存 ${eventsToSave.length} 条时间笔记`);
+      alert(`成功保存 ${eventsToSave.length} 条时间事件到年表`);
       setShowTimelineResults(false);
       setTimelineResults(null);
       setSelectedTimelineEvents(new Set());
       setCurrentQuickNote(null);
+      setQuickContent('');
       loadQuickNotes();
     } catch (error) {
       console.error('Failed to save timeline notes:', error);
-      alert('保存时间笔记失败');
+      alert('保存时间事件失败');
     }
   };
 
@@ -995,14 +1149,25 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                     已选 {selectedQuickNotes.size} / {allUnprocessedQuickNotes.length}
                   </span>
                   {selectedQuickNotes.size > 0 && (
-                    <button
-                      onClick={handleBatchPolish}
-                      disabled={isBatchPolishing}
-                      className="batch-polish-btn"
-                    >
-                      <Sparkles size={14} />
-                      {isBatchPolishing ? '润色中...' : '批量润色'}
-                    </button>
+                    <>
+                      <button
+                        onClick={handleBatchPolish}
+                        disabled={isBatchPolishing}
+                        className="batch-polish-btn"
+                      >
+                        <Sparkles size={14} />
+                        {isBatchPolishing ? '润色中...' : '批量润色'}
+                      </button>
+                      <button
+                        onClick={handleBatchTimelineGenerate}
+                        disabled={isGeneratingTimeline}
+                        className="batch-timeline-btn"
+                        title="批量生成时间笔记"
+                      >
+                        <Calendar size={14} />
+                        {isGeneratingTimeline ? '生成中...' : '时间笔记'}
+                      </button>
+                    </>
                   )}
                   <button
                     onClick={handleNewQuickNote}
@@ -1126,7 +1291,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                 value={quickContent}
                 onChange={(e) => setQuickContent(e.target.value)}
                 onKeyDown={handleQuickKeyDown}
-                placeholder="输入笔记内容，Ctrl+Enter 保存...&#10;&#10;提示：可粘贴历史文本，点击「时间笔记」自动拆分为多个时间节点"
+                placeholder="输入笔记内容，Ctrl+Enter 保存..."
                 rows={4}
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
@@ -1134,37 +1299,6 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                   Ctrl+Enter 快速保存
                 </span>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    onClick={handleGenerateTimelineNotes}
-                    disabled={!quickContent.trim() || isGeneratingTimeline}
-                    className="timeline-generate-btn"
-                    title="AI 自动识别时间事件并拆分为多个时间笔记"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      padding: '6px 12px',
-                      background: isGeneratingTimeline ? 'var(--bg-tertiary)' : 'linear-gradient(135deg, #8b5cf6, #6366f1)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 6,
-                      cursor: isGeneratingTimeline ? 'wait' : 'pointer',
-                      fontSize: 13,
-                      opacity: !quickContent.trim() ? 0.5 : 1
-                    }}
-                  >
-                    {isGeneratingTimeline ? (
-                      <>
-                        <RefreshCw size={14} className="spinning" />
-                        生成中...
-                      </>
-                    ) : (
-                      <>
-                        <Calendar size={14} />
-                        时间笔记
-                      </>
-                    )}
-                  </button>
                   <button
                     onClick={handleQuickSave}
                     disabled={!quickContent.trim() || isSavingQuick}
