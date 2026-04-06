@@ -77,6 +77,15 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   const [searchText, setSearchText] = useState<string>('');
   const [searchResults, setSearchResults] = useState<number[]>([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState<number>(-1);
+  const [ocrChapters, setOcrChapters] = useState<string[]>([]);
+  const [currentOcrChapter, setCurrentOcrChapter] = useState(0);
+  const [showChapterNav, setShowChapterNav] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{
+    show: boolean;
+    x: number;
+    y: number;
+    selectedText: string;
+  } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const containerRef = useRef<HTMLDivElement>(null);
@@ -305,6 +314,54 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     }
   }, []);
 
+  const parseChapters = useCallback((text: string): string[] => {
+    const CHAPTER_MARKER = '====';
+    const lines = text.split('\n');
+    const chapters: string[] = [];
+    let currentChapter: string[] = [];
+    
+    for (const line of lines) {
+      if (line.trim().startsWith(CHAPTER_MARKER)) {
+        if (currentChapter.length > 0) {
+          chapters.push(currentChapter.join('\n'));
+        }
+        currentChapter = [line.trim().substring(CHAPTER_MARKER.length).trim()];
+      } else {
+        currentChapter.push(line);
+      }
+    }
+    
+    if (currentChapter.length > 0) {
+      chapters.push(currentChapter.join('\n'));
+    }
+    
+    return chapters;
+  }, []);
+
+  useEffect(() => {
+    if (ocrText) {
+      const chapters = parseChapters(ocrText);
+      setOcrChapters(prevChapters => {
+        if (prevChapters.length === chapters.length) {
+          return chapters;
+        }
+        setCurrentOcrChapter(0);
+        return chapters;
+      });
+      setShowChapterNav(chapters.length > 1);
+    } else {
+      setOcrChapters([]);
+      setShowChapterNav(false);
+    }
+  }, [ocrText, parseChapters]);
+
+  const handleChapterChange = useCallback((chapterIndex: number) => {
+    setCurrentOcrChapter(chapterIndex);
+    if (ocrPanelRef.current) {
+      ocrPanelRef.current.scrollTop = 0;
+    }
+  }, []);
+
   const fixLineBreaksInText = useCallback((text: string): string => {
     const lines = text.split('\n');
     if (lines.length <= 1) return text;
@@ -375,7 +432,6 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     if (!book.file_path || !text) return;
     try {
       await pdfOcrApi.saveOcrText(book.file_path, text);
-      console.log('OCR text saved successfully');
     } catch (error) {
       console.error('Failed to save OCR text:', error);
     }
@@ -526,14 +582,78 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   }, [searchResults, currentSearchIndex, scrollToSearchResult]);
 
   const handleOCRTextSelection = useCallback(async () => {
-    if (!autoFixMode || !ocrText) return;
+    if (!ocrText) return;
     
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed) return;
     
     const selectedText = selection.toString();
-    if (!selectedText || selectedText.length < 2) {
+    if (!selectedText || selectedText.length < 1) return;
+  }, [ocrText]);
+
+  const handleOCRContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    if (!ocrText) return;
+    
+    const selection = window.getSelection();
+    const selectedText = selection?.toString() || '';
+    
+    setContextMenu({
+      show: true,
+      x: e.clientX,
+      y: e.clientY,
+      selectedText: selectedText,
+    });
+  }, [ocrText]);
+
+  const handleChapterize = useCallback(async () => {
+    if (!contextMenu?.selectedText || !ocrText) return;
+    
+    const CHAPTER_MARKER = '====';
+    const selectedText = contextMenu.selectedText;
+    
+    const lines = ocrText.split('\n');
+    let found = false;
+    let newChapterIndex = 0;
+    let chapterCount = 0;
+    
+    const newLines = lines.map((line) => {
+      if (line.trim().startsWith(CHAPTER_MARKER)) {
+        chapterCount++;
+      }
+      if (!found && line.includes(selectedText.trim())) {
+        found = true;
+        if (!line.trim().startsWith(CHAPTER_MARKER)) {
+          newChapterIndex = chapterCount;
+          return CHAPTER_MARKER + line;
+        }
+      }
+      return line;
+    });
+    
+    if (found) {
+      const newOcrText = newLines.join('\n');
+      setOcrText(newOcrText);
+      await saveOCRText(newOcrText);
+      setFixNotification(`已添加章节标记 - 第 ${newChapterIndex + 1} 章`);
+      setCurrentOcrChapter(newChapterIndex + 1);
+    } else {
+      setFixNotification('未找到选中的文本');
+    }
+    
+    setContextMenu(null);
+    setTimeout(() => setFixNotification(null), 2000);
+  }, [contextMenu, ocrText, saveOCRText]);
+
+  const handleQuickFix = useCallback(async () => {
+    if (!contextMenu?.selectedText || !ocrText) return;
+    
+    const selectedText = contextMenu.selectedText;
+    
+    if (selectedText.length < 2) {
       setFixNotification('请选择至少2个字符');
+      setContextMenu(null);
       setTimeout(() => setFixNotification(null), 2000);
       return;
     }
@@ -549,9 +669,20 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
       setFixNotification('未检测到需要修复的换行');
     }
     
-    selection.removeAllRanges();
+    setContextMenu(null);
     setTimeout(() => setFixNotification(null), 2000);
-  }, [autoFixMode, ocrText, fixLineBreaksInText, saveOCRText]);
+  }, [contextMenu, ocrText, fixLineBreaksInText, saveOCRText]);
+
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (contextMenu?.show) {
+        setContextMenu(null);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [contextMenu?.show]);
 
   useEffect(() => {
     const loadExistingOCRText = async () => {
@@ -1191,8 +1322,70 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
               <div 
                 className="ocr-text-content"
                 onMouseUp={handleOCRTextSelection}
+                onContextMenu={handleOCRContextMenu}
               >
-                <pre>{ocrText}</pre>
+                <pre>{ocrChapters.length > 0 ? ocrChapters[currentOcrChapter] : ocrText}</pre>
+              </div>
+            )}
+            {contextMenu?.show && (
+              <div 
+                className="ocr-context-menu"
+                style={{
+                  position: 'fixed',
+                  left: contextMenu.x,
+                  top: contextMenu.y,
+                  zIndex: 1000,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button 
+                  className="context-menu-item"
+                  onClick={handleChapterize}
+                  disabled={!contextMenu.selectedText}
+                >
+                  <span className="menu-icon">📑</span>
+                  章节化
+                </button>
+                <button 
+                  className="context-menu-item"
+                  onClick={handleQuickFix}
+                  disabled={!contextMenu.selectedText || contextMenu.selectedText.length < 2}
+                >
+                  <span className="menu-icon">🔧</span>
+                  修复换行
+                </button>
+              </div>
+            )}
+            {showChapterNav && !editMode && (
+              <div className="chapter-navigation">
+                <button 
+                  className="chapter-nav-btn"
+                  onClick={() => handleChapterChange(Math.max(0, currentOcrChapter - 1))}
+                  disabled={currentOcrChapter === 0}
+                  title="上一章"
+                >
+                  ‹
+                </button>
+                <div className="chapter-pages">
+                  {ocrChapters.map((_, index) => (
+                    <button
+                      key={index}
+                      className={`chapter-page-btn ${currentOcrChapter === index ? 'active' : ''}`}
+                      onClick={() => handleChapterChange(index)}
+                      title={`第 ${index + 1} 章`}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
+                </div>
+                <button 
+                  className="chapter-nav-btn"
+                  onClick={() => handleChapterChange(Math.min(ocrChapters.length - 1, currentOcrChapter + 1))}
+                  disabled={currentOcrChapter === ocrChapters.length - 1}
+                  title="下一章"
+                >
+                  ›
+                </button>
               </div>
             )}
           </div>

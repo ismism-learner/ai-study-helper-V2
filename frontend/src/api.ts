@@ -1066,7 +1066,9 @@ export const pdfOcrApi = {
       success: boolean;
       message: string;
       text_file_path: string;
-    }>(`/pdf-ocr/paddle/save-ocr-text/${encodeURIComponent(filePath)}?text_content=${encodeURIComponent(textContent)}`),
+    }>(`/pdf-ocr/paddle/save-ocr-text/${encodeURIComponent(filePath)}`, {
+      text_content: textContent
+    }),
 
   deleteOcrText: (filePath: string) =>
     api.delete<{

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Body
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
@@ -868,7 +868,7 @@ async def get_ocr_progress(file_path: str):
     }
 
 @router.post("/paddle/save-ocr-text/{file_path:path}")
-async def save_ocr_text(file_path: str, text_content: str = ""):
+async def save_ocr_text(file_path: str, text_content: str = Body("", embed=True)):
     resolved_path = resolve_file_path(file_path)
     
     base, ext = os.path.splitext(resolved_path)
