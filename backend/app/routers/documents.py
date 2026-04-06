@@ -1156,6 +1156,54 @@ async def batch_generate_content(
     }
 
 
+class AIGenerateTimelineNotesFromContentRequest(BaseModel):
+    content: str
+    custom_prompt: Optional[str] = None
+
+
+@router.post("/documents/ai-generate-timeline-notes-from-content", response_model=AIGenerateTimelineNotesResponse)
+async def ai_generate_timeline_notes_from_content(
+    request: AIGenerateTimelineNotesFromContentRequest
+):
+    """
+    使用AI从文本内容中提取时间事件并生成规范化格式的时间笔记
+    不需要文档ID，直接处理传入的文本内容
+    """
+    import traceback
+    
+    if not request.content or not request.content.strip():
+        raise HTTPException(status_code=400, detail="内容不能为空")
+    
+    try:
+        print(f"[ai_generate_timeline_notes_from_content] Processing content, length: {len(request.content)}")
+        
+        raw_output = await ai_service.generate_timeline_notes(
+            content=request.content,
+            custom_prompt=request.custom_prompt
+        )
+        
+        parsed_events = parse_timeline_notes_output(raw_output)
+        
+        print(f"[ai_generate_timeline_notes_from_content] Parsed {len(parsed_events)} events")
+        
+        return AIGenerateTimelineNotesResponse(
+            raw_output=raw_output,
+            parsed_events=parsed_events,
+            total_events=len(parsed_events)
+        )
+        
+    except ValueError as e:
+        error_msg = str(e)
+        print(f"ValueError generating timeline notes: {error_msg}")
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail=error_msg)
+    except Exception as e:
+        error_msg = str(e)
+        print(f"Error generating timeline notes: {type(e).__name__}: {error_msg}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"生成时间笔记失败: {error_msg}")
+
+
 import re
 from typing import List as TypingList
 

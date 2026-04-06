@@ -573,6 +573,21 @@ export const worldTimelineApi = {
       content: content
     }),
 
+  aiGenerateTimelineNotesFromContent: (content: string, customPrompt?: string) =>
+    api.post<{
+      raw_output: string;
+      parsed_events: Array<{
+        event_date: string;
+        event_date_display: string;
+        event_title: string;
+        event_description: string;
+      }>;
+      total_events: number;
+    }>('/documents/ai-generate-timeline-notes-from-content', {
+      content,
+      custom_prompt: customPrompt
+    }),
+
   saveTimelineNotesBatch: (documentId: string, events: Array<{
     event_date: string;
     event_date_display: string;

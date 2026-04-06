@@ -102,6 +102,19 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
   const [selectedQuickNotes, setSelectedQuickNotes] = useState<Set<string>>(new Set());
   const [isBatchPolishing, setIsBatchPolishing] = useState(false);
   const [polishResults, setPolishResults] = useState<any[] | null>(null);
+  const [isGeneratingTimeline, setIsGeneratingTimeline] = useState(false);
+  const [timelineResults, setTimelineResults] = useState<{
+    raw_output: string;
+    parsed_events: Array<{
+      event_date: string;
+      event_date_display: string;
+      event_title: string;
+      event_description: string;
+    }>;
+    total_events: number;
+  } | null>(null);
+  const [showTimelineResults, setShowTimelineResults] = useState(false);
+  const [selectedTimelineEvents, setSelectedTimelineEvents] = useState<Set<number>>(new Set());
   const [showTimeInput, setShowTimeInput] = useState(false);
   const [viewMode, setViewMode] = useState<'page' | 'timeline'>('page');  // 视图模式：页面视图 / 时间序列视图
 
@@ -660,6 +673,67 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
     }
   };
 
+  const handleGenerateTimelineNotes = async () => {
+    const content = currentQuickNote?.content || '';
+    if (!content.trim()) {
+      alert('请先输入笔记内容');
+      return;
+    }
+
+    setIsGeneratingTimeline(true);
+    try {
+      const response = await worldTimelineApi.aiGenerateTimelineNotesFromContent(content);
+      
+      if (response.data.parsed_events.length === 0) {
+        alert('未识别到时间事件，请确保内容包含明确的时间信息');
+        return;
+      }
+
+      setTimelineResults(response.data);
+      setShowTimelineResults(true);
+      setSelectedTimelineEvents(new Set(response.data.parsed_events.map((_, i) => i)));
+    } catch (error) {
+      console.error('Failed to generate timeline notes:', error);
+      alert('生成时间笔记失败');
+    } finally {
+      setIsGeneratingTimeline(false);
+    }
+  };
+
+  const handleSaveTimelineNotes = async () => {
+    if (!timelineResults || selectedTimelineEvents.size === 0) {
+      alert('请先选择要保存的事件');
+      return;
+    }
+
+    try {
+      const eventsToSave = Array.from(selectedTimelineEvents).map(i => 
+        timelineResults.parsed_events[i]
+      ).filter(Boolean);
+
+      for (const event of eventsToSave) {
+        await quickNoteApi.create({
+          content: `${event.event_title}\n\n${event.event_description}`,
+          source_page: currentPage,
+          document_id: documentId,
+          event_date: event.event_date,
+          event_date_display: event.event_date_display,
+          tags: []
+        });
+      }
+
+      alert(`成功保存 ${eventsToSave.length} 条时间笔记`);
+      setShowTimelineResults(false);
+      setTimelineResults(null);
+      setSelectedTimelineEvents(new Set());
+      setCurrentQuickNote(null);
+      loadQuickNotes();
+    } catch (error) {
+      console.error('Failed to save timeline notes:', error);
+      alert('保存时间笔记失败');
+    }
+  };
+
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
     const isButton = target.tagName === 'BUTTON' || !!target.closest('button');
@@ -1052,32 +1126,184 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                 value={quickContent}
                 onChange={(e) => setQuickContent(e.target.value)}
                 onKeyDown={handleQuickKeyDown}
-                placeholder="输入笔记内容，Ctrl+Enter 保存..."
+                placeholder="输入笔记内容，Ctrl+Enter 保存...&#10;&#10;提示：可粘贴历史文本，点击「时间笔记」自动拆分为多个时间节点"
                 rows={4}
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
                 <span style={{ fontSize: 11, color: '#64748b' }}>
                   Ctrl+Enter 快速保存
                 </span>
-                <button
-                  onClick={handleQuickSave}
-                  disabled={!quickContent.trim() || isSavingQuick}
-                  className="quick-save-btn"
-                >
-                  {isSavingQuick ? (
-                    <>
-                      <RefreshCw size={14} className="spinning" />
-                      保存中...
-                    </>
-                  ) : (
-                    <>
-                      <Send size={14} />
-                      保存
-                    </>
-                  )}
-                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={handleGenerateTimelineNotes}
+                    disabled={!quickContent.trim() || isGeneratingTimeline}
+                    className="timeline-generate-btn"
+                    title="AI 自动识别时间事件并拆分为多个时间笔记"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: '6px 12px',
+                      background: isGeneratingTimeline ? 'var(--bg-tertiary)' : 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 6,
+                      cursor: isGeneratingTimeline ? 'wait' : 'pointer',
+                      fontSize: 13,
+                      opacity: !quickContent.trim() ? 0.5 : 1
+                    }}
+                  >
+                    {isGeneratingTimeline ? (
+                      <>
+                        <RefreshCw size={14} className="spinning" />
+                        生成中...
+                      </>
+                    ) : (
+                      <>
+                        <Calendar size={14} />
+                        时间笔记
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleQuickSave}
+                    disabled={!quickContent.trim() || isSavingQuick}
+                    className="quick-save-btn"
+                  >
+                    {isSavingQuick ? (
+                      <>
+                        <RefreshCw size={14} className="spinning" />
+                        保存中...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={14} />
+                        保存
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
+
+            {showTimelineResults && timelineResults && (
+              <div className="timeline-results-panel" style={{
+                marginTop: 12,
+                padding: 12,
+                background: 'var(--bg-secondary)',
+                borderRadius: 8,
+                border: '1px solid var(--border-color)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Calendar size={16} style={{ color: '#8b5cf6' }} />
+                    识别到 {timelineResults.total_events} 个时间事件
+                  </span>
+                  <button
+                    onClick={() => {
+                      setShowTimelineResults(false);
+                      setTimelineResults(null);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#64748b',
+                      cursor: 'pointer',
+                      padding: 4
+                    }}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+                  {timelineResults.parsed_events.map((event, index) => (
+                    <div
+                      key={index}
+                      onClick={() => {
+                        setSelectedTimelineEvents(prev => {
+                          const newSet = new Set(prev);
+                          if (newSet.has(index)) {
+                            newSet.delete(index);
+                          } else {
+                            newSet.add(index);
+                          }
+                          return newSet;
+                        });
+                      }}
+                      style={{
+                        padding: 10,
+                        marginBottom: 8,
+                        background: selectedTimelineEvents.has(index) ? 'rgba(139, 92, 246, 0.15)' : 'var(--bg-tertiary)',
+                        borderRadius: 6,
+                        cursor: 'pointer',
+                        border: selectedTimelineEvents.has(index) ? '1px solid #8b5cf6' : '1px solid transparent'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        {selectedTimelineEvents.has(index) ? (
+                          <CheckSquare size={14} style={{ color: '#8b5cf6' }} />
+                        ) : (
+                          <Square size={14} style={{ color: '#64748b' }} />
+                        )}
+                        <span style={{ fontSize: 12, color: '#8b5cf6', fontWeight: 500 }}>
+                          {event.event_date_display || event.event_date}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: '#e2e8f0', marginBottom: 4 }}>
+                        {event.event_title}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.5 }}>
+                        {event.event_description.substring(0, 100)}
+                        {event.event_description.length > 100 ? '...' : ''}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border-color)' }}>
+                  <span style={{ fontSize: 12, color: '#64748b' }}>
+                    已选 {selectedTimelineEvents.size} / {timelineResults.total_events} 个事件
+                  </span>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={() => {
+                        if (selectedTimelineEvents.size === timelineResults.total_events) {
+                          setSelectedTimelineEvents(new Set());
+                        } else {
+                          setSelectedTimelineEvents(new Set(timelineResults.parsed_events.map((_, i) => i)));
+                        }
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        background: 'var(--bg-tertiary)',
+                        color: '#e2e8f0',
+                        border: 'none',
+                        borderRadius: 6,
+                        cursor: 'pointer',
+                        fontSize: 12
+                      }}
+                    >
+                      {selectedTimelineEvents.size === timelineResults.total_events ? '取消全选' : '全选'}
+                    </button>
+                    <button
+                      onClick={handleSaveTimelineNotes}
+                      disabled={selectedTimelineEvents.size === 0}
+                      style={{
+                        padding: '6px 16px',
+                        background: selectedTimelineEvents.size === 0 ? 'var(--bg-tertiary)' : 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 6,
+                        cursor: selectedTimelineEvents.size === 0 ? 'not-allowed' : 'pointer',
+                        fontSize: 12,
+                        opacity: selectedTimelineEvents.size === 0 ? 0.5 : 1
+                      }}
+                    >
+                      保存选中事件
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <>
