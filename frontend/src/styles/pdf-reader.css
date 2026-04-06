@@ -1096,6 +1096,19 @@
   transform: translateY(-2px);
 }
 
+.pdf-ocr-modal-content .concurrency-panel .concurrency-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  background: var(--bg-tertiary, rgba(255, 255, 255, 0.08));
+  border-color: var(--border-color, rgba(255, 255, 255, 0.2));
+}
+
+.pdf-ocr-modal-content .concurrency-panel .concurrency-btn:disabled:hover {
+  background: var(--bg-tertiary, rgba(255, 255, 255, 0.08));
+  border-color: var(--border-color, rgba(255, 255, 255, 0.2));
+}
+
 .pdf-ocr-modal-content .concurrency-panel .concurrency-btn.active {
   background: var(--primary-color, #3b82f6);
   border-color: var(--primary-color, #3b82f6);

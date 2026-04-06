@@ -736,10 +736,12 @@ export const quarkApi = {
     country_id?: string;
     remote_folder?: string;
     share_expire?: number;
+    secondary_tag?: string;
   }) => api.post<{
     success: boolean;
     message: string;
     tag: string;
+    secondary_tag?: string;
     folder_path: string;
     share_url: string | null;
     share_password: string | null;

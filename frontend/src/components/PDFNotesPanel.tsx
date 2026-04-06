@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Document } from '../types';
-import { Search, X, ChevronUp, ChevronDown, Plus, Edit3, Trash2, BookOpen, Tag, Clock, FileText, Sparkles, Zap, ToggleLeft, ToggleRight, Send, Check, RefreshCw, CheckSquare, Square } from 'lucide-react';
+import { Search, X, ChevronUp, ChevronDown, Plus, Edit3, Trash2, BookOpen, Tag, Clock, FileText, Sparkles, Zap, Send, Check, RefreshCw, CheckSquare, Square, Calendar } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 import { optimizeApi, worldTimelineApi, quickNoteApi, QuickNote } from '../api';
 
@@ -740,18 +740,23 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
       setIsDragging(false);
     };
 
+    const handleBlur = () => {
+      isDraggingRef.current = false;
+      setIsDragging(false);
+    };
+
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('blur', handlePointerUp);
+    window.addEventListener('blur', handleBlur);
 
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('blur', handlePointerUp);
+      window.removeEventListener('blur', handleBlur);
     };
   }, []);
 

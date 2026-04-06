@@ -344,13 +344,15 @@ const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
                     key={num}
                     className={`concurrency-btn ${concurrency === num ? 'active' : ''}`}
                     onClick={() => setConcurrency(num)}
+                    disabled={num > 1}
+                    title={num > 1 ? '多并发模式暂不支持，后续版本将开放' : ''}
                   >
                     {num}
                   </button>
                 ))}
               </div>
               <div className="concurrency-hint">
-                数值越大处理越快，但 GPU 负载越高
+                当前仅支持单线程处理，确保精度和顺序正确
               </div>
             </div>
           )}

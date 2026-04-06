@@ -1104,20 +1104,32 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBack, on
                   try {
                     const { quarkApi } = await import('../api');
                     const booksToUpload = displayBooks.filter(b => !b.quark_upload_status || b.quark_upload_status === 'not_uploaded');
-                    const booksByTag: Record<string, typeof booksToUpload> = {};
+                    
+                    // 二级分类：第一个标签为一级文件夹，第二个标签为二级文件夹
+                    const booksByPath: Record<string, { books: typeof booksToUpload; primaryTag: string; secondaryTag?: string }> = {};
                     for (const book of booksToUpload) {
                       const primaryTag = (book.tags && book.tags.length > 0) ? book.tags[0] : '未分类';
-                      if (!booksByTag[primaryTag]) booksByTag[primaryTag] = [];
-                      booksByTag[primaryTag].push(book);
+                      const secondaryTag = (book.tags && book.tags.length > 1) ? book.tags[1] : undefined;
+                      const pathKey = secondaryTag ? `${primaryTag}/${secondaryTag}` : primaryTag;
+                      
+                      if (!booksByPath[pathKey]) {
+                        booksByPath[pathKey] = { books: [], primaryTag, secondaryTag };
+                      }
+                      booksByPath[pathKey].books.push(book);
                     }
+                    
                     const results: typeof quarkUploadResults = [];
-                    for (const [tag, tagBooks] of Object.entries(booksByTag)) {
+                    for (const [pathKey, { books: tagBooks, primaryTag, secondaryTag }] of Object.entries(booksByPath)) {
                       try {
-                        const response = await quarkApi.uploadByTag(tag, { book_ids: tagBooks.map(b => b.id) });
+                        const response = await quarkApi.uploadByTag(primaryTag, { 
+                          book_ids: tagBooks.map(b => b.id),
+                          secondary_tag: secondaryTag
+                        });
                         if (response.data.success) {
+                          const folderDisplay = secondaryTag ? `${primaryTag}/${secondaryTag}` : primaryTag;
                           results.push({
-                            book_id: `folder-${tag}`,
-                            book_title: `📁 ${tag} (${response.data.uploaded_count}本)`,
+                            book_id: `folder-${pathKey}`,
+                            book_title: `📁 ${folderDisplay} (${response.data.uploaded_count}本)`,
                             success: true,
                             message: `已上传到 ${response.data.folder_path}`,
                             share_url: response.data.share_url || undefined,
