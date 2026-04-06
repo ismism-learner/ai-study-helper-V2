@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf';
 import { BookDocument } from '../types';
 import { bookApi, pdfOcrApi } from '../api';
-import { ArrowLeft, ZoomIn, ZoomOut, Maximize2, Minimize2, FileText, Download, RefreshCw, BookOpen, ChevronLeft, ChevronRight, GripVertical, ScanText, X, Wand2 } from 'lucide-react';
+import { ArrowLeft, ZoomIn, ZoomOut, Maximize2, Minimize2, FileText, Download, RefreshCw, BookOpen, ChevronLeft, ChevronRight, GripVertical, ScanText, X } from 'lucide-react';
 import PDFNotesPanel from './PDFNotesPanel';
 import EpubReaderView from './EpubReaderView';
 import PDFOCRModal from './PDFOCRModal';
@@ -67,7 +67,6 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   const [showOCRModal, setShowOCRModal] = useState(false);
   const [ocrText, setOcrText] = useState<string | null>(null);
   const [showOCRPanel, setShowOCRPanel] = useState(false);
-  const [autoFixMode, setAutoFixMode] = useState(false);
   const [fixNotification, setFixNotification] = useState<string | null>(null);
   const [showTagDetector, setShowTagDetector] = useState(false);
   const [detectedTags, setDetectedTags] = useState<{ text: string; count: number }[]>([]);
@@ -379,6 +378,10 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
       return endPunct.includes(char);
     };
     
+    const isComma = (char: string): boolean => {
+      return char === '，' || char === ',';
+    };
+    
     const result: string[] = [];
     let currentMergedLine = lines[0];
     
@@ -390,7 +393,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
       const firstChar = currentLine.trim()[0];
       
       const shouldMerge = 
-        isChineseChar(lastChar) && 
+        (isChineseChar(lastChar) || isComma(lastChar)) && 
         !isSentenceEnd(lastChar) &&
         isChineseChar(firstChar);
       
@@ -491,7 +494,6 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     if (!ocrText) return;
     setEditText(ocrText);
     setEditMode(true);
-    setAutoFixMode(false);
     setShowTagDetector(false);
   }, [ocrText]);
 
@@ -1184,14 +1186,6 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
                       <ScanText size={16} />
                       <span>标签</span>
                     </button>
-                    <button 
-                      className={`auto-fix-btn ${autoFixMode ? 'active' : ''}`}
-                      onClick={() => setAutoFixMode(!autoFixMode)}
-                      title={autoFixMode ? "关闭自动修复模式" : "开启自动修复模式 - 选择文本后自动合并换行"}
-                    >
-                      <Wand2 size={16} />
-                      <span>{autoFixMode ? '修复中' : '修复'}</span>
-                    </button>
                   </>
                 )}
                 {editMode && (
@@ -1223,11 +1217,6 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
             {fixNotification && (
               <div className="fix-notification">
                 {fixNotification}
-              </div>
-            )}
-            {autoFixMode && !editMode && (
-              <div className="auto-fix-hint">
-                选择需要修复换行的文本，松开鼠标后自动合并
               </div>
             )}
             {editMode && (
