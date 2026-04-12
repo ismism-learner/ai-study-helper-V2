@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
 from typing import List, Optional
 import tempfile
 import os
@@ -304,21 +305,24 @@ def list_documents(
             (Document.description.ilike(search_filter))
         )
     
-    documents = query.order_by(Document.created_at.desc()).offset(skip).limit(limit).all()
+    documents = query.options(joinedload(Document.highlights)).order_by(Document.created_at.desc()).offset(skip).limit(limit).all()
     
-    # 为每个文档添加时间笔记数量
+    doc_ids = [d.id for d in documents]
+    count_rows = db.query(
+        DocumentTimelineEvent.document_id, func.count(DocumentTimelineEvent.id)
+    ).filter(
+        DocumentTimelineEvent.document_id.in_(doc_ids)
+    ).group_by(DocumentTimelineEvent.document_id).all()
+    count_map = dict(count_rows)
+    
     result = []
     for doc in documents:
-        timeline_events_count = db.query(DocumentTimelineEvent).filter(
-            DocumentTimelineEvent.document_id == doc.id
-        ).count()
-        
         doc_dict = {
             "id": doc.id,
             "title": doc.title,
-            "original_content": doc.original_content,
-            "framework_content": doc.framework_content,
-            "processed_content": doc.processed_content,
+            "original_content": doc.original_content[:200] + "..." if doc.original_content and len(doc.original_content) > 200 else doc.original_content,
+            "framework_content": None,
+            "processed_content": None,
             "folder_id": doc.folder_id,
             "archive_status": doc.archive_status,
             "doc_type": doc.doc_type,
@@ -334,7 +338,7 @@ def list_documents(
             "created_at": doc.created_at,
             "updated_at": doc.updated_at,
             "highlights": doc.highlights,
-            "timeline_events_count": timeline_events_count
+            "timeline_events_count": count_map.get(doc.id, 0)
         }
         result.append(doc_dict)
     
@@ -408,15 +412,23 @@ def get_timeline_tags_history(db: Session = Depends(get_db)):
 
 @router.get("/documents/stats")
 def get_document_stats(db: Session = Depends(get_db)):
-    """获取文档统计信息"""
+    total = db.query(Document).count()
+    archive_rows = db.query(
+        Document.archive_status, func.count(Document.id)
+    ).group_by(Document.archive_status).all()
+    type_rows = db.query(
+        Document.doc_type, func.count(Document.id)
+    ).group_by(Document.doc_type).all()
+    archive_map = dict(archive_rows)
+    type_map = dict(type_rows)
     stats = {
-        "total": db.query(Document).count(),
-        "unarchived_book": db.query(Document).filter(Document.archive_status == "unarchived_book").count(),
-        "archived_book": db.query(Document).filter(Document.archive_status == "archived_book").count(),
-        "unarchived_doc": db.query(Document).filter(Document.archive_status == "unarchived_doc").count(),
-        "archived_doc": db.query(Document).filter(Document.archive_status == "archived_doc").count(),
-        "pdf_ebook": db.query(Document).filter(Document.doc_type == "pdf_ebook").count(),
-        "text_document": db.query(Document).filter(Document.doc_type == "text_document").count(),
+        "total": total,
+        "unarchived_book": archive_map.get("unarchived_book", 0),
+        "archived_book": archive_map.get("archived_book", 0),
+        "unarchived_doc": archive_map.get("unarchived_doc", 0),
+        "archived_doc": archive_map.get("archived_doc", 0),
+        "pdf_ebook": type_map.get("pdf_ebook", 0),
+        "text_document": type_map.get("text_document", 0),
     }
     return stats
 

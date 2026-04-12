@@ -1327,11 +1327,11 @@
 }
 
 .metric-fill.gpu-util {
-  background: linear-gradient(90deg, #10b981, #34d399);
+  background: linear-gradient(90deg, var(--success-500), #34d399);
 }
 
 .metric-fill.gpu-mem {
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  background: linear-gradient(90deg, var(--primary-500), #60a5fa);
 }
 
 .metric-value {

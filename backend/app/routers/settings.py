@@ -22,7 +22,10 @@ def get_settings():
         explain_prompt=all_settings["explain_prompt"],
         optimize_prompt=all_settings["optimize_prompt"],
         quick_note_polish_prompt=all_settings.get("quick_note_polish_prompt", ""),
-        batch_upload_size=all_settings.get("batch_upload_size", 5)
+        chapter_note_system_prompt=all_settings.get("chapter_note_system_prompt", ""),
+        chapter_note_prompt=all_settings.get("chapter_note_prompt", ""),
+        timeline_prompt=all_settings.get("timeline_prompt", ""),
+        batch_upload_size=all_settings.get("batch_upload_size", 5),
     )
 
 
@@ -35,9 +38,10 @@ async def get_models():
                 base_url += "/"
             url = f"{base_url}models"
 
-            response = await client.get(url, headers={
-                "Authorization": f"Bearer {settings_manager.openai_api_key}"
-            })
+            response = await client.get(
+                url,
+                headers={"Authorization": f"Bearer {settings_manager.openai_api_key}"},
+            )
 
             if response.status_code == 200:
                 data = response.json()
@@ -50,7 +54,10 @@ async def get_models():
 
             if response.status_code == 401:
                 raise HTTPException(status_code=401, detail="API密钥无效")
-            raise HTTPException(status_code=response.status_code, detail=f"获取模型列表失败: {response.text}")
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"获取模型列表失败: {response.text}",
+            )
 
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="请求超时，请检查API地址是否正确")
@@ -68,6 +75,9 @@ def update_settings(settings_update: SettingsUpdate):
         explain_prompt=settings_update.explain_prompt,
         optimize_prompt=settings_update.optimize_prompt,
         quick_note_polish_prompt=settings_update.quick_note_polish_prompt,
+        chapter_note_system_prompt=settings_update.chapter_note_system_prompt,
+        chapter_note_prompt=settings_update.chapter_note_prompt,
+        timeline_prompt=settings_update.timeline_prompt,
         batch_upload_size=settings_update.batch_upload_size,
     )
     return get_settings()

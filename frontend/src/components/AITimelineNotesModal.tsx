@@ -272,7 +272,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
           borderBottom: '1px solid var(--border-color, #334155)',
         }}>
           <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary, #e2e8f0)' }}>
-            <Sparkles size={20} style={{ color: '#8b5cf6' }} />
+            <Sparkles size={20} style={{ color: 'var(--accent-500)' }} />
             AI生成时间笔记
           </h3>
           <button 
@@ -367,7 +367,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                 onClick={handleAddTag}
                 style={{
                   padding: '8px 16px',
-                  background: '#3b82f6',
+                  background: 'var(--primary-500)',
                   color: 'white',
                   border: 'none',
                   borderRadius: '4px',
@@ -410,7 +410,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
             )}
             {historyTags.length > 0 && (
               <div style={{ marginTop: '12px' }} ref={historyTagDropdownRef}>
-                <label style={{ fontSize: '12px', color: '#6b7280', marginBottom: '6px', display: 'block' }}>
+                <label style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px', display: 'block' }}>
                   历史标签（点击快速添加）
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -432,7 +432,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Tag size={14} style={{ color: '#8b5cf6' }} />
+                      <Tag size={14} style={{ color: 'var(--accent-500)' }} />
                       <span>全部历史标签 ({historyTags.length})</span>
                     </div>
                     {historyTagDropdownOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -486,16 +486,16 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                             }}
                           />
                           {historyTagSearchQuery && (
-                            <button
-                              onClick={() => setHistoryTagSearchQuery('')}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                padding: 0,
-                                cursor: 'pointer',
-                                color: '#6b7280'
-                              }}
-                            >
+<button
+                               onClick={() => setHistoryTagSearchQuery('')}
+                               style={{
+                                 background: 'none',
+                                 border: 'none',
+                                 padding: 0,
+                                 cursor: 'pointer',
+                                 color: 'var(--text-muted)'
+                               }}
+                             >
                               <X size={14} />
                             </button>
                           )}
@@ -508,12 +508,12 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                         padding: '8px'
                       }}>
                         {filteredHistoryTags.length === 0 ? (
-                          <div style={{
-                            textAlign: 'center',
-                            padding: '20px',
-                            color: '#6b7280',
-                            fontSize: '13px'
-                          }}>
+<div style={{
+                             textAlign: 'center',
+                             padding: '20px',
+                             color: 'var(--text-muted)',
+                             fontSize: '13px'
+                           }}>
                             {historyTagSearchQuery ? '没有找到匹配的标签' : '暂无历史标签'}
                           </div>
                         ) : (
@@ -537,8 +537,8 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                                     alignItems: 'center',
                                     gap: '6px',
                                     padding: '8px 10px',
-                                    background: isSelected ? '#8b5cf6' : 'white',
-                                    border: '1px solid ' + (isSelected ? '#7c3aed' : '#e5e7eb'),
+                                    background: isSelected ? 'var(--accent-500)' : 'white',
+                                    border: '1px solid ' + (isSelected ? 'var(--accent-600)' : '#e5e7eb'),
                                     borderRadius: '6px',
                                     cursor: isSelected ? 'default' : 'pointer',
                                     fontSize: '12px',
@@ -568,7 +568,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                           background: '#f8fafc',
                           borderRadius: '0 0 8px 8px'
                         }}>
-                          <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px' }}>
                             已选择的标签:
                           </div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
@@ -580,7 +580,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                                   alignItems: 'center',
                                   gap: '4px',
                                   padding: '3px 8px',
-                                  background: '#8b5cf6',
+                                  background: 'var(--accent-500)',
                                   color: 'white',
                                   borderRadius: '12px',
                                   fontSize: '11px'
@@ -622,7 +622,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
               disabled={isGenerating}
               style={{
                 padding: '12px 24px',
-                background: isGenerating ? '#9ca3af' : '#8b5cf6',
+                background: isGenerating ? 'var(--text-muted)' : 'var(--accent-500)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
@@ -646,16 +646,16 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
               <div style={{
                 width: '40px',
                 height: '40px',
-                border: '3px solid #e5e7eb',
-                borderTopColor: '#8b5cf6',
+                border: '3px solid var(--border-default)',
+                borderTopColor: 'var(--accent-500)',
                 borderRadius: '50%',
                 animation: 'spin 1s linear infinite',
                 margin: '0 auto 12px',
               }} />
-              <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>
                 AI正在分析文档内容，提取时间事件...
               </p>
-              <p style={{ color: '#9ca3af', fontSize: '12px', margin: '4px 0 0 0' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '12px', margin: '4px 0 0 0' }}>
                 这可能需要几秒钟到一分钟
               </p>
             </div>
@@ -675,7 +675,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                   </h4>
                   {selectedEvents.size > 0 && (
                     <span style={{
-                      background: '#8b5cf6',
+                      background: 'var(--accent-500)',
                       color: 'white',
                       padding: '2px 8px',
                       borderRadius: '12px',
@@ -691,7 +691,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                       onClick={() => setShowTagPanel(!showTagPanel)}
                       style={{
                         padding: '6px 12px',
-                        background: showTagPanel ? '#8b5cf6' : '#f3f4f6',
+                        background: showTagPanel ? 'var(--accent-500)' : 'var(--bg-hover)',
                         color: showTagPanel ? 'white' : '#374151',
                         border: 'none',
                         borderRadius: '4px',
@@ -710,7 +710,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                     onClick={toggleSelectAll}
                     style={{
                       padding: '6px 12px',
-                      background: selectedEvents.size === aiGeneratedEvents.length ? '#10b981' : '#f3f4f6',
+                      background: selectedEvents.size === aiGeneratedEvents.length ? 'var(--success-500)' : 'var(--bg-hover)',
                       color: selectedEvents.size === aiGeneratedEvents.length ? 'white' : '#374151',
                       border: 'none',
                       borderRadius: '4px',
@@ -723,7 +723,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                 </div>
               </div>
 
-              <div style={{ marginBottom: '8px', fontSize: '12px', color: '#6b7280' }}>
+              <div style={{ marginBottom: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
                 提示：按住 Shift 键点击可选择多个连续事件
               </div>
 
@@ -766,7 +766,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                       disabled={!batchTagInput.trim()}
                       style={{
                         padding: '8px 16px',
-                        background: batchTagInput.trim() ? '#8b5cf6' : '#9ca3af',
+                        background: batchTagInput.trim() ? 'var(--accent-500)' : 'var(--text-muted)',
                         color: 'white',
                         border: 'none',
                         borderRadius: '4px',
@@ -783,7 +783,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                   </div>
                   {historyTags.length > 0 && (
                     <div>
-                      <label style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px', display: 'block' }}>
+                      <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>
                         快速选择历史标签：
                       </label>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
@@ -830,21 +830,21 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                       onClick={(e) => handleEventClick(index, e)}
                       style={{
                         padding: '12px',
-                        background: isSelected ? '#f0f9ff' : '#fff',
-                        border: isSelected ? '2px solid #8b5cf6' : '1px solid transparent',
-                        borderBottom: '1px solid #f3f4f6',
+                        background: isSelected ? 'var(--bg-hover)' : 'var(--bg-surface)',
+                        border: isSelected ? '2px solid var(--accent-500)' : '1px solid transparent',
+                        borderBottom: '1px solid var(--border-subtle)',
                         cursor: 'pointer',
                         transition: 'all 0.15s ease',
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                          <div style={{
-                            width: '18px',
-                            height: '18px',
-                            borderRadius: '4px',
-                            border: isSelected ? '2px solid #8b5cf6' : '2px solid #d1d5db',
-                            background: isSelected ? '#8b5cf6' : 'transparent',
+<div style={{
+                             width: '18px',
+                             height: '18px',
+                             borderRadius: '4px',
+                             border: isSelected ? '2px solid var(--accent-500)' : '2px solid var(--border-default)',
+                             background: isSelected ? 'var(--accent-500)' : 'transparent',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -852,16 +852,16 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                           }}>
                             {isSelected && <Check size={12} style={{ color: 'white' }} />}
                           </div>
-                          <span style={{ fontWeight: 500, fontSize: '14px', color: isSelected ? '#1f2937' : '#4b5563' }}>
+                          <span style={{ fontWeight: 500, fontSize: '14px', color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
                             {event.event_title}
                           </span>
                         </div>
                       </div>
-                      <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '6px', marginLeft: '26px' }}>
+                      <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '6px', marginLeft: '26px' }}>
                         {event.event_description}
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginLeft: '26px' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#9ca3af' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--text-muted)' }}>
                           <Calendar size={12} />
                           {event.event_date_display}
                         </span>
@@ -873,8 +873,8 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                                 style={{
                                   fontSize: '10px',
                                   padding: '1px 6px',
-                                  background: eventSpecificTags.length > 0 ? '#8b5cf6' : '#e5e7eb',
-                                  color: eventSpecificTags.length > 0 ? 'white' : '#4b5563',
+                                  background: eventSpecificTags.length > 0 ? 'var(--accent-500)' : 'var(--border-subtle)',
+                                  color: eventSpecificTags.length > 0 ? 'white' : 'var(--text-secondary)',
                                   borderRadius: '8px',
                                   display: 'flex',
                                   alignItems: 'center',
@@ -917,7 +917,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                 disabled={selectedEvents.size === 0 || isSaving}
                 style={{
                   padding: '12px 24px',
-                  background: selectedEvents.size === 0 || isSaving ? '#9ca3af' : '#10b981',
+                  background: selectedEvents.size === 0 || isSaving ? 'var(--text-muted)' : 'var(--success-500)',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',

@@ -1,0 +1,111 @@
+/* 主题切换器样式 */
+.theme-switcher {
+  position: relative;
+}
+
+.theme-switcher-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.theme-switcher-trigger:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.theme-switcher-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-dropdown);
+}
+
+.theme-switcher-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 200px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-popover);
+  overflow: hidden;
+}
+
+.theme-switcher-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-default);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.theme-switcher-list {
+  padding: 8px;
+}
+
+.theme-switcher-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.theme-switcher-item:hover {
+  background: var(--bg-hover);
+}
+
+.theme-switcher-item.active {
+  background: var(--primary-lighter);
+}
+
+.theme-preview {
+  width: 32px;
+  height: 24px;
+  border-radius: 4px;
+  border: 2px solid var(--border-default);
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-preview-accent {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+}
+
+.theme-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.theme-check {
+  color: var(--primary-500);
+}

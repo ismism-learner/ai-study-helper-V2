@@ -286,7 +286,7 @@ const BookUploadModal: React.FC<BookUploadModalProps> = ({ countryId, onClose, o
                       />
                       选择文件
                     </label>
-                    <label className="file-select-btn" style={{ background: '#10b981', borderColor: '#10b981' }} onClick={(e) => e.stopPropagation()}>
+                    <label className="file-select-btn" style={{ background: 'var(--success-500)', borderColor: 'var(--success-500)' }} onClick={(e) => e.stopPropagation()}>
                       <input
                         type="file"
                         // @ts-expect-error webkitdirectory is not in the type definition

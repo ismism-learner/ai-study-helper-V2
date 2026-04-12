@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BookDocument } from '../types';
 import { bookApi } from '../api';
 import { X, Search, Loader2, Tag as TagIcon, CheckSquare, Square, GripVertical } from 'lucide-react';

@@ -622,7 +622,9 @@ async def get_make_searchable_status(file_path: str):
             "current_page": 0,
             "total_pages": 0,
             "error": None,
-            "message": "尚未开始处理"
+            "message": "尚未开始处理",
+            "had_text": False,
+            "text_file_path": None
         }
     
     return IN_PLACE_STATUS_CACHE[cache_key]
@@ -658,6 +660,22 @@ async def extract_text_from_pdf_async(
     
     cache_key = os.path.abspath(resolved_path)
     print(f"[OCR API] 缓存键: {cache_key}")
+    
+    # 检查是否已有任务在运行
+    if cache_key in EXTRACT_TEXT_STATUS_CACHE:
+        existing_status = EXTRACT_TEXT_STATUS_CACHE[cache_key]
+        if existing_status.get('status') in ['initializing', 'loading_model', 'processing']:
+            print(f"[OCR API] ⚠️ 检测到重复任务，当前状态: {existing_status.get('status')}")
+            print(f"[OCR API] 返回现有任务状态，不启动新任务")
+            return {
+                "message": "OCR 任务已在运行中",
+                "file_path": file_path,
+                "status": existing_status.get('status'),
+                "progress": existing_status.get('progress', 0),
+                "current_page": existing_status.get('current_page', 0),
+                "total_pages": existing_status.get('total_pages', 0)
+            }
+    
     print(f"[OCR API] 启动后台任务...")
     
     EXTRACT_TEXT_STATUS_CACHE[cache_key] = {
@@ -759,7 +777,8 @@ async def get_extract_text_status(file_path: str):
             "error": None,
             "message": "尚未开始处理",
             "had_text": False,
-            "text_content": None
+            "text_content": None,
+            "text_file_path": None
         }
     
     return EXTRACT_TEXT_STATUS_CACHE[cache_key]
@@ -827,17 +846,18 @@ async def cancel_ocr_process(file_path: str):
     cache_key = os.path.abspath(resolved_path)
     
     cancelled = False
+    active_statuses = ['initializing', 'loading_model', 'processing']
     
     if cache_key in EXTRACT_TEXT_STATUS_CACHE:
         status = EXTRACT_TEXT_STATUS_CACHE[cache_key]
-        if status.get('status') == 'processing':
+        if status.get('status') in active_statuses:
             status['status'] = 'cancelled'
             status['message'] = '用户取消处理'
             cancelled = True
     
     if cache_key in IN_PLACE_STATUS_CACHE:
         status = IN_PLACE_STATUS_CACHE[cache_key]
-        if status.get('status') == 'processing':
+        if status.get('status') in active_statuses:
             status['status'] = 'cancelled'
             status['message'] = '用户取消处理'
             cancelled = True
@@ -926,3 +946,50 @@ async def delete_ocr_text(file_path: str):
             "success": False,
             "message": "未找到 OCR 文件"
         }
+
+
+@router.post("/paddle/clear-cache")
+async def clear_ocr_cache():
+    """清理所有OCR状态缓存"""
+    global EXTRACT_TEXT_STATUS_CACHE, IN_PLACE_STATUS_CACHE, PADDLE_STATUS_CACHE, SMART_STATUS_CACHE
+    
+    cleared_count = 0
+    cleared_count += len(EXTRACT_TEXT_STATUS_CACHE)
+    cleared_count += len(IN_PLACE_STATUS_CACHE)
+    cleared_count += len(PADDLE_STATUS_CACHE)
+    cleared_count += len(SMART_STATUS_CACHE)
+    
+    EXTRACT_TEXT_STATUS_CACHE.clear()
+    IN_PLACE_STATUS_CACHE.clear()
+    PADDLE_STATUS_CACHE.clear()
+    SMART_STATUS_CACHE.clear()
+    
+    return {
+        "success": True,
+        "message": f"已清理 {cleared_count} 个缓存项",
+        "cleared_count": cleared_count
+    }
+
+
+@router.get("/paddle/cache-status")
+async def get_cache_status():
+    """获取所有缓存的状态"""
+    return {
+        "extract_text_cache": {
+            "count": len(EXTRACT_TEXT_STATUS_CACHE),
+            "keys": list(EXTRACT_TEXT_STATUS_CACHE.keys()),
+            "statuses": {k: v.get('status') for k, v in EXTRACT_TEXT_STATUS_CACHE.items()}
+        },
+        "in_place_cache": {
+            "count": len(IN_PLACE_STATUS_CACHE),
+            "keys": list(IN_PLACE_STATUS_CACHE.keys())
+        },
+        "paddle_cache": {
+            "count": len(PADDLE_STATUS_CACHE),
+            "keys": list(PADDLE_STATUS_CACHE.keys())
+        },
+        "smart_cache": {
+            "count": len(SMART_STATUS_CACHE),
+            "keys": list(SMART_STATUS_CACHE.keys())
+        }
+    }

@@ -165,7 +165,7 @@ const DraggableProgressWindow: React.FC<DraggableProgressWindowProps> = ({
         <>
           <div style={{ padding: '12px 16px', borderBottom: '1px solid #e5e7eb' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
-              <span style={{ color: '#6b7280' }}>
+              <span style={{ color: 'var(--text-muted)' }}>
                 {isProcessing ? (
                   isPaused ? '已暂停' : `正在处理: ${currentProcessing || '...'}`
                 ) : (
@@ -202,7 +202,7 @@ const DraggableProgressWindow: React.FC<DraggableProgressWindowProps> = ({
                 <AlertCircle size={12} /> 失败: {errorCount}
               </span>
               {processingCount > 0 && (
-                <span style={{ color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ color: 'var(--primary-500)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Loader size={12} className="spinning" /> 处理中: {processingCount}
                 </span>
               )}
@@ -344,7 +344,7 @@ const DraggableProgressWindow: React.FC<DraggableProgressWindowProps> = ({
                 onClick={onClose}
                 style={{
                   padding: '6px 12px',
-                  background: '#6b7280',
+                  background: 'var(--text-muted)',
                   color: 'white',
                   border: 'none',
                   borderRadius: '6px',
@@ -361,7 +361,7 @@ const DraggableProgressWindow: React.FC<DraggableProgressWindowProps> = ({
       )}
 
       {isMinimized && (
-        <div style={{ padding: '8px 16px', fontSize: '12px', color: '#6b7280' }}>
+        <div style={{ padding: '8px 16px', fontSize: '12px', color: 'var(--text-muted)' }}>
           <span>进度: {progress.current}/{progress.total}</span>
           <span style={{ marginLeft: '12px', color: '#10b981' }}>✓{successCount}</span>
           {noEventsCount > 0 && <span style={{ marginLeft: '8px', color: '#f59e0b' }}>○{noEventsCount}</span>}

@@ -1,0 +1,276 @@
+/* 节点画布容器 */
+.node-canvas-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-base);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.node-canvas-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.node-canvas-toolbar h3 {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.node-canvas-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.node-canvas-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all var(--transition-fast);
+}
+
+.node-canvas-btn.save {
+  background: var(--accent-500);
+  color: white;
+}
+
+.node-canvas-btn.save:hover {
+  background: var(--accent-600);
+}
+
+.node-canvas-btn.save:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.node-canvas-btn.close {
+  background: var(--danger-500);
+  color: white;
+}
+
+.node-canvas-btn.close:hover {
+  background: var(--danger-600);
+}
+
+.node-canvas-flow {
+  flex: 1;
+  width: 100%;
+}
+
+/* ReactFlow 覆盖样式 */
+.react-flow__node {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.react-flow__handle {
+  width: 8px;
+  height: 8px;
+  background: var(--node-handle-color);
+  border: 2px solid var(--text-primary);
+}
+
+.react-flow__handle-top {
+  top: -4px;
+}
+
+.react-flow__handle-bottom {
+  bottom: -4px;
+}
+
+/* 节点通用样式 */
+.viz-node {
+  min-width: 200px;
+  max-width: 350px;
+  background: var(--bg-surface);
+  border: 2px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  overflow: hidden;
+}
+
+.viz-node.selected {
+  border-color: var(--node-selected-border);
+  box-shadow: 0 0 0 2px var(--node-selected-shadow);
+}
+
+.viz-node-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-default);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.viz-node-header svg {
+  flex-shrink: 0;
+}
+
+.viz-node-lang {
+  margin-left: auto;
+  font-size: 10px;
+  padding: 2px 6px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+}
+
+.viz-node-action {
+  margin-left: 4px;
+  padding: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.viz-node-action:hover {
+  background: var(--accent-500);
+  color: white;
+}
+
+.viz-node-content {
+  padding: 12px;
+  max-height: 200px;
+  overflow: auto;
+  color: var(--text-secondary);
+}
+
+.viz-node-content pre {
+  margin: 0;
+  padding: 8px;
+  background: var(--bg-base);
+  border-radius: var(--radius-sm);
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.viz-node-content code {
+  font-family: inherit;
+}
+
+/* 公式节点 */
+.viz-node-formula {
+  border-color: var(--node-border-formula);
+}
+
+.viz-node-formula .viz-node-header {
+  background: var(--node-bg-formula);
+  color: var(--primary-300);
+}
+
+.viz-node-formula-content {
+  font-size: 14px;
+  text-align: center;
+}
+
+/* 代码节点 */
+.viz-node-code {
+  border-color: var(--node-border-code);
+}
+
+.viz-node-code .viz-node-header {
+  background: var(--node-bg-code);
+  color: var(--primary-300);
+}
+
+/* 图表节点 */
+.viz-node-chart {
+  border-color: var(--node-border-chart);
+}
+
+.viz-node-chart .viz-node-header {
+  background: var(--node-bg-chart);
+  color: var(--success-400);
+}
+
+.viz-node-chart-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  color: var(--success-400);
+  opacity: 0.5;
+}
+
+.viz-node-chart-placeholder span {
+  margin-top: 8px;
+  font-size: 11px;
+}
+
+/* 几何节点 */
+.viz-node-geometry {
+  border-color: var(--node-border-geometry);
+}
+
+.viz-node-geometry .viz-node-header {
+  background: var(--node-bg-geometry);
+  color: var(--warning-400);
+}
+
+.viz-node-geometry-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  color: var(--warning-400);
+  opacity: 0.5;
+}
+
+.viz-node-geometry-placeholder span {
+  margin-top: 8px;
+  font-size: 11px;
+}
+
+/* 连接线样式 */
+.react-flow__edge-path {
+  stroke: var(--accent-500);
+  stroke-width: 2;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--primary-400);
+  stroke-width: 3;
+}
+
+/* 控制面板样式 */
+.react-flow__controls {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+}
+
+.react-flow__controls-button {
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-default);
+  color: var(--text-primary);
+}
+
+.react-flow__controls-button:hover {
+  background: var(--bg-hover);
+}
+
+/* 背景样式 */
+.react-flow__background {
+  background: var(--bg-base);
+}

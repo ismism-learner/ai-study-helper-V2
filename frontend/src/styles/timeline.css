@@ -365,7 +365,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  background: linear-gradient(135deg, var(--primary-500), var(--accent-500));
   color: white;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
@@ -640,7 +640,7 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  color: #ef4444;
+  color: var(--danger-500);
 }
 
 .simple-timeline-view .timeline-book-item .book-cover-pdf-placeholder .pdf-icon {
@@ -652,7 +652,7 @@
 .simple-timeline-view .timeline-book-item .book-cover-pdf-placeholder .pdf-label {
   font-size: 10px;
   font-weight: 600;
-  color: #ef4444;
+  color: var(--danger-500);
 }
 
 .simple-timeline-view .timeline-book-item .book-cover-pdf-preview {
@@ -737,7 +737,7 @@
 }
 
 .simple-timeline-view .book-actions .action-btn.delete-btn:hover {
-  color: #ef4444;
+  color: var(--danger-500);
 }
 
 .simple-timeline-view .book-checkbox {
@@ -758,7 +758,7 @@
 }
 
 .simple-timeline-view .quark-uploaded-icon {
-  color: #10b981;
+  color: var(--success-500);
   margin-left: 4px;
 }
 

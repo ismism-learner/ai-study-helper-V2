@@ -168,6 +168,9 @@ class SettingsResponse(BaseModel):
     explain_prompt: str
     optimize_prompt: str
     quick_note_polish_prompt: str = ""
+    chapter_note_system_prompt: str = ""
+    chapter_note_prompt: str = ""
+    timeline_prompt: str = ""
     batch_upload_size: int = 5
 
 
@@ -183,6 +186,9 @@ class SettingsUpdate(BaseModel):
     explain_prompt: Optional[str] = None
     optimize_prompt: Optional[str] = None
     quick_note_polish_prompt: Optional[str] = None
+    chapter_note_system_prompt: Optional[str] = None
+    chapter_note_prompt: Optional[str] = None
+    timeline_prompt: Optional[str] = None
     batch_upload_size: Optional[int] = None
 
 
@@ -273,3 +279,46 @@ class QuickNoteBatchProcessResponse(BaseModel):
     total: int
     success: int
     failed: int
+
+
+class ChapterNoteCreate(BaseModel):
+    book_id: Optional[str] = None
+    document_id: Optional[str] = None
+    chapter_title: str
+    original_text: str
+    start_page: Optional[int] = None
+    end_page: Optional[int] = None
+    tags: Optional[List[str]] = None
+
+
+class ChapterNoteUpdate(BaseModel):
+    chapter_title: Optional[str] = None
+    original_text: Optional[str] = None
+    markdown_content: Optional[str] = None
+    status: Optional[str] = None
+    start_page: Optional[int] = None
+    end_page: Optional[int] = None
+    tags: Optional[List[str]] = None
+
+
+class ChapterNoteResponse(BaseModel):
+    id: str
+    book_id: Optional[str] = None
+    document_id: Optional[str] = None
+    chapter_title: str
+    original_text: str
+    markdown_content: Optional[str] = None
+    status: str
+    start_page: Optional[int] = None
+    end_page: Optional[int] = None
+    tags: Optional[List[str]] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ChapterNoteGenerateRequest(BaseModel):
+    original_text: str
+    chapter_title: Optional[str] = None

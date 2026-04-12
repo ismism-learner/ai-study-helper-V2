@@ -93,8 +93,8 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
   isGenerating,
   streamingContent,
   generatingDocumentId,
-  generatingDocIds = new Set(),
-  streamingContents = new Map(),
+  generatingDocIds: _generatingDocIds = new Set(),
+  streamingContents: _streamingContents = new Map(),
   onHighlightCreated,
   onHighlightDeleted,
   onFrameworkUpdate,
@@ -597,7 +597,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
                               <span style={{ 
                                 marginLeft: 8, 
                                 fontSize: 11, 
-                                color: '#10b981',
+                                color: 'var(--success-500)',
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: 4
@@ -606,14 +606,14 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
                                   width: 6,
                                   height: 6,
                                   borderRadius: '50%',
-                                  background: '#10b981',
+                                  background: 'var(--success-500)',
                                   animation: 'pulse 1s infinite'
                                 }} />
                                 流式生成中
                               </span>
                             )}
                             {state.streamStatus === 'error' && (
-                              <span style={{ marginLeft: 8, fontSize: 11, color: '#ef4444' }}>
+                              <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--danger-500)' }}>
                                 生成失败
                               </span>
                             )}
@@ -629,14 +629,14 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
                         </div>
                         {state.streamStatus === 'streaming' && state.streamingContent ? (
                           <div style={{
-                            background: '#f8f9fa',
+                            background: 'var(--bg-surface)',
                             borderRadius: 6,
                             padding: 12,
                             minHeight: 100,
                             fontSize: 13,
                             lineHeight: 1.6,
-                            color: '#374151',
-                            border: '1px solid #e5e7eb',
+                            color: 'var(--text-primary)',
+                            border: '1px solid var(--border-default)',
                             whiteSpace: 'pre-wrap',
                             wordBreak: 'break-word'
                           }}>
@@ -645,14 +645,14 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
                           </div>
                         ) : state.streamStatus === 'error' ? (
                           <div style={{
-                            background: '#fef2f2',
+                            background: 'var(--bg-surface)',
                             borderRadius: 6,
                             padding: 12,
                             minHeight: 100,
                             fontSize: 13,
                             lineHeight: 1.6,
-                            color: '#dc2626',
-                            border: '1px solid #fecaca'
+                            color: 'var(--danger-500)',
+                            border: '1px solid var(--border-default)'
                           }}>
                             <p style={{ margin: 0, fontWeight: 500 }}>生成失败</p>
                             <p style={{ margin: '4px 0 0 0', fontSize: 12 }}>{state.errorMessage || '未知错误'}</p>
@@ -911,7 +911,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
       <div className="card">
         <h2 style={{ marginBottom: 20 }}>文章正文</h2>
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <p style={{ color: '#6c757d', marginBottom: 20 }}>
+          <p style={{ color: 'var(--text-muted)', marginBottom: 20 }}>
             暂无正文内容
           </p>
           {onGenerate && (
@@ -1010,7 +1010,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
             left: selection.position.x,
             top: selection.position.y,
             transform: 'translate(-50%, -100%)',
-            background: 'var(--bg-elevated, #1e293b)',
+            background: 'var(--bg-elevated)',
             borderRadius: 8,
             boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
             padding: 12,
@@ -1019,10 +1019,10 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
             flexDirection: 'column',
             gap: 8,
             minWidth: 200,
-            color: 'var(--text-primary, #e2e8f0)',
+            color: 'var(--text-primary)',
           }}
         >
-          <div style={{ fontSize: 12, color: 'var(--text-muted, #94a3b8)', marginBottom: 4 }}>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>
             选中文本: "{selection.text.substring(0, 30)}{selection.text.length > 30 ? '...' : ''}"
           </div>
 
@@ -1076,7 +1076,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
             left: highlightMenu.position.x,
             top: highlightMenu.position.y,
             transform: 'translate(-50%, -100%)',
-            background: 'var(--bg-elevated, #1e293b)',
+            background: 'var(--bg-elevated)',
             borderRadius: 8,
             boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
             padding: 12,
@@ -1085,11 +1085,11 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
             flexDirection: 'column',
             gap: 8,
             minWidth: 180,
-            color: 'var(--text-primary, #e2e8f0)',
+            color: 'var(--text-primary)',
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4, color: 'var(--text-primary, #e2e8f0)' }}>
+          <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4, color: 'var(--text-primary)' }}>
             "{highlightMenu.highlight.highlighted_text.substring(0, 25)}{highlightMenu.highlight.highlighted_text.length > 25 ? '...' : ''}"
           </div>
           <button
@@ -1125,7 +1125,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
             left: Math.min(explanationPopup.position.x, window.innerWidth - 320),
             top: explanationPopup.position.y + 20,
             transform: 'translateX(-50%)',
-            background: 'var(--bg-elevated, #1e293b)',
+            background: 'var(--bg-elevated)',
             borderRadius: 12,
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
             padding: 16,
@@ -1136,7 +1136,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            color: 'var(--text-primary, #e2e8f0)',
+            color: 'var(--text-primary)',
           }}
           onClick={(e) => e.stopPropagation()}
           onMouseEnter={() => {
@@ -1156,12 +1156,12 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
             alignItems: 'center',
             marginBottom: 12,
             paddingBottom: 8,
-            borderBottom: '1px solid var(--border-color, #334155)',
+            borderBottom: '1px solid var(--border-default)',
           }}>
             <div style={{
               fontSize: 13,
               fontWeight: 600,
-              color: 'var(--primary-400, #818cf8)',
+              color: 'var(--primary-400)',
               display: 'flex',
               alignItems: 'center',
               gap: 6,
@@ -1176,7 +1176,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
                 AI解释
               </span>
               {explanationPopup.isPinned && (
-                <span style={{ fontSize: 10, color: 'var(--text-muted, #94a3b8)' }}>已固定</span>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>已固定</span>
               )}
             </div>
             <button
@@ -1188,7 +1188,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
                 padding: 4,
                 display: 'flex',
                 alignItems: 'center',
-                color: 'var(--text-muted, #94a3b8)',
+                color: 'var(--text-muted)',
               }}
             >
               <X size={16} />
@@ -1196,10 +1196,10 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
           </div>
           <div style={{
             fontSize: 12,
-            color: 'var(--text-secondary, #94a3b8)',
+            color: 'var(--text-secondary)',
             marginBottom: 12,
             padding: '8px 12px',
-            background: 'var(--bg-light, #0f172a)',
+            background: 'var(--bg-base)',
             borderRadius: 6,
             fontStyle: 'italic',
           }}>
@@ -1210,7 +1210,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
             overflow: 'auto',
             fontSize: 14,
             lineHeight: 1.6,
-            color: 'var(--text-primary, #e2e8f0)',
+            color: 'var(--text-primary)',
           }}>
             <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeRaw, rehypeKatex]}>
               {explanationPopup.highlight.explanation || ''}

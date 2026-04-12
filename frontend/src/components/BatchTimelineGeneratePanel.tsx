@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   X, 
   Calendar, 
   Check, 
   Play, 
-  Pause, 
   CheckSquare, 
   Square,
   FileText,
@@ -12,11 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
   Search,
-  Settings,
-  Minimize2,
-  Maximize2,
-  Loader,
-  AlertCircle
+  Settings
 } from 'lucide-react';
 import { worldTimelineApi } from '../api';
 import DraggableProgressWindow from './DraggableProgressWindow';
@@ -231,9 +226,7 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
           setProgress({ current: completed, total });
           
           updateProgressItem(docId, {
-            status: result.success 
-              ? (result.eventCount && result.eventCount > 0 ? 'success' : 'no_events')
-              : 'error',
+            status: result.success ? 'success' : 'error',
             eventCount: result.eventCount,
             error: result.error
           });
@@ -281,7 +274,6 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
 
   const successCount = results.filter(r => r.success).length;
   const failedCount = results.filter(r => !r.success).length;
-  const isComplete = !generating && results.length > 0;
 
   return (
     <>
@@ -344,9 +336,9 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                         {concurrency}
                       </span>
                     </div>
-                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                      建议：并发数过高可能导致API限流，请根据实际情况调整
-                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                       建议：并发数过高可能导致API限流，请根据实际情况调整
+                     </div>
                   </div>
                   
                   <div className="form-group">
@@ -370,7 +362,7 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                         onClick={handleAddTag}
                         style={{
                           padding: '8px 16px',
-                          background: '#3b82f6',
+                          background: 'var(--primary-500)',
                           color: 'white',
                           border: 'none',
                           borderRadius: '4px',
@@ -415,9 +407,9 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                     
                     {historyTags.length > 0 && (
                       <div ref={historyTagDropdownRef}>
-                        <label style={{ fontSize: '12px', color: '#6b7280', marginBottom: '6px', display: 'block' }}>
-                          历史标签（点击快速添加）
-                        </label>
+                       <label style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px', display: 'block' }}>
+                           历史标签（点击快速添加）
+                         </label>
                         <div style={{ position: 'relative' }}>
                           <button
                             onClick={() => setHistoryTagDropdownOpen(!historyTagDropdownOpen)}
@@ -436,10 +428,10 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                               transition: 'all 0.2s ease'
                             }}
                           >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <Tag size={14} style={{ color: '#8b5cf6' }} />
-                              <span>全部历史标签 ({historyTags.length})</span>
-                            </div>
+                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                               <Tag size={14} style={{ color: 'var(--accent-500)' }} />
+                               <span>全部历史标签 ({historyTags.length})</span>
+                             </div>
                             {historyTagDropdownOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                           </button>
 
@@ -475,7 +467,7 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                                   background: '#f8fafc',
                                   borderRadius: '6px'
                                 }}>
-                                  <Search size={14} style={{ color: '#6b7280' }} />
+                                   <Search size={14} style={{ color: 'var(--text-muted)' }} />
                                   <input
                                     type="text"
                                     placeholder="搜索历史标签..."
@@ -498,7 +490,7 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                                         border: 'none',
                                         padding: 0,
                                         cursor: 'pointer',
-                                        color: '#6b7280'
+                                        color: 'var(--text-muted)'
                                       }}
                                     >
                                       <X size={14} />
@@ -516,7 +508,7 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                                   <div style={{
                                     textAlign: 'center',
                                     padding: '20px',
-                                    color: '#6b7280',
+                                    color: 'var(--text-muted)',
                                     fontSize: '13px'
                                   }}>
                                     {historyTagSearchQuery ? '没有找到匹配的标签' : '暂无历史标签'}
@@ -542,7 +534,7 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                                             alignItems: 'center',
                                             gap: '6px',
                                             padding: '8px 10px',
-                                            background: isSelected ? '#8b5cf6' : 'white',
+                                            background: isSelected ? 'var(--accent-500)' : 'white',
                                             border: '1px solid ' + (isSelected ? '#7c3aed' : '#e5e7eb'),
                                             borderRadius: '6px',
                                             cursor: isSelected ? 'default' : 'pointer',
@@ -573,23 +565,23 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                                   background: '#f8fafc',
                                   borderRadius: '0 0 8px 8px'
                                 }}>
-                                  <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '6px' }}>
-                                    已选择的标签:
-                                  </div>
+                                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                                     已选择的标签:
+                                   </div>
                                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                                     {selectedTags.map(tag => (
                                       <span
                                         key={tag}
                                         style={{
-                                          display: 'inline-flex',
-                                          alignItems: 'center',
-                                          gap: '4px',
-                                          padding: '3px 8px',
-                                          background: '#8b5cf6',
-                                          color: 'white',
-                                          borderRadius: '12px',
-                                          fontSize: '11px'
-                                        }}
+                                           display: 'inline-flex',
+                                           alignItems: 'center',
+                                           gap: '4px',
+                                           padding: '3px 8px',
+                                           background: 'var(--accent-500)',
+                                           color: 'white',
+                                           borderRadius: '12px',
+                                           fontSize: '11px'
+                                         }}
                                       >
                                         {tag}
                                         <button

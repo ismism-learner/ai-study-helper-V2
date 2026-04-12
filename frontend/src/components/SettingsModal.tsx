@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Settings, RefreshCw, Cloud, CheckCircle, XCircle, Loader2, ExternalLink, Copy } from 'lucide-react';
+import { Settings, RefreshCw, Cloud, CheckCircle, XCircle, Loader2, ExternalLink, Copy, Palette } from 'lucide-react';
 import { quarkApi } from '../api';
 import DuplicateManager from './DuplicateManager';
+import ThemeSwitcher from './ThemeSwitcher';
+import '../styles/theme-switcher.css';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -16,6 +18,9 @@ interface SettingsData {
   explain_prompt: string;
   optimize_prompt: string;
   quick_note_polish_prompt: string;
+  chapter_note_system_prompt: string;
+  chapter_note_prompt: string;
+  timeline_prompt: string;
   batch_upload_size: number;
 }
 
@@ -109,6 +114,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     explain_prompt: '',
     optimize_prompt: '',
     quick_note_polish_prompt: '',
+    chapter_note_system_prompt: '',
+    chapter_note_prompt: '',
+    timeline_prompt: '',
     batch_upload_size: 5,
   });
   const [fullApiKey, setFullApiKey] = useState('');
@@ -231,6 +239,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
         explain_prompt: settings.explain_prompt,
         optimize_prompt: settings.optimize_prompt,
         quick_note_polish_prompt: settings.quick_note_polish_prompt,
+        chapter_note_system_prompt: settings.chapter_note_system_prompt,
+        chapter_note_prompt: settings.chapter_note_prompt,
+        timeline_prompt: settings.timeline_prompt,
         batch_upload_size: settings.batch_upload_size,
       });
       alert('设置保存成功！用户自定义提示词将被持久化保存。');
@@ -479,6 +490,70 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 />
                 <small style={{ color: '#6c757d' }}>
                   使用 {"{content}"} 作为笔记内容的占位符。AI需返回JSON格式：{"{ title, content, tags }"}
+                </small>
+              </div>
+
+              {/* 章节笔记提示词 */}
+              <div className="prompt-section" style={{ marginBottom: 20 }}>
+                <div className="prompt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <h4 style={{ margin: 0, color: '#495057' }}>章节笔记系统提示词</h4>
+                </div>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 200, fontFamily: 'monospace', fontSize: 13 }}
+                  value={settings.chapter_note_system_prompt}
+                  onChange={(e) => setSettings({ ...settings, chapter_note_system_prompt: e.target.value })}
+                  placeholder="输入章节笔记整理的系统提示词..."
+                />
+                <small style={{ color: '#6c757d' }}>
+                  用于PDF书籍OCR文本整理成Markdown笔记。包含代码块识别、数学公式处理等规则。
+                </small>
+              </div>
+
+              <div className="prompt-section" style={{ marginBottom: 20 }}>
+                <div className="prompt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <h4 style={{ margin: 0, color: '#495057' }}>章节笔记用户提示词</h4>
+                </div>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 100, fontFamily: 'monospace', fontSize: 13 }}
+                  value={settings.chapter_note_prompt}
+                  onChange={(e) => setSettings({ ...settings, chapter_note_prompt: e.target.value })}
+                  placeholder="输入章节笔记的用户提示词模板..."
+                />
+                <small style={{ color: '#6c757d' }}>
+                  使用 {"{chapter_title}"} 和 {"{original_text}"} 作为占位符。
+                </small>
+              </div>
+
+              {/* 时间轴提示词 */}
+              <div className="prompt-section" style={{ marginBottom: 20 }}>
+                <div className="prompt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <h4 style={{ margin: 0, color: '#495057' }}>时间轴提取提示词</h4>
+                </div>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 150, fontFamily: 'monospace', fontSize: 13 }}
+                  value={settings.timeline_prompt}
+                  onChange={(e) => setSettings({ ...settings, timeline_prompt: e.target.value })}
+                  placeholder="输入时间轴事件提取的提示词..."
+                />
+                <small style={{ color: '#6c757d' }}>
+                  使用 {"{content}"} 作为文档内容的占位符。用于从文档中提取历史事件时间点。
+                </small>
+              </div>
+
+              {/* 主题切换 */}
+              <div className="prompt-section" style={{ marginBottom: 20 }}>
+                <div className="prompt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <h4 style={{ margin: 0, color: '#495057', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Palette size={16} />
+                    主题切换
+                  </h4>
+                </div>
+                <ThemeSwitcher />
+                <small style={{ color: '#6c757d', marginTop: 8, display: 'block' }}>
+                  选择界面主题配色方案。
                 </small>
               </div>
 

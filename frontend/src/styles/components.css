@@ -177,7 +177,7 @@
 .input:focus {
   outline: none;
   border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 3px hsla(var(--hue-primary), var(--saturation-primary), 60%, 0.15);
 }
 
 .input:disabled {
@@ -216,7 +216,7 @@
 .select:focus {
   outline: none;
   border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 3px hsla(var(--hue-primary), var(--saturation-primary), 60%, 0.15);
 }
 
 .form-group {
@@ -615,7 +615,7 @@
 
 .search-box:focus-within {
   border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 3px hsla(var(--hue-primary), var(--saturation-primary), 60%, 0.15);
 }
 
 .search-box input {

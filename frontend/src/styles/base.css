@@ -185,9 +185,28 @@
   --glass-border: hsla(var(--hue-neutral), 12%, 65%, 0.1);
   --glass-blur: 12px;
   
-  /* 渐变色 */
-  --gradient-primary: linear-gradient(135deg, var(--primary-500), var(--accent-500));
-  --gradient-success: linear-gradient(135deg, var(--success-500), hsl(var(--hue-success), 71%, 55%));
+  /* 渐变色 - 按钮和标题使用 */
+  --gradient-primary: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+  --gradient-primary-hover: linear-gradient(135deg, var(--primary-400), var(--primary-500));
+  --gradient-accent: linear-gradient(135deg, var(--accent-500), var(--accent-600));
+  --gradient-success: linear-gradient(135deg, var(--success-500), var(--success-400));
+  --gradient-danger: linear-gradient(135deg, var(--danger-500), var(--danger-600));
+  --gradient-warning: linear-gradient(135deg, var(--warning-500), var(--warning-400));
+  
+  /* 节点画布专用变量 */
+  --node-bg-formula: hsl(270, 50%, 15%);
+  --node-border-formula: hsl(270, 70%, 60%);
+  --node-bg-code: hsl(210, 50%, 15%);
+  --node-border-code: hsl(210, 70%, 55%);
+  --node-bg-chart: hsl(150, 40%, 15%);
+  --node-border-chart: hsl(150, 60%, 45%);
+  --node-bg-geometry: hsl(35, 60%, 15%);
+  --node-border-geometry: hsl(35, 90%, 50%);
+  --node-bg-text: hsl(0, 0%, 18%);
+  --node-border-text: hsl(0, 0%, 40%);
+  --node-handle-color: var(--accent-500);
+  --node-selected-border: var(--accent-500);
+  --node-selected-shadow: hsla(270, 70%, 60%, 0.3);
   
   /* 状态颜色 - 用于不同类型的高亮 */
   --state-info: var(--primary-500);
@@ -211,6 +230,60 @@
 
   color: var(--text-primary);
   background-color: var(--bg-base);
+}
+
+/* ========================================
+   主题变体定义
+   ======================================== */
+
+/* 红黑主题 */
+[data-theme="red-dark"] {
+  --hue-primary: 0;
+  --hue-accent: 15;
+  --hue-success: 142;
+  --hue-warning: 38;
+  --hue-danger: 0;
+}
+
+/* 绿黑主题 */
+[data-theme="green-dark"] {
+  --hue-primary: 142;
+  --hue-accent: 160;
+  --hue-success: 142;
+  --hue-warning: 45;
+  --hue-danger: 0;
+}
+
+/* 紫黑主题 */
+[data-theme="purple-dark"] {
+  --hue-primary: 270;
+  --hue-accent: 280;
+  --hue-success: 142;
+  --hue-warning: 38;
+  --hue-danger: 0;
+}
+
+/* 白蓝主题（亮色） */
+[data-theme="light-blue"] {
+  --hue-primary: 217;
+  --hue-accent: 258;
+  --hue-neutral: 220;
+  
+  /* 反转背景和文字 */
+  --bg-base: hsl(var(--hue-neutral), 100%, 98%);
+  --bg-surface: hsl(var(--hue-neutral), 60%, 96%);
+  --bg-elevated: hsl(var(--hue-neutral), 40%, 94%);
+  --bg-hover: hsla(var(--hue-neutral), 30%, 50%, 0.1);
+  --bg-active: hsla(var(--hue-primary), var(--saturation-primary), 60%, 0.1);
+  
+  --text-primary: hsl(var(--hue-neutral), 30%, 10%);
+  --text-secondary: hsl(var(--hue-neutral), 15%, 40%);
+  --text-muted: hsl(var(--hue-neutral), 10%, 50%);
+  --text-inverse: hsl(var(--hue-neutral), 100%, 98%);
+  
+  --border-default: hsl(var(--hue-neutral), 20%, 88%);
+  --border-subtle: hsl(var(--hue-neutral), 20%, 92%);
+  --border-strong: hsl(var(--hue-neutral), 20%, 80%);
 }
 
 *,

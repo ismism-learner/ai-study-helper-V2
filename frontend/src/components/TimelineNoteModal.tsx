@@ -241,15 +241,15 @@ const TimelineNoteModal: React.FC<TimelineNoteModalProps> = ({
         overflowY: 'auto',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
         border: '1px solid rgba(255, 255, 255, 0.1)',
-        color: '#e2e8f0',
-      }}>
+color: 'var(--text-primary)',
+        }}>
         <div className="modal-header" style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: '20px',
         }}>
-          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#e2e8f0' }}>
+          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
             {selectedEvent ? (
               <>
                 <Edit3 size={20} />
@@ -308,7 +308,7 @@ const TimelineNoteModal: React.FC<TimelineNoteModalProps> = ({
               borderRadius: '6px',
               fontSize: '14px',
               background: 'rgba(255, 255, 255, 0.1)',
-              color: '#e2e8f0',
+              color: 'var(--text-primary)',
             }}
           />
         </div>
@@ -330,7 +330,7 @@ const TimelineNoteModal: React.FC<TimelineNoteModalProps> = ({
               fontSize: '14px',
               resize: 'vertical',
               background: 'rgba(255, 255, 255, 0.1)',
-              color: '#e2e8f0',
+              color: 'var(--text-primary)',
             }}
           />
           <button
@@ -340,7 +340,7 @@ const TimelineNoteModal: React.FC<TimelineNoteModalProps> = ({
             style={{
               marginTop: '8px',
               padding: '8px 16px',
-              background: isGenerating ? '#9ca3af' : '#8b5cf6',
+              background: isGenerating ? '#9ca3af' : 'var(--accent-500)',
               color: 'white',
               border: 'none',
               borderRadius: '4px',
@@ -388,49 +388,49 @@ const TimelineNoteModal: React.FC<TimelineNoteModalProps> = ({
                 border: '1px solid rgba(255, 255, 255, 0.2)',
                 borderRadius: '6px',
                 fontSize: '14px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                color: '#e2e8f0',
-              }}
-            />
-            <input
-              type="number"
-              value={month ?? ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                setMonth(val === '' ? null : parseInt(val));
-              }}
-              placeholder="月（可选）"
-              min={1}
-              max={12}
-              style={{
-                flex: 1,
-                padding: '8px',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '6px',
-                fontSize: '14px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                color: '#e2e8f0',
-              }}
-            />
-            <input
-              type="number"
-              value={day ?? ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                setDay(val === '' ? null : parseInt(val));
-              }}
-              placeholder="日（可选）"
-              min={1}
-              max={31}
-              style={{
-                flex: 1,
-                padding: '8px',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '6px',
-                fontSize: '14px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                color: '#e2e8f0',
-              }}
+background: 'rgba(255, 255, 255, 0.1)',
+                 color: 'var(--text-primary)',
+               }}
+             />
+             <input
+               type="number"
+               value={month ?? ''}
+               onChange={(e) => {
+                 const val = e.target.value;
+                 setMonth(val === '' ? null : parseInt(val));
+               }}
+               placeholder="月（可选）"
+               min={1}
+               max={12}
+               style={{
+                 flex: 1,
+                 padding: '8px',
+                 border: '1px solid rgba(255, 255, 255, 0.2)',
+                 borderRadius: '6px',
+                 fontSize: '14px',
+                 background: 'rgba(255, 255, 255, 0.1)',
+                 color: 'var(--text-primary)',
+               }}
+             />
+             <input
+               type="number"
+               value={day ?? ''}
+               onChange={(e) => {
+                 const val = e.target.value;
+                 setDay(val === '' ? null : parseInt(val));
+               }}
+               placeholder="日（可选）"
+               min={1}
+               max={31}
+               style={{
+                 flex: 1,
+                 padding: '8px',
+                 border: '1px solid rgba(255, 255, 255, 0.2)',
+                 borderRadius: '6px',
+                 fontSize: '14px',
+                 background: 'rgba(255, 255, 255, 0.1)',
+                 color: 'var(--text-primary)',
+               }}
             />
           </div>
         </div>
@@ -452,7 +452,7 @@ const TimelineNoteModal: React.FC<TimelineNoteModalProps> = ({
               borderRadius: '6px',
               fontSize: '14px',
               background: 'rgba(255, 255, 255, 0.1)',
-              color: '#e2e8f0',
+              color: 'var(--text-primary)',
             }}
           />
         </div>
@@ -474,15 +474,15 @@ const TimelineNoteModal: React.FC<TimelineNoteModalProps> = ({
                 border: '1px solid rgba(255, 255, 255, 0.2)',
                 borderRadius: '6px',
                 fontSize: '14px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                color: '#e2e8f0',
-              }}
-            />
-            <button
-              onClick={handleAddTag}
-              style={{
-                padding: '8px 16px',
-                background: '#8b5cf6',
+background: 'rgba(255, 255, 255, 0.1)',
+                 color: 'var(--text-primary)',
+               }}
+             />
+             <button
+               onClick={handleAddTag}
+               style={{
+                 padding: '8px 16px',
+                background: 'var(--accent-500)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '6px',
@@ -503,7 +503,7 @@ const TimelineNoteModal: React.FC<TimelineNoteModalProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
-                color: '#e2e8f0',
+                color: 'var(--text-primary)',
               }}>
                 {tag}
                 <button
@@ -514,7 +514,7 @@ const TimelineNoteModal: React.FC<TimelineNoteModalProps> = ({
                     cursor: 'pointer',
                     fontSize: '14px',
                     lineHeight: '1',
-                    color: '#e2e8f0',
+                    color: 'var(--text-primary)',
                   }}
                 >
                   ×
@@ -570,7 +570,7 @@ const TimelineNoteModal: React.FC<TimelineNoteModalProps> = ({
                             }
                           }}
                           style={{
-                            background: isAdded ? '#8b5cf6' : 'var(--bg-surface, #334155)',
+                            background: isAdded ? 'var(--accent-500)' : 'var(--bg-surface, #334155)',
                             color: isAdded ? 'white' : 'var(--text-primary, #e2e8f0)',
                             border: '1px solid var(--border-color, #475569)',
                             borderRadius: '12px',
@@ -602,7 +602,7 @@ const TimelineNoteModal: React.FC<TimelineNoteModalProps> = ({
             style={{
               padding: '10px 20px',
               background: 'rgba(255, 255, 255, 0.1)',
-              color: '#e2e8f0',
+              color: 'var(--text-primary)',
               border: '1px solid rgba(255, 255, 255, 0.2)',
               borderRadius: '6px',
               cursor: 'pointer',
@@ -616,7 +616,7 @@ const TimelineNoteModal: React.FC<TimelineNoteModalProps> = ({
             disabled={isLoading}
             style={{
               padding: '10px 20px',
-              background: '#8b5cf6',
+              background: 'var(--accent-500)',
               color: 'white',
               border: 'none',
               borderRadius: '6px',

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Document, Folder } from '../types';
-import { FileText, Trash2, Upload, Clock, Highlighter, Move, FolderOpen, X, Check, Home, FileText as FileTextIcon, Loader, Square, CheckSquare, RefreshCw, AlertTriangle, Calendar, Sparkles } from 'lucide-react';
+import { FileText, Trash2, Upload, Clock, Highlighter, Move, FolderOpen, X, Check, Home, FileText as FileTextIcon, Loader, Square, CheckSquare, Calendar, Sparkles } from 'lucide-react';
 import FolderManager from './FolderManager';
 import BatchTimelineGeneratePanel from './BatchTimelineGeneratePanel';
 
@@ -810,7 +810,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <Check 
                           size={10} 
                           style={{ 
-                            color: hasTimelineNotes ? '#8b5cf6' : '#10b981' 
+                            color: hasTimelineNotes ? 'var(--accent-500)' : '#10b981' 
                           }} 
                         />
                       )}
@@ -834,7 +834,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                           </span>
                         )}
                         {hasTimelineNotes && (
-                          <span className="meta-item timeline-count" style={{ color: '#8b5cf6' }}>
+                          <span className="meta-item timeline-count" style={{ color: 'var(--accent-500)' }}>
                             <Calendar size={10} />
                             {doc.timeline_events_count}
                           </span>
@@ -936,7 +936,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="modal batch-generate-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 900 }}>
             <div className="modal-header">
               <h3>批量生成正文</h3>
-              <span style={{ fontSize: 12, color: '#6b7280', marginLeft: 8 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>
                 批次大小: {batchGenerate.batchSize} 个文档/批次
               </span>
               <button 
@@ -1050,7 +1050,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <span style={{ fontSize: 11, color: '#ef4444' }}>✗ 失败</span>
                           )}
                           {streamState?.streamingContent && (
-                            <span style={{ fontSize: 10, color: '#6b7280' }}>
+                            <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
                               {streamState.streamingContent.length} 字符
                             </span>
                           )}

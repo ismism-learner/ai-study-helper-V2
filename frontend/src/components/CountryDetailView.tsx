@@ -586,17 +586,17 @@ const CountryDetailView: React.FC<CountryDetailViewProps> = ({ country, onBookSe
               {quarkUploadResults.length === 0 ? (
                 <>
                   <div className="quark-upload-info" style={{ marginBottom: 16 }}>
-                    <p style={{ margin: '0 0 8px 0', color: '#666' }}>
+                    <p style={{ margin: '0 0 8px 0', color: 'var(--text-muted)' }}>
                       将 {country.name} 的书籍上传到夸克网盘，按标签分类存储。
                     </p>
-                    <p style={{ margin: 0, color: '#666' }}>
+                    <p style={{ margin: 0, color: 'var(--text-muted)' }}>
                       将上传 {books.filter(b => !b.quark_upload_status || b.quark_upload_status === 'not_uploaded').length} 本未上传的书籍
                     </p>
                   </div>
 
-                  <div style={{ background: '#f8f9fa', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+                  <div style={{ background: 'var(--bg-surface)', padding: 12, borderRadius: 8, marginBottom: 16 }}>
                     <h4 style={{ margin: '0 0 8px 0', fontSize: 14 }}>上传说明：</h4>
-                    <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: '#666' }}>
+                    <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: 'var(--text-muted)' }}>
                       <li>书籍将按标签分类到「我的电子图书馆/标签名」文件夹</li>
                       <li>每个标签文件夹会生成一个分享链接</li>
                       <li>相同标签的书籍共享同一个文件夹链接</li>
@@ -613,17 +613,17 @@ const CountryDetailView: React.FC<CountryDetailViewProps> = ({ country, onBookSe
                         padding: 12, 
                         marginBottom: 8, 
                         borderRadius: 8,
-                        background: result.success ? '#d4edda' : '#f8d7da',
-                        border: `1px solid ${result.success ? '#c3e6cb' : '#f5c6cb'}`
+                        background: result.success ? 'var(--success-100)' : 'var(--danger-100)',
+                        border: `1px solid ${result.success ? 'var(--success-200)' : 'var(--danger-200)'}`
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                         {result.success ? (
-                          <CheckCircle size={16} color="#155724" />
+                          <CheckCircle size={16} color="var(--success-500)" />
                         ) : (
-                          <XCircle size={16} color="#721c24" />
+                          <XCircle size={16} color="var(--danger-500)" />
                         )}
-                        <span style={{ fontWeight: 500, color: result.success ? '#155724' : '#721c24' }}>
+                        <span style={{ fontWeight: 500, color: result.success ? 'var(--success-700)' : 'var(--danger-700)' }}>
                           {result.book_title}
                         </span>
                       </div>
@@ -634,13 +634,13 @@ const CountryDetailView: React.FC<CountryDetailViewProps> = ({ country, onBookSe
                             href={result.share_url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            style={{ color: '#0066cc', fontSize: 12 }}
+                            style={{ color: 'var(--primary-500)', fontSize: 12 }}
                           >
                             {result.share_url}
                             <ExternalLink size={10} style={{ marginLeft: 4, verticalAlign: 'middle' }} />
                           </a>
                           {result.share_password && (
-                            <span style={{ fontSize: 12, color: '#666' }}>
+                            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                               提取码: {result.share_password}
                             </span>
                           )}
@@ -656,7 +656,7 @@ const CountryDetailView: React.FC<CountryDetailViewProps> = ({ country, onBookSe
                       )}
                       
                       {!result.success && (
-                        <div style={{ fontSize: 12, color: '#721c24', marginTop: 4 }}>
+                        <div style={{ fontSize: 12, color: 'var(--danger-700)', marginTop: 4 }}>
                           {result.message}
                         </div>
                       )}

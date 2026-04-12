@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   X, 
   Minimize2, 
@@ -7,9 +7,6 @@ import {
   Save, 
   Tag, 
   Plus, 
-  ChevronDown, 
-  ChevronUp, 
-  Search,
   Calendar,
   Sparkles,
   Loader,
@@ -50,7 +47,6 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
   const [tagInput, setTagInput] = useState('');
   const [historyTags, setHistoryTags] = useState<string[]>([]);
   const [historyTagDropdownOpen, setHistoryTagDropdownOpen] = useState(false);
-  const [historyTagSearchQuery, setHistoryTagSearchQuery] = useState('');
   const historyTagDropdownRef = useRef<HTMLDivElement>(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -83,14 +79,6 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
       console.error('Failed to load history tags:', error);
     }
   };
-
-  const filteredHistoryTags = useMemo(() => {
-    if (!historyTagSearchQuery.trim()) {
-      return historyTags;
-    }
-    const query = historyTagSearchQuery.toLowerCase();
-    return historyTags.filter(tag => tag.toLowerCase().includes(query));
-  }, [historyTags, historyTagSearchQuery]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.window-controls') || 
@@ -287,13 +275,6 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
     setTimeout(() => setTagFeedback(null), 2000);
   };
 
-  const removeEventTag = (eventIndex: number, tag: string) => {
-    const newEventTags = new Map(eventTags);
-    const currentTags = newEventTags.get(eventIndex) || [];
-    newEventTags.set(eventIndex, currentTags.filter(t => t !== tag));
-    setEventTags(newEventTags);
-  };
-
   if (!isOpen) return null;
 
   const isProcessing = isGenerating || isSaving;
@@ -465,7 +446,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
                     onClick={handleAddTag}
                     style={{
                       padding: '6px 12px',
-                      background: '#3b82f6',
+                      background: 'var(--primary-500)',
                       color: 'white',
                       border: 'none',
                       borderRadius: '4px',
@@ -506,7 +487,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
                 disabled={isGenerating}
                 style={{
                   padding: '10px 16px',
-                  background: isGenerating ? '#9ca3af' : '#8b5cf6',
+                  background: isGenerating ? '#9ca3af' : 'var(--accent-500)',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
@@ -528,8 +509,8 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
 
           {isGenerating && (
             <div style={{ textAlign: 'center', padding: '20px' }}>
-              <Loader size={32} className="spinning" style={{ margin: '0 auto 12px', color: '#8b5cf6' }} />
-              <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>
+              <Loader size={32} className="spinning" style={{ margin: '0 auto 12px', color: 'var(--accent-500)' }} />
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: 0 }}>
                 AI正在分析文档内容...
               </p>
             </div>
@@ -578,7 +559,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
                   </span>
                   {selectedEvents.size > 0 && (
                     <span style={{
-                      background: '#8b5cf6',
+                      background: 'var(--accent-500)',
                       color: 'white',
                       padding: '1px 6px',
                       borderRadius: '10px',
@@ -594,7 +575,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
                       onClick={() => setShowTagPanel(!showTagPanel)}
                       style={{
                         padding: '4px 8px',
-                        background: showTagPanel ? '#8b5cf6' : '#f3f4f6',
+                        background: showTagPanel ? 'var(--accent-500)' : '#f3f4f6',
                         color: showTagPanel ? 'white' : '#374151',
                         border: 'none',
                         borderRadius: '4px',
@@ -653,7 +634,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
                       disabled={!batchTagInput.trim()}
                       style={{
                         padding: '6px 10px',
-                        background: batchTagInput.trim() ? '#8b5cf6' : '#9ca3af',
+                        background: batchTagInput.trim() ? 'var(--accent-500)' : '#9ca3af',
                         color: 'white',
                         border: 'none',
                         borderRadius: '4px',
@@ -715,8 +696,8 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
                           width: '14px',
                           height: '14px',
                           borderRadius: '3px',
-                          border: isSelected ? '2px solid #8b5cf6' : '2px solid #d1d5db',
-                          background: isSelected ? '#8b5cf6' : 'transparent',
+                          border: isSelected ? '2px solid var(--accent-500)' : '2px solid #d1d5db',
+                          background: isSelected ? 'var(--accent-500)' : 'transparent',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -739,12 +720,12 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
                         {eventSpecificTags.length > 0 && (
                           <div style={{ display: 'flex', gap: '2px' }}>
                             {eventSpecificTags.slice(0, 2).map((tag, tagIndex) => (
-                              <span 
-                                key={tagIndex} 
+                              <span
+                                key={tagIndex}
                                 style={{
                                   fontSize: '9px',
                                   padding: '1px 4px',
-                                  background: '#8b5cf6',
+                                  background: 'var(--accent-500)',
                                   color: 'white',
                                   borderRadius: '6px',
                                 }}
@@ -788,7 +769,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
       )}
 
       {isMinimized && (
-        <div style={{ padding: '8px 12px', fontSize: '12px', color: '#6b7280' }}>
+        <div style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--text-muted)' }}>
           {isGenerating ? (
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Loader size={12} className="spinning" />

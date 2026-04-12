@@ -7,8 +7,7 @@ import DocumentManager from './DocumentManager';
 import TimelinePanel from './TimelinePanel';
 import DashboardPanel from './DashboardPanel';
 import BookReaderView from './BookReaderView';
-import EpubReaderView from './EpubReaderView';
-import { Library, FileText, Clock, Tag } from 'lucide-react';
+import { Library, Clock, Tag } from 'lucide-react';
 
 type ViewType = 'map' | 'tagLibrary' | 'documents' | 'timeline' | 'bookReader';
 
@@ -127,7 +126,6 @@ const LibraryView: React.FC<LibraryViewProps> = ({
         {currentView === 'tagLibrary' && (
           <TagLibraryView
             selectedTag={selectedTag}
-            onBack={() => { setSelectedTag(null); setCurrentView('map'); }}
             onBookSelect={handleBookSelect}
           />
         )}

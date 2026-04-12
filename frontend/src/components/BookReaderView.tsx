@@ -1,13 +1,17 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { BookDocument } from '../types';
-import { bookApi, pdfOcrApi } from '../api';
-import { ArrowLeft, ZoomIn, ZoomOut, Maximize2, Minimize2, FileText, Download, RefreshCw, BookOpen, ChevronLeft, ChevronRight, GripVertical, ScanText, X } from 'lucide-react';
+import { bookApi, pdfOcrApi, chapterNoteApi } from '../api';
+import { ArrowLeft, ZoomIn, ZoomOut, Maximize2, Minimize2, FileText, Download, RefreshCw, BookOpen, ChevronLeft, ChevronRight, GripVertical, ScanText, X, Sparkles } from 'lucide-react';
 import PDFNotesPanel from './PDFNotesPanel';
-import EpubReaderView from './EpubReaderView';
+
+const EpubReaderView = lazy(() => import('./EpubReaderView'));
 import PDFOCRModal from './PDFOCRModal';
+import ChapterNoteViewer from './ChapterNoteViewer';
+import NoteCardPanel from './NoteCardPanel';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import '../styles/note-card.css';
 
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
@@ -18,6 +22,7 @@ interface BookReaderViewProps {
 }
 
 const BUFFER_PAGES = 3;
+const UNLOAD_BUFFER_PAGES = 5;
 const PAGE_HEIGHT_ESTIMATE = 800;
 
 const SUPPORTED_EXTENSIONS = ['pdf'];
@@ -57,7 +62,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   const [book] = useState<BookDocument>(propsBook);
   const [containerWidth, setContainerWidth] = useState<number>(800);
   const [visiblePages, setVisiblePages] = useState<Set<number>>(new Set());
-  const [pageHeights, setPageHeights] = useState<Map<number, number>>(new Map());
+  const pageHeightsRef = useRef<Map<number, number>>(new Map());
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [jumpPageInput, setJumpPageInput] = useState<string>('');
   
@@ -73,12 +78,17 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [editMode, setEditMode] = useState(false);
   const [editText, setEditText] = useState<string>('');
-  const [searchText, setSearchText] = useState<string>('');
-  const [searchResults, setSearchResults] = useState<number[]>([]);
-  const [currentSearchIndex, setCurrentSearchIndex] = useState<number>(-1);
+  const [editChapters, setEditChapters] = useState<string[]>([]);
+  const [editCurrentChapter, setEditCurrentChapter] = useState(0);
   const [ocrChapters, setOcrChapters] = useState<string[]>([]);
   const [currentOcrChapter, setCurrentOcrChapter] = useState(0);
   const [showChapterNav, setShowChapterNav] = useState(false);
+  const [noteViewMode, setNoteViewMode] = useState(false);
+  const [noteMarkdown, setNoteMarkdown] = useState<string | null>(null);
+  const [isGeneratingNote, setIsGeneratingNote] = useState(false);
+  const [chapterNoteId, setChapterNoteId] = useState<string | null>(null);
+  const [rightPanelMode, setRightPanelMode] = useState<'ocr' | 'cards'>('ocr');
+  const [chapterNotesMap, setChapterNotesMap] = useState<Map<number, { chapterTitle: string; chapterIndex: number; markdownContent: string | null; isGenerating: boolean; noteId: string | null }>>(new Map());
   const [contextMenu, setContextMenu] = useState<{
     show: boolean;
     x: number;
@@ -100,6 +110,9 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   const lastSaveTimeRef = useRef<number>(Date.now());
   const accumulatedSecondsRef = useRef<number>(0);
   const isScrollingProgrammatically = useRef<boolean>(false);
+  const pendingSelectionRef = useRef<{ start: number; end: number } | null>(null);
+  const editChaptersRef = useRef<string[]>([]);
+  const editCurrentChapterRef = useRef<number>(0);
 
   const pdfContainerRef = useCallback((node: HTMLDivElement | null) => {
     if (showOCRPanel) {
@@ -114,11 +127,34 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   }, [currentPage]);
 
   useEffect(() => {
+    if (pendingSelectionRef.current && textareaRef.current) {
+      const { start, end } = pendingSelectionRef.current;
+      pendingSelectionRef.current = null;
+      const textarea = textareaRef.current;
+      textarea.focus();
+      textarea.setSelectionRange(start, end);
+      const lineHeight = parseInt(getComputedStyle(textarea).lineHeight) || 25;
+      const textBefore = textarea.value.substring(0, start);
+      const linesBefore = textBefore.split('\n').length;
+      const scrollTop = (linesBefore - 1) * lineHeight - textarea.clientHeight / 2;
+      textarea.scrollTop = Math.max(0, scrollTop);
+    }
+  }, [editCurrentChapter]);
+
+  useEffect(() => {
+    editChaptersRef.current = editChapters;
+  }, [editChapters]);
+
+  useEffect(() => {
+    editCurrentChapterRef.current = editCurrentChapter;
+  }, [editCurrentChapter]);
+
+  useEffect(() => {
     const targetPage = initialPage || book.last_read_page || 1;
     setCurrentPage(targetPage);
     currentPageRef.current = targetPage;
     setVisiblePages(new Set());
-    setPageHeights(new Map());
+    pageHeightsRef.current = new Map();
     readingStartTimeRef.current = Date.now();
     lastSaveTimeRef.current = Date.now();
     accumulatedSecondsRef.current = 0;
@@ -321,10 +357,10 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     
     for (const line of lines) {
       if (line.trim().startsWith(CHAPTER_MARKER)) {
-        if (currentChapter.length > 0) {
-          chapters.push(currentChapter.join('\n'));
-        }
-        currentChapter = [line.trim().substring(CHAPTER_MARKER.length).trim()];
+        // Always push current chapter content to preserve all ==== markers for lossless round-trip
+        chapters.push(currentChapter.join('\n'));
+        // Preserve raw content after ==== (including original spacing) for lossless round-trip
+        currentChapter = [line.trim().substring(CHAPTER_MARKER.length)];
       } else {
         currentChapter.push(line);
       }
@@ -334,20 +370,43 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
       chapters.push(currentChapter.join('\n'));
     }
     
+    // Filter out trailing empty chapter (from text ending with ====)
+    while (chapters.length > 1 && chapters[chapters.length - 1] === '') {
+      chapters.pop();
+    }
+    
     return chapters;
+  }, []);
+
+  /** Convert parseChapters output to edit format: re-add ==== prefix to chapters 1+ */
+  const toEditChapters = useCallback((chapters: string[]): string[] => {
+    if (chapters.length <= 1) return [...chapters];
+    // If first chapter is empty (text starts with ====), omit it to avoid leading \n on reassembly
+    const firstChapter = chapters[0] === '' ? [] : [chapters[0]];
+    return [
+      ...firstChapter,
+      ...chapters.slice(chapters[0] === '' ? 1 : 1).map(ch => '====' + ch)
+    ];
+  }, []);
+
+  /** Reassemble editChapters (with ==== prefixes) back into full OCR text */
+  const reassembleFromEditChapters = useCallback((chapters: string[]): string => {
+    return chapters.map(ch => ch.replace(/\n+$/, '')).join('\n');
   }, []);
 
   useEffect(() => {
     if (ocrText) {
       const chapters = parseChapters(ocrText);
+      // Filter out empty chapters for view mode display (keep them in edit mode for lossless round-trip)
+      const displayChapters = chapters.filter(c => c.length > 0);
       setOcrChapters(prevChapters => {
-        if (prevChapters.length === chapters.length) {
-          return chapters;
+        if (prevChapters.length === displayChapters.length) {
+          return displayChapters;
         }
         setCurrentOcrChapter(0);
-        return chapters;
+        return displayChapters;
       });
-      setShowChapterNav(chapters.length > 1);
+      setShowChapterNav(displayChapters.length > 1);
     } else {
       setOcrChapters([]);
       setShowChapterNav(false);
@@ -356,6 +415,9 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
 
   const handleChapterChange = useCallback((chapterIndex: number) => {
     setCurrentOcrChapter(chapterIndex);
+    setChapterNoteId(null);
+    setNoteMarkdown(null);
+    setNoteViewMode(false);
     if (ocrPanelRef.current) {
       ocrPanelRef.current.scrollTop = 0;
     }
@@ -440,6 +502,15 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     }
   }, [book.file_path]);
 
+  useEffect(() => {
+    if (!editMode || !editText) return;
+    const handleBeforeUnload = () => {
+      saveOCRText(editText);
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [editMode, editText, saveOCRText]);
+
   const handleDetectTags = useCallback(() => {
     if (!ocrText) return;
     
@@ -493,9 +564,28 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   const handleEnterEditMode = useCallback(() => {
     if (!ocrText) return;
     setEditText(ocrText);
+    const parsed = parseChapters(ocrText);
+    const editFormat = toEditChapters(parsed);
+    setEditChapters(editFormat);
+    // Map currentOcrChapter (index in filtered display chapters) to editCurrentChapter (index in edit format)
+    // ocrChapters = parsed.filter(non-empty), editChapters = toEditChapters(parsed)
+    // We need to find which editChapters index corresponds to the currently viewed chapter
+    const nonEmptyParsed = parsed.filter(c => c.length > 0);
+    if (currentOcrChapter < nonEmptyParsed.length) {
+      const targetContent = nonEmptyParsed[currentOcrChapter];
+      // Find this content in editFormat
+      const editIndex = editFormat.findIndex(ch => {
+        // For chapters 1+ in editFormat, the ==== prefix is prepended, so compare after stripping it
+        const chContent = ch.startsWith('====') ? ch : ch;
+        return chContent === targetContent || ch === targetContent;
+      });
+      setEditCurrentChapter(editIndex >= 0 ? editIndex : 0);
+    } else {
+      setEditCurrentChapter(0);
+    }
     setEditMode(true);
     setShowTagDetector(false);
-  }, [ocrText]);
+  }, [ocrText, currentOcrChapter, parseChapters, toEditChapters]);
 
   const handleCloseOCRPanel = useCallback(async () => {
     if (ocrText) {
@@ -519,69 +609,71 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   }, [book.file_path]);
 
   const handleExitEditMode = useCallback(async (save: boolean) => {
-    if (save && editText !== ocrText) {
-      setOcrText(editText);
-      await saveOCRText(editText);
-      setFixNotification('已保存编辑');
-      setTimeout(() => setFixNotification(null), 2000);
+    if (save && editChapters.length > 0) {
+      const fullText = reassembleFromEditChapters(editChapters);
+      if (fullText !== ocrText) {
+        setOcrText(fullText);
+        await saveOCRText(fullText);
+        setFixNotification('已保存编辑');
+        setTimeout(() => setFixNotification(null), 2000);
+      }
     }
     setEditMode(false);
     setEditText('');
-    setSearchText('');
-    setSearchResults([]);
-    setCurrentSearchIndex(-1);
-  }, [editText, ocrText, saveOCRText]);
+    setEditChapters([]);
+    setEditCurrentChapter(0);
+  }, [editChapters, ocrText, saveOCRText, reassembleFromEditChapters]);
 
-  const handleSearch = useCallback((text: string) => {
-    setSearchText(text);
-    if (!text.trim() || !editText) {
-      setSearchResults([]);
-      setCurrentSearchIndex(-1);
-      return;
+  const handleEditChapterChange = useCallback((newIndex: number) => {
+    setEditCurrentChapter(newIndex);
+    if (ocrPanelRef.current) {
+      ocrPanelRef.current.scrollTop = 0;
     }
-    
-    const indices: number[] = [];
-    let index = 0;
-    const lowerText = editText.toLowerCase();
-    const lowerSearch = text.toLowerCase();
-    
-    while ((index = lowerText.indexOf(lowerSearch, index)) !== -1) {
-      indices.push(index);
-      index += 1;
+  }, []);
+
+  const reparseDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleEditTextChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    const newEditChapters = [...editChaptersRef.current];
+    newEditChapters[editCurrentChapterRef.current] = newValue;
+    setEditChapters(newEditChapters);
+
+    const newFullText = reassembleFromEditChapters(newEditChapters);
+    setEditText(newFullText);
+
+    const hasChapterMarker = newValue.includes('====');
+    if (hasChapterMarker) {
+      if (reparseDebounceRef.current) {
+        clearTimeout(reparseDebounceRef.current);
+      }
+      reparseDebounceRef.current = setTimeout(() => {
+        const parsedChapters = parseChapters(newFullText);
+        const newEditFormat = toEditChapters(parsedChapters);
+        if (newEditFormat.length !== newEditChapters.length) {
+          const cursorPos = e.target.selectionStart;
+          const textBeforeCursor = newValue.substring(0, cursorPos);
+          const markersInCurrentBeforeCursor = (textBeforeCursor.match(/^====/gm) || []).length;
+          const adjustedMarkers = editCurrentChapterRef.current > 0
+            ? Math.max(0, markersInCurrentBeforeCursor - 1)
+            : markersInCurrentBeforeCursor;
+          const effectiveNewChapters = editCurrentChapterRef.current + 1 + adjustedMarkers;
+          const newChapterIndex = Math.min(effectiveNewChapters - 1, newEditFormat.length - 1);
+          setEditChapters(newEditFormat);
+          setEditCurrentChapter(Math.max(0, newChapterIndex));
+        }
+      }, 500);
     }
-    
-    setSearchResults(indices);
-    setCurrentSearchIndex(indices.length > 0 ? 0 : -1);
-  }, [editText]);
 
-  const scrollToSearchResult = useCallback((index: number) => {
-    if (!textareaRef.current || index === undefined || searchText.length === 0) return;
-    
-    const textarea = textareaRef.current;
-    textarea.focus();
-    textarea.setSelectionRange(index, index + searchText.length);
-    
-    const lineHeight = parseInt(getComputedStyle(textarea).lineHeight) || 25;
-    const textBefore = editText.substring(0, index);
-    const linesBefore = textBefore.split('\n').length;
-    const scrollTop = (linesBefore - 1) * lineHeight - textarea.clientHeight / 2;
-    
-    textarea.scrollTop = Math.max(0, scrollTop);
-  }, [editText, searchText]);
-
-  const handleNextSearch = useCallback(() => {
-    if (searchResults.length === 0) return;
-    const newIndex = (currentSearchIndex + 1) % searchResults.length;
-    setCurrentSearchIndex(newIndex);
-    scrollToSearchResult(searchResults[newIndex]);
-  }, [searchResults, currentSearchIndex, scrollToSearchResult]);
-
-  const handlePrevSearch = useCallback(() => {
-    if (searchResults.length === 0) return;
-    const newIndex = (currentSearchIndex - 1 + searchResults.length) % searchResults.length;
-    setCurrentSearchIndex(newIndex);
-    scrollToSearchResult(searchResults[newIndex]);
-  }, [searchResults, currentSearchIndex, scrollToSearchResult]);
+    if (autoSaveDebounceRef.current) {
+      clearTimeout(autoSaveDebounceRef.current);
+    }
+    autoSaveDebounceRef.current = setTimeout(() => {
+      saveOCRText(newFullText);
+      setOcrText(newFullText);
+    }, 2000);
+  }, [reassembleFromEditChapters, parseChapters, toEditChapters, saveOCRText]);
 
   const handleOCRTextSelection = useCallback(async () => {
     if (!ocrText) return;
@@ -675,6 +767,86 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     setTimeout(() => setFixNotification(null), 2000);
   }, [contextMenu, ocrText, fixLineBreaksInText, saveOCRText]);
 
+  const MAX_NOTE_CHARS = 8000;
+
+  const handleGenerateNote = useCallback(async (targetChapter?: number) => {
+    const chapterIdx = targetChapter ?? currentOcrChapter;
+    const currentText = ocrChapters.length > 0 ? ocrChapters[chapterIdx] : ocrText;
+    if (!currentText) return;
+
+    const charCount = currentText.length;
+    if (charCount > MAX_NOTE_CHARS) {
+      alert(`当前文本共 ${charCount.toLocaleString()} 字，超过 ${MAX_NOTE_CHARS.toLocaleString()} 字限制。\n\n请先使用"章节化"功能将文本分章，再对单个章节制作笔记。\n\n分章节后，每个章节可单独整理，避免一次性消耗过多 Token。`);
+      return;
+    }
+
+    const chapterTitle = ocrChapters.length > 0
+      ? `${book.title} - 第${chapterIdx + 1}章`
+      : book.title;
+
+    setChapterNotesMap(prev => {
+      const next = new Map(prev);
+      next.set(chapterIdx, { chapterTitle, chapterIndex: chapterIdx, markdownContent: null, isGenerating: true, noteId: null });
+      return next;
+    });
+
+    if (targetChapter === undefined) {
+      setIsGeneratingNote(true);
+      setNoteMarkdown(null);
+      setNoteViewMode(true);
+    }
+
+    try {
+      const createResponse = await chapterNoteApi.create({
+        book_id: book.id,
+        chapter_title: chapterTitle,
+        original_text: currentText,
+      });
+
+      const noteId = createResponse.data.id;
+      if (targetChapter === undefined) {
+        setChapterNoteId(noteId);
+      }
+
+      const generateResponse = await chapterNoteApi.generate({
+        original_text: currentText,
+        chapter_title: chapterTitle,
+      });
+
+      const mdContent = generateResponse.data.markdown_content;
+
+      setChapterNotesMap(prev => {
+        const next = new Map(prev);
+        next.set(chapterIdx, { chapterTitle, chapterIndex: chapterIdx, markdownContent: mdContent, isGenerating: false, noteId });
+        return next;
+      });
+
+      if (targetChapter === undefined) {
+        setNoteMarkdown(mdContent);
+      }
+
+      await chapterNoteApi.update(noteId, {
+        markdown_content: mdContent,
+        status: 'completed',
+      });
+    } catch (error: any) {
+      console.error('Failed to generate note:', error);
+      setChapterNotesMap(prev => {
+        const next = new Map(prev);
+        next.set(chapterIdx, { chapterTitle, chapterIndex: chapterIdx, markdownContent: null, isGenerating: false, noteId: null });
+        return next;
+      });
+      if (targetChapter === undefined) {
+        alert('生成笔记失败: ' + (error.response?.data?.detail || error.message));
+        setNoteViewMode(false);
+      }
+    } finally {
+      if (targetChapter === undefined) {
+        setIsGeneratingNote(false);
+      }
+    }
+  }, [ocrChapters, currentOcrChapter, ocrText, book.id, book.title]);
+
   useEffect(() => {
     const handleClickOutside = () => {
       if (contextMenu?.show) {
@@ -694,8 +866,9 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
         const response = await pdfOcrApi.hasOcrText(book.file_path);
         if (response.data.has_ocr_text) {
           const textResponse = await pdfOcrApi.getOcrText(book.file_path);
-          console.log('Loaded existing OCR text, length:', textResponse.data?.length);
-          setOcrText(textResponse.data);
+          const normalizedText = textResponse.data.replace(/\n{3,}/g, '\n\n');
+          console.log('Loaded existing OCR text, length:', normalizedText.length);
+          setOcrText(normalizedText);
         }
       } catch (error) {
         console.log('No existing OCR text found');
@@ -747,13 +920,6 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     if (e.target instanceof HTMLInputElement) return;
     
     switch (e.key) {
-      case '+':
-      case '=':
-        handleZoomIn();
-        break;
-      case '-':
-        handleZoomOut();
-        break;
       case 'ArrowLeft':
         handlePrevPage();
         break;
@@ -835,11 +1001,18 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
           setVisiblePages(prev => {
             const combined = new Set<number>();
             newVisiblePages.forEach(page => {
-              for (let i = Math.max(1, page - BUFFER_PAGES); i <= Math.min(numPages, page + BUFFER_PAGES); i++) {
+              for (let i = Math.max(1, page - UNLOAD_BUFFER_PAGES); i <= Math.min(numPages, page + UNLOAD_BUFFER_PAGES); i++) {
                 combined.add(i);
               }
             });
-            prev.forEach(page => combined.add(page));
+            prev.forEach(page => {
+              const nearAnyVisible = Array.from(newVisiblePages).some(
+                vp => Math.abs(page - vp) <= UNLOAD_BUFFER_PAGES
+              );
+              if (nearAnyVisible) {
+                combined.add(page);
+              }
+            });
             return combined;
           });
         }
@@ -864,11 +1037,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   }, [numPages, scale, showOCRPanel]);
 
   const onPageRenderSuccess = (pageNumber: number) => (page: { height: number; width: number }) => {
-    setPageHeights(prev => {
-      const newMap = new Map(prev);
-      newMap.set(pageNumber, page.height);
-      return newMap;
-    });
+    pageHeightsRef.current.set(pageNumber, page.height);
   };
 
   const onPageRenderError = (pageNumber: number) => (error: Error) => {
@@ -884,8 +1053,8 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   }, [visiblePages]);
 
   const getPageHeight = useCallback((pageNumber: number) => {
-    return pageHeights.get(pageNumber) || PAGE_HEIGHT_ESTIMATE;
-  }, [pageHeights]);
+    return pageHeightsRef.current.get(pageNumber) || PAGE_HEIGHT_ESTIMATE;
+  }, []);
 
   const handleToolbarMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.toolbar-btn, .nav-btn, input, .zoom-controls')) {
@@ -957,11 +1126,13 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
 
   if (fileUrl && !isPdfFile) {
     return (
-      <EpubReaderView
-        book={book}
-        fileUrl={fileUrl}
-        onBack={onBack}
-      />
+      <Suspense fallback={<div>加载阅读器...</div>}>
+        <EpubReaderView
+          book={book}
+          fileUrl={fileUrl}
+          onBack={onBack}
+        />
+      </Suspense>
     );
   }
 
@@ -1157,11 +1328,31 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
         
         {showOCRPanel && ocrText && (
           <div className="ocr-text-panel" ref={ocrPanelRef}>
+            {/* 标签页始终可见 */}
             <div className="ocr-text-header">
-              <h3>OCR 识别文字</h3>
+              <div className="ocr-mode-tabs">
+                <button 
+                  className={`ocr-mode-tab ${rightPanelMode === 'ocr' ? 'active' : ''}`}
+                  onClick={() => setRightPanelMode('ocr')}
+                >OCR</button>
+                <button 
+                  className={`ocr-mode-tab ${rightPanelMode === 'cards' ? 'active' : ''}`}
+                  onClick={() => setRightPanelMode('cards')}
+                >笔记</button>
+              </div>
               <div className="ocr-header-actions">
-                {!editMode && (
+                {rightPanelMode === 'ocr' && !editMode && (
                   <>
+                    <button 
+                      className="auto-fix-btn"
+                      onClick={() => handleGenerateNote()}
+                      disabled={isGeneratingNote || (() => { const t = ocrChapters.length > 0 ? ocrChapters[currentOcrChapter] : ocrText; return t ? t.length > MAX_NOTE_CHARS : false; })()}
+                      title={(() => { const t = ocrChapters.length > 0 ? ocrChapters[currentOcrChapter] : ocrText; const len = t ? t.length : 0; return len > MAX_NOTE_CHARS ? `文本过长（${len.toLocaleString()}字），请先分章节` : '将当前章节OCR文本整理为Markdown笔记'; })()}
+                      style={(() => { const t = ocrChapters.length > 0 ? ocrChapters[currentOcrChapter] : ocrText; const len = t ? t.length : 0; const overLimit = len > MAX_NOTE_CHARS; return isGeneratingNote ? { opacity: 0.6, cursor: 'wait' } : overLimit ? { opacity: 0.4, cursor: 'not-allowed', background: 'linear-gradient(135deg, var(--text-muted), var(--bg-surface))', color: 'var(--text-secondary)', borderColor: 'transparent' } : { background: 'var(--gradient-accent)', color: 'white', borderColor: 'transparent' }; })()}
+                    >
+                      <Sparkles size={16} />
+                      <span>{isGeneratingNote ? '整理中...' : (() => { const t = ocrChapters.length > 0 ? ocrChapters[currentOcrChapter] : ocrText; return t && t.length > MAX_NOTE_CHARS ? '过长' : '笔记'; })()}</span>
+                    </button>
                     <button 
                       className="auto-fix-btn"
                       onClick={handleEnterEditMode}
@@ -1188,7 +1379,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
                     </button>
                   </>
                 )}
-                {editMode && (
+                {rightPanelMode === 'ocr' && editMode && (
                   <>
                     <button 
                       className="auto-fix-btn save-btn"
@@ -1214,6 +1405,31 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
                 </button>
               </div>
             </div>
+            
+            {/* 根据模式切换内容 */}
+            {noteViewMode ? (
+              <ChapterNoteViewer
+                chapterTitle={ocrChapters.length > 0 ? `${book.title} - 第${currentOcrChapter + 1}章` : book.title}
+                originalText={ocrChapters.length > 0 ? ocrChapters[currentOcrChapter] : (ocrText || '')}
+                markdownContent={noteMarkdown}
+                isGenerating={isGeneratingNote}
+                onBack={() => setNoteViewMode(false)}
+                bookId={book.id}
+                noteId={chapterNoteId}
+              />
+            ) : rightPanelMode === 'cards' ? (
+              <div className="ocr-card-content">
+                <NoteCardPanel
+                  chapters={ocrChapters.length > 0 ? ocrChapters : (ocrText ? [ocrText] : [])}
+                  currentChapter={currentOcrChapter}
+                  notes={chapterNotesMap}
+                  onGenerateNote={(idx) => handleGenerateNote(idx)}
+                  onBack={() => setRightPanelMode('ocr')}
+                  hideHeader={true}
+                />
+              </div>
+            ) : (
+              <>
             {fixNotification && (
               <div className="fix-notification">
                 {fixNotification}
@@ -1221,41 +1437,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
             )}
             {editMode && (
               <div className="auto-fix-hint edit-mode-hint">
-                编辑模式 - 可自由修改文字内容
-              </div>
-            )}
-            {editMode && (
-              <div className="ocr-search-bar">
-                <input
-                  type="text"
-                  className="ocr-search-input"
-                  placeholder="搜索关键词..."
-                  value={searchText}
-                  onChange={(e) => handleSearch(e.target.value)}
-                />
-                {searchText && (
-                  <div className="ocr-search-nav">
-                    <span className="search-count">
-                      {searchResults.length > 0 ? `${currentSearchIndex + 1}/${searchResults.length}` : '无结果'}
-                    </span>
-                    <button 
-                      className="search-nav-btn"
-                      onClick={handlePrevSearch}
-                      disabled={searchResults.length === 0}
-                      title="上一个"
-                    >
-                      ↑
-                    </button>
-                    <button 
-                      className="search-nav-btn"
-                      onClick={handleNextSearch}
-                      disabled={searchResults.length === 0}
-                      title="下一个"
-                    >
-                      ↓
-                    </button>
-                  </div>
-                )}
+                编辑模式 - 可自由修改文字内容（使用 Ctrl+F 搜索）
               </div>
             )}
             {showTagDetector && !editMode && (
@@ -1297,13 +1479,8 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
               <textarea
                 ref={textareaRef}
                 className="ocr-edit-textarea"
-                value={editText}
-                onChange={(e) => {
-                  setEditText(e.target.value);
-                  if (searchText) {
-                    handleSearch(searchText);
-                  }
-                }}
+                value={editChapters.length > 0 ? editChapters[editCurrentChapter] : editText}
+                onChange={handleEditTextChange}
                 placeholder="在此编辑文字..."
                 spellCheck={false}
               />
@@ -1345,22 +1522,34 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
                 </button>
               </div>
             )}
-            {showChapterNav && !editMode && (
+            {(editMode ? editChapters.length > 1 : showChapterNav) && (
               <div className="chapter-navigation">
                 <button 
                   className="chapter-nav-btn"
-                  onClick={() => handleChapterChange(Math.max(0, currentOcrChapter - 1))}
-                  disabled={currentOcrChapter === 0}
+                  onClick={() => {
+                    if (editMode) {
+                      handleEditChapterChange(Math.max(0, editCurrentChapter - 1));
+                    } else {
+                      handleChapterChange(Math.max(0, currentOcrChapter - 1));
+                    }
+                  }}
+                  disabled={editMode ? editCurrentChapter === 0 : currentOcrChapter === 0}
                   title="上一章"
                 >
                   ‹
                 </button>
                 <div className="chapter-pages">
-                  {ocrChapters.map((_, index) => (
+                  {(editMode ? editChapters : ocrChapters).map((_, index) => (
                     <button
                       key={index}
-                      className={`chapter-page-btn ${currentOcrChapter === index ? 'active' : ''}`}
-                      onClick={() => handleChapterChange(index)}
+                      className={`chapter-page-btn ${(editMode ? editCurrentChapter : currentOcrChapter) === index ? 'active' : ''}`}
+                      onClick={() => {
+                        if (editMode) {
+                          handleEditChapterChange(index);
+                        } else {
+                          handleChapterChange(index);
+                        }
+                      }}
                       title={`第 ${index + 1} 章`}
                     >
                       {index + 1}
@@ -1369,13 +1558,22 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
                 </div>
                 <button 
                   className="chapter-nav-btn"
-                  onClick={() => handleChapterChange(Math.min(ocrChapters.length - 1, currentOcrChapter + 1))}
-                  disabled={currentOcrChapter === ocrChapters.length - 1}
+                  onClick={() => {
+                    if (editMode) {
+                      const maxIdx = editChapters.length - 1;
+                      handleEditChapterChange(Math.min(maxIdx, editCurrentChapter + 1));
+                    } else {
+                      handleChapterChange(Math.min(ocrChapters.length - 1, currentOcrChapter + 1));
+                    }
+                  }}
+                  disabled={editMode ? editCurrentChapter === editChapters.length - 1 : currentOcrChapter === ocrChapters.length - 1}
                   title="下一章"
                 >
                   ›
                 </button>
               </div>
+            )}
+            </>
             )}
           </div>
         )}
@@ -1398,6 +1596,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
           onClose={() => setShowOCRModal(false)}
           filePath={book.file_path || ''}
           bookTitle={book.title}
+          bookId={book.id}
           onOCRComplete={handleOCRComplete}
         />
       )}

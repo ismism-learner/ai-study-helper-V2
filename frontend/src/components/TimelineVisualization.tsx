@@ -335,7 +335,7 @@ const TimelineVisualization: React.FC<TimelineVisualizationProps> = ({
 
       <div className="visualization-legend">
         <div className="legend-item">
-          <div className="legend-color" style={{ background: '#3b82f6' }}></div>
+          <div className="legend-color" style={{ background: 'var(--primary-500)' }}></div>
           <span>点击历史时期查看关联书籍</span>
         </div>
         <div className="legend-item">

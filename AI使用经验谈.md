@@ -669,6 +669,190 @@ AI 的特点是：
 
 ---
 
+## PaddleOCR 并行处理优化实践
+
+### 问题背景
+
+在实现 PDF OCR 功能时，希望利用多核 CPU 和 GPU 进行并行处理，提高处理速度。但遇到了以下问题：
+
+1. **原始架构**：使用 `asyncio.gather` + 共享单例 OCR 实例
+2. **问题表现**：并发处理时，OCR 结果与页码不匹配（第1页收到了第3页的内容）
+3. **用户需求**：希望启用前端UI中的"并行数量"选择器（1-5）
+
+### 尝试方案对比
+
+#### 方案A：多进程 + 批量推理
+
+```python
+# 每个 Worker 进程独立初始化 OCR 实例
+with ProcessPoolExecutor(max_workers=4) as executor:
+    futures = [executor.submit(process_page, idx, path) for idx, path in pages]
+```
+
+**测试结果**：
+```
+单进程处理 (顺序): 0.11秒
+多进程处理 (2 Workers): 28.18秒  ← 启动开销太大！
+```
+
+**失败原因**：
+- Windows 只能用 `spawn` 启动方式（不能用 `fork`）
+- 每个进程都要完整初始化 PaddleOCR（约 30 秒）
+- 启动开销远大于推理收益
+
+#### 方案B：PaddleOCR 批量推理 API
+
+```python
+# 尝试批量传入图片列表
+result = ocr.ocr([image1, image2, image3], cls=True)
+```
+
+**测试结果**：
+```
+[ppocr ERROR: When input a list of images, det must be false
+```
+
+**失败原因**：
+- PaddleOCR 批量模式不支持 `det=True`
+- 如果关闭检测（det=False），只能做纯识别，不适合扫描版 PDF
+
+#### 方案C：单进程 + 线程池 + 加锁保护（最终方案）
+
+```python
+class PaddleOCRService:
+    def __init__(self):
+        self.ocr = None  # 单例 OCR 实例
+        self._thread_pool = ThreadPoolExecutor(max_workers=4)
+        self._ocr_lock = threading.Lock()  # 关键：加锁保护
+    
+    def _process_single_image_sync(self, image_path: str):
+        with self._ocr_lock:  # 加锁，避免多线程竞争
+            result = self.ocr.ocr(image_path, cls=True)
+        # ... 处理结果
+```
+
+**测试结果**：
+```
+✅ 所有测试通过
+✅ 顺序正确性：100%
+✅ 启动时间：1-2秒（vs 多进程30秒）
+```
+
+### 为什么选择方案C？
+
+| 指标 | 多进程方案 | 批量推理 | 单进程+线程池+加锁 |
+|------|-----------|----------|-------------------|
+| 启动时间 | 30秒+ | N/A | **1-2秒** |
+| 顺序正确性 | 需额外处理 | N/A | **100%正确** |
+| 显存占用 | N×模型 | N/A | **1×模型** |
+| 代码复杂度 | 高 | N/A | **低** |
+| 稳定性 | 中等 | 不支持 | **高** |
+
+### 关键技术点
+
+#### 1. 为什么需要加锁？
+
+PaddleOCR 的 `ocr()` 方法内部不是线程安全的。当多个线程同时调用时：
+
+```
+线程A: self.ocr.ocr(image_page_1) ────> 返回结果?
+线程B: self.ocr.ocr(image_page_2) ────> 返回结果?
+                                    ↑ 可能收到对方的结果！
+```
+
+加锁后，同一时刻只有一个线程能调用 OCR：
+
+```python
+with self._ocr_lock:
+    result = self.ocr.ocr(image_path, cls=True)
+```
+
+#### 2. 为什么不用多进程？
+
+在 Windows 环境下：
+- `multiprocessing` 只能用 `spawn` 模式
+- 每个进程会重新导入所有模块、重新初始化模型
+- PaddleOCR 初始化约需 30 秒
+
+```
+时间线（多进程）：
+────────────────────────────────────────────────────────
+进程1启动: ████████████████████████████████ (30秒初始化)
+进程2启动: ████████████████████████████████ (30秒初始化)
+实际推理: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ (0.1秒)
+────────────────────────────────────────────────────────
+总耗时: 30+ 秒
+```
+
+#### 3. 线程池的作用
+
+虽然 OCR 调用是串行的（因为加锁），但线程池可以：
+- 并发读取图片文件
+- 并发进行图片预处理
+- 让 CPU 和 GPU 有一定程度的流水线并行
+
+### 推荐的 AI 提示
+
+```
+在实现 OCR 并行处理时，请考虑：
+
+1. PaddleOCR 的 ocr() 方法不是线程安全的，需要加锁保护
+2. Windows 下多进程启动开销很大（每个进程都要初始化模型）
+3. PaddleOCR 批量模式不支持 det=True，无法用于扫描版 PDF
+4. 推荐方案：单进程 + 线程池 + 加锁保护
+
+测试验证：
+- 顺序正确性：确保第N页的内容确实是第N页
+- 启动时间：应该在 1-5 秒内
+- 显存占用：应该只有一份模型
+```
+
+### 验证流程
+
+```python
+# 1. 创建带页码标识的测试 PDF
+for page_num in range(1, 6):
+    text = f"PAGE_{page_num:03d}"
+    draw.text((100, 130), text, fill='black', font=font)
+
+# 2. 执行 OCR
+result = await paddleocr_service.extract_text_from_pdf(pdf_path)
+
+# 3. 验证顺序
+for page in result['pages']:
+    expected = f"PAGE_{page['page_number']:03d}"
+    assert expected in page['text'], f"顺序错误！期望 {expected}"
+```
+
+### 最终架构
+
+```
+┌─────────────────────────────────────────────────────┐
+│  PaddleOCRService (单例)                            │
+│  ├── self.ocr (单个 OCR 实例)                       │
+│  ├── self._thread_pool (线程池，并发预处理)         │
+│  └── self._ocr_lock (锁，保护 OCR 调用)             │
+│                                                     │
+│  处理流程：                                         │
+│  1. 线程池并发读取图片                              │
+│  2. 加锁调用 OCR（串行）                            │
+│  3. 按 page_idx 排序返回结果                        │
+└─────────────────────────────────────────────────────┘
+```
+
+### 性能建议
+
+| PDF 页数 | 建议配置 |
+|----------|----------|
+| < 10 页 | 默认配置即可 |
+| 10-50 页 | 默认配置 |
+| 50-100 页 | 默认配置 |
+| > 100 页 | 默认配置 |
+
+**注意**：当前架构下，`concurrency` 参数只影响预处理线程数，不影响 OCR 推理速度。因此前端 UI 中的"并行数量"选择器暂时只保留 1 可用。
+
+---
+
 ## 其他经验（待补充）
 
 *在此处添加更多 AI 编码经验...*

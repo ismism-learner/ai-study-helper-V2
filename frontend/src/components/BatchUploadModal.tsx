@@ -381,7 +381,7 @@ const BatchUploadModal: React.FC<BatchUploadModalProps> = ({ countryId, folderId
                   />
                   选择文件
                 </label>
-                <label className="file-select-btn" style={{ background: '#10b981', borderColor: '#10b981' }}>
+                <label className="file-select-btn" style={{ background: 'var(--success-500)', borderColor: 'var(--success-500)' }}>
                   <input
                     type="file"
                     multiple
@@ -509,10 +509,10 @@ const BatchUploadModal: React.FC<BatchUploadModalProps> = ({ countryId, folderId
                     <div className="file-info" style={{ flex: 1 }}>
                       <span className="file-name">{file.file.name}</span>
                       {file.relativePath && file.relativePath !== file.file.name && (
-                        <span style={{ 
-                          display: 'block', 
-                          fontSize: '11px', 
-                          color: '#6b7280',
+                        <span style={{
+                          display: 'block',
+                          fontSize: '11px',
+                          color: 'var(--text-muted)',
                           marginTop: '2px'
                         }}>
                           📁 {file.relativePath}

@@ -96,52 +96,110 @@ class PaddleOCRService:
         return 0, 8192
     
     def _check_gpu_available(self) -> Tuple[bool, str]:
+        print(f"[GPU检查] 开始检查 GPU 可用性...")
+        
         try:
             import paddle
+            print(f"[GPU检查] PaddlePaddle 版本: {paddle.__version__}")
+            print(f"[GPU检查] 是否编译了 CUDA: {paddle.is_compiled_with_cuda()}")
+            
             if paddle.is_compiled_with_cuda():
                 gpu_count = paddle.device.cuda.device_count()
+                print(f"[GPU检查] 检测到 {gpu_count} 个 GPU")
+                
                 if gpu_count > 0:
                     gpu_name = paddle.device.cuda.get_device_name(0)
+                    print(f"[GPU检查] GPU 0 名称: {gpu_name}")
+                    
+                    try:
+                        gpu_memory = paddle.device.cuda.get_device_properties(0).total_memory
+                        print(f"[GPU检查] GPU 0 显存: {gpu_memory / 1024**3:.2f} GB")
+                    except:
+                        print(f"[GPU检查] 无法获取 GPU 显存信息")
+                    
+                    print(f"[GPU检查] ✅ GPU 可用: {gpu_name}")
                     logger.info(f"PaddlePaddle GPU available: {gpu_name}")
                     return True, "gpu"
+            
+            print(f"[GPU检查] ❌ GPU 不可用，将使用 CPU")
             logger.info("PaddlePaddle GPU not available, using CPU")
             return False, "cpu"
         except Exception as e:
+            print(f"[GPU检查] ❌ GPU 检查出错: {e}")
             logger.warning(f"Error checking GPU: {e}")
             return False, "cpu"
     
     def _do_load_model(self) -> bool:
+        import time
+        start_time = time.time()
+        
+        print(f"\n{'='*80}")
+        print(f"[PaddleOCR] 开始加载模型...")
+        print(f"[PaddleOCR] 开始时间: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"{'='*80}")
+        
         try:
+            print(f"[PaddleOCR] 步骤1: 导入 PaddlePaddle...")
             import paddle
             
+            print(f"[PaddleOCR] 步骤2: 检查 GPU 可用性...")
             self._use_gpu, self.device = self._check_gpu_available()
+            print(f"[PaddleOCR] GPU 可用: {self._use_gpu}, 设备: {self.device}")
             
             if not self._use_gpu:
-                raise Exception("GPU 不可用，请确保 CUDA 和 cuDNN 已正确安装。OCR 功能仅支持 GPU 模式。")
+                error_msg = "GPU 不可用，请确保 CUDA 和 cuDNN 已正确安装。OCR 功能仅支持 GPU 模式。"
+                print(f"[PaddleOCR] 错误: {error_msg}")
+                raise Exception(error_msg)
             
+            print(f"[PaddleOCR] 步骤3: 设置 GPU 设备...")
             paddle.device.set_device("gpu:0")
+            print(f"[PaddleOCR] 已设置 paddle device to GPU:0")
             logger.info("Set paddle device to GPU:0")
             
+            print(f"[PaddleOCR] 步骤4: 导入 PaddleOCR...")
             from paddleocr import PaddleOCR
             
-            logger.info("Initializing PaddleOCR with GPU...")
+            print(f"[PaddleOCR] 步骤5: 初始化 PaddleOCR 模型 (这可能需要10-30秒)...")
+            print(f"[PaddleOCR] 参数: use_angle_cls=True, lang='ch', use_gpu=True")
             
+            init_start = time.time()
             self.ocr = PaddleOCR(
                 use_angle_cls=True,
                 lang='ch',
                 use_gpu=True,
                 show_log=False
             )
+            init_time = time.time() - init_start
+            
+            print(f"[PaddleOCR] PaddleOCR 初始化完成，耗时: {init_time:.2f} 秒")
             
             if self.ocr is None:
-                raise Exception("PaddleOCR 初始化返回 None")
+                error_msg = "PaddleOCR 初始化返回 None"
+                print(f"[PaddleOCR] 错误: {error_msg}")
+                raise Exception(error_msg)
             
             self.model_loaded = True
-            logger.info(f"PaddleOCR model loaded successfully on GPU")
+            total_time = time.time() - start_time
+            
+            print(f"\n{'='*80}")
+            print(f"[PaddleOCR] ✅ 模型加载成功!")
+            print(f"[PaddleOCR] 总耗时: {total_time:.2f} 秒")
+            print(f"[PaddleOCR] 设备: GPU")
+            print(f"{'='*80}\n")
+            
+            logger.info(f"PaddleOCR model loaded successfully on GPU in {total_time:.2f}s")
             return True
             
         except Exception as e:
             self._load_error = str(e) if str(e) else f"加载失败: {type(e).__name__}"
+            total_time = time.time() - start_time
+            
+            print(f"\n{'='*80}")
+            print(f"[PaddleOCR] ❌ 模型加载失败!")
+            print(f"[PaddleOCR] 错误: {e}")
+            print(f"[PaddleOCR] 耗时: {total_time:.2f} 秒")
+            print(f"{'='*80}\n")
+            
             logger.error(f"Failed to load PaddleOCR model: {e}")
             return False
     

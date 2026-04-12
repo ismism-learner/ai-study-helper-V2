@@ -82,14 +82,13 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
   });
   const [showAddNoteForm, setShowAddNoteForm] = useState(false);
   const [editingNote, setEditingNote] = useState<PDFNote | null>(null);
-  const [historyTags, setHistoryTags] = useState<string[]>([]);
+  const [_historyTags, setHistoryTags] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
-  const [showTagDropdown, setShowTagDropdown] = useState(false);
   
   const [position, setPosition] = useState<Position>({ x: typeof window !== 'undefined' ? window.innerWidth - 420 : 500, y: 80 });
   const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
+  const [_dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
   const panelRef = useRef<HTMLDivElement>(null);
   const prevPageRef = useRef<number>(currentPage);
   const isDraggingRef = useRef(false);
@@ -100,7 +99,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
   const [isSavingQuick, setIsSavingQuick] = useState(false);
   const [quickNotes, setQuickNotes] = useState<QuickNote[]>([]);
   const [allUnprocessedQuickNotes, setAllUnprocessedQuickNotes] = useState<QuickNote[]>([]);
-  const [currentQuickNote, setCurrentQuickNote] = useState<QuickNote | null>(null);
+  const [_currentQuickNote, setCurrentQuickNote] = useState<QuickNote | null>(null);
   const [selectedQuickNotes, setSelectedQuickNotes] = useState<Set<string>>(new Set());
   const [isBatchPolishing, setIsBatchPolishing] = useState(false);
   const [polishResults, setPolishResults] = useState<any[] | null>(null);
@@ -170,34 +169,6 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
     return { event_date: eventDate, display };
   };
 
-  // 解析时间范围
-  const parseTimeRange = (inputStr: string): {
-    start: { event_date: string; display: string } | null;
-    end: { event_date: string; display: string } | null;
-    isRange: boolean;
-  } => {
-    const separators = ['~', '～', '-', '至', '到'];
-    let parts: string[] = [];
-    let foundSeparator = '';
-    
-    for (const sep of separators) {
-      if (inputStr.includes(sep)) {
-        parts = inputStr.split(sep);
-        foundSeparator = sep;
-        break;
-      }
-    }
-    
-    if (parts.length === 2) {
-      const start = parseTimeInput(parts[0].trim());
-      const end = parseTimeInput(parts[1].trim());
-      return { start, end, isRange: true };
-    }
-    
-    const single = parseTimeInput(inputStr);
-    return { start: single, end: null, isRange: false };
-  };
-
   useEffect(() => {
     loadNotes();
   }, [documentId]);
@@ -208,8 +179,11 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
 
   useEffect(() => {
     if (isQuickMode) {
-      loadQuickNotes();
-      loadAllUnprocessedQuickNotes();
+      const timer = setTimeout(() => {
+        loadQuickNotes();
+        loadAllUnprocessedQuickNotes();
+      }, 300);
+      return () => clearTimeout(timer);
     }
   }, [currentPage, isQuickMode]);
 
@@ -661,7 +635,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
 
     setIsSavingQuick(true);
     try {
-      const response = await quickNoteApi.create({
+      await quickNoteApi.create({
         content: quickContent.trim(),
         source_document_id: documentId,
         source_page: currentPage,
@@ -730,33 +704,6 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
       alert('批量润色失败');
     } finally {
       setIsBatchPolishing(false);
-    }
-  };
-
-  const handleGenerateTimelineNotes = async () => {
-    const content = currentQuickNote?.content || quickContent;
-    if (!content.trim()) {
-      alert('请先输入笔记内容');
-      return;
-    }
-
-    setIsGeneratingTimeline(true);
-    try {
-      const response = await worldTimelineApi.aiGenerateTimelineNotesFromContent(content);
-      
-      if (response.data.parsed_events.length === 0) {
-        alert('未识别到时间事件，请确保内容包含明确的时间信息');
-        return;
-      }
-
-      setTimelineResults(response.data);
-      setShowTimelineResults(true);
-      setSelectedTimelineEvents(new Set(response.data.parsed_events.map((_, i) => i)));
-    } catch (error) {
-      console.error('Failed to generate timeline notes:', error);
-      alert('生成时间笔记失败');
-    } finally {
-      setIsGeneratingTimeline(false);
     }
   };
 
@@ -1212,7 +1159,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                           </span>
                         )}
                       </div>
-                      <div style={{ fontSize: 13, color: '#e2e8f0' }}>
+                      <div style={{ fontSize: 13, color: 'var(--text-primary)' }}>
                         {qn.content.substring(0, 100)}
                         {qn.content.length > 100 ? '...' : ''}
                       </div>
@@ -1280,7 +1227,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                     <X size={14} />
                   </button>
                 </div>
-                <div style={{ fontSize: 12, color: '#10b981' }}>
+                <div style={{ fontSize: 12, color: 'var(--success-500)' }}>
                   笔记已润色并转换为标准笔记，可在标准模式中查看
                 </div>
               </div>
@@ -1295,7 +1242,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                 rows={4}
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                <span style={{ fontSize: 11, color: '#64748b' }}>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                   Ctrl+Enter 快速保存
                 </span>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -1329,8 +1276,8 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                 border: '1px solid var(--border-color)'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <span style={{ fontSize: 14, fontWeight: 500, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Calendar size={16} style={{ color: '#8b5cf6' }} />
+                  <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Calendar size={16} style={{ color: 'var(--accent-500)' }} />
                     识别到 {timelineResults.total_events} 个时间事件
                   </span>
                   <button
@@ -1341,7 +1288,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                     style={{
                       background: 'none',
                       border: 'none',
-                      color: '#64748b',
+                      color: 'var(--text-muted)',
                       cursor: 'pointer',
                       padding: 4
                     }}
@@ -1370,23 +1317,23 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                         background: selectedTimelineEvents.has(index) ? 'rgba(139, 92, 246, 0.15)' : 'var(--bg-tertiary)',
                         borderRadius: 6,
                         cursor: 'pointer',
-                        border: selectedTimelineEvents.has(index) ? '1px solid #8b5cf6' : '1px solid transparent'
+                        border: selectedTimelineEvents.has(index) ? '1px solid var(--accent-500)' : '1px solid transparent'
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                         {selectedTimelineEvents.has(index) ? (
-                          <CheckSquare size={14} style={{ color: '#8b5cf6' }} />
+                          <CheckSquare size={14} style={{ color: 'var(--accent-500)' }} />
                         ) : (
-                          <Square size={14} style={{ color: '#64748b' }} />
+                          <Square size={14} style={{ color: 'var(--text-muted)' }} />
                         )}
-                        <span style={{ fontSize: 12, color: '#8b5cf6', fontWeight: 500 }}>
+                        <span style={{ fontSize: 12, color: 'var(--accent-500)', fontWeight: 500 }}>
                           {event.event_date_display || event.event_date}
                         </span>
                       </div>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: '#e2e8f0', marginBottom: 4 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
                         {event.event_title}
                       </div>
-                      <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.5 }}>
+                      <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                         {event.event_description.substring(0, 100)}
                         {event.event_description.length > 100 ? '...' : ''}
                       </div>
@@ -1394,7 +1341,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                   ))}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border-color)' }}>
-                  <span style={{ fontSize: 12, color: '#64748b' }}>
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                     已选 {selectedTimelineEvents.size} / {timelineResults.total_events} 个事件
                   </span>
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -1409,7 +1356,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                       style={{
                         padding: '6px 12px',
                         background: 'var(--bg-tertiary)',
-                        color: '#e2e8f0',
+                        color: 'var(--text-primary)',
                         border: 'none',
                         borderRadius: 6,
                         cursor: 'pointer',
@@ -1423,7 +1370,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                       disabled={selectedTimelineEvents.size === 0}
                       style={{
                         padding: '6px 16px',
-                        background: selectedTimelineEvents.size === 0 ? 'var(--bg-tertiary)' : 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+                        background: selectedTimelineEvents.size === 0 ? 'var(--bg-tertiary)' : 'var(--gradient-accent)',
                         color: 'white',
                         border: 'none',
                         borderRadius: 6,
@@ -1607,7 +1554,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                         <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
                           <Clock size={14} />
                           <span>时间属性</span>
-                          <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 'normal' }}>
                             (可选，用于时间轴)
                           </span>
                         </label>
@@ -1637,7 +1584,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                         }}>
                           <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
                             <div style={{ flex: 1 }}>
-                              <label style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', display: 'block' }}>
+                              <label style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>
                                 时间节点
                               </label>
                               <input
@@ -1684,7 +1631,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                           
                           <div className="form-row" style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
                             <div style={{ flex: 1 }}>
-                              <label style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', display: 'block' }}>
+                              <label style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>
                                 时间范围（可选）
                               </label>
                               <input
@@ -1730,7 +1677,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                             )}
                           </div>
                           
-                          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '8px' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
                             <div>支持格式：年份(1960) | 年月(1960-3) | 完整日期(1960-3-15) | 公元前(-0221)</div>
                             <div>时间范围：起始时间~结束时间 (如: 1960~1968)</div>
                           </div>

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
@@ -218,25 +219,42 @@ class TimelineEntry(BaseModel):
 @router.get("/countries", response_model=List[CountryResponse])
 def list_countries(db: Session = Depends(get_db)):
     countries = db.query(Country).all()
-    result = []
-    for country in countries:
-        book_count = db.query(BookDocument).filter(
-            (BookDocument.country_id == country.id) |
-            (BookDocument.content_region_id == country.id) |
-            (BookDocument.author_region_id == country.id)
-        ).count()
-        result.append(CountryResponse(
-            id=country.id,
-            name=country.name,
-            code=country.code,
-            region=country.region,
-            continent=country.continent,
-            geojson_properties=country.geojson_properties,
-            book_count=book_count,
-            created_at=country.created_at,
-            updated_at=country.updated_at
-        ))
-    return result
+    country_ids = [c.id for c in countries]
+    
+    country_counts = db.query(
+        BookDocument.country_id, func.count(BookDocument.id)
+    ).filter(
+        BookDocument.country_id.in_(country_ids)
+    ).group_by(BookDocument.country_id).all()
+    content_counts = db.query(
+        BookDocument.content_region_id, func.count(BookDocument.id)
+    ).filter(
+        BookDocument.content_region_id.in_(country_ids)
+    ).group_by(BookDocument.content_region_id).all()
+    author_counts = db.query(
+        BookDocument.author_region_id, func.count(BookDocument.id)
+    ).filter(
+        BookDocument.author_region_id.in_(country_ids)
+    ).group_by(BookDocument.author_region_id).all()
+    
+    count_map = {}
+    for cid, cnt in country_counts:
+        count_map[cid] = count_map.get(cid, 0) + cnt
+    for cid, cnt in content_counts:
+        count_map[cid] = count_map.get(cid, 0) + cnt
+    for cid, cnt in author_counts:
+        count_map[cid] = count_map.get(cid, 0) + cnt
+    
+    return [
+        CountryResponse(
+            id=c.id, name=c.name, code=c.code,
+            region=c.region, continent=c.continent,
+            geojson_properties=c.geojson_properties,
+            book_count=count_map.get(c.id, 0),
+            created_at=c.created_at, updated_at=c.updated_at
+        )
+        for c in countries
+    ]
 
 
 @router.post("/countries", response_model=CountryResponse)
@@ -320,18 +338,21 @@ def get_country_by_code(country_code: str, db: Session = Depends(get_db)):
 @router.get("/categories", response_model=List[CategoryResponse])
 def list_categories(db: Session = Depends(get_db)):
     categories = db.query(Category).all()
-    result = []
-    for cat in categories:
-        book_count = db.query(BookDocument).filter(BookDocument.category_id == cat.id).count()
-        result.append(CategoryResponse(
-            id=cat.id,
-            name=cat.name,
-            parent_id=cat.parent_id,
-            book_count=book_count,
-            created_at=cat.created_at,
-            updated_at=cat.updated_at
-        ))
-    return result
+    cat_ids = [c.id for c in categories]
+    count_rows = db.query(
+        BookDocument.category_id, func.count(BookDocument.id)
+    ).filter(
+        BookDocument.category_id.in_(cat_ids)
+    ).group_by(BookDocument.category_id).all()
+    count_map = dict(count_rows)
+    return [
+        CategoryResponse(
+            id=cat.id, name=cat.name, parent_id=cat.parent_id,
+            book_count=count_map.get(cat.id, 0),
+            created_at=cat.created_at, updated_at=cat.updated_at
+        )
+        for cat in categories
+    ]
 
 
 @router.post("/categories", response_model=CategoryResponse)
@@ -361,20 +382,24 @@ def list_time_periods(country_id: Optional[str] = None, db: Session = Depends(ge
         query = query.filter(TimePeriod.country_id == country_id)
     periods = query.all()
     
-    result = []
-    for period in periods:
-        book_count = db.query(BookDocument).filter(BookDocument.time_period_id == period.id).count()
-        result.append(TimePeriodResponse(
-            id=period.id,
-            name=period.name,
-            start_year=period.start_year,
-            end_year=period.end_year,
+    period_ids = [p.id for p in periods]
+    count_rows = db.query(
+        BookDocument.time_period_id, func.count(BookDocument.id)
+    ).filter(
+        BookDocument.time_period_id.in_(period_ids)
+    ).group_by(BookDocument.time_period_id).all()
+    count_map = dict(count_rows)
+    
+    return [
+        TimePeriodResponse(
+            id=period.id, name=period.name,
+            start_year=period.start_year, end_year=period.end_year,
             country_id=period.country_id,
-            book_count=book_count,
-            created_at=period.created_at,
-            updated_at=period.updated_at
-        ))
-    return result
+            book_count=count_map.get(period.id, 0),
+            created_at=period.created_at, updated_at=period.updated_at
+        )
+        for period in periods
+    ]
 
 
 @router.post("/time-periods", response_model=TimePeriodResponse)
@@ -1096,9 +1121,9 @@ def list_books(
     if search:
         query = query.filter(BookDocument.title.ilike(f"%{search}%"))
     
-    books = query.order_by(BookDocument.created_at.desc()).all()
+    books = query.options(*BOOK_EAGER_LOAD).order_by(BookDocument.created_at.desc()).all()
     
-    return [_build_book_response(book, db) for book in books]
+    return _build_books_response_bulk(books, db)
 
 
 @router.get("/tags")
@@ -1129,7 +1154,7 @@ def quick_search_books(
     - 其他值: 搜索该标签下的书籍
     """
     if tag == "__untagged__":
-        books = db.query(BookDocument).filter(
+        books = db.query(BookDocument).options(*BOOK_EAGER_LOAD).filter(
             (BookDocument.tags.is_(None)) | (BookDocument.tags == [])
         ).all()
         
@@ -1140,7 +1165,7 @@ def quick_search_books(
                 keyword.lower() in (b.author or '').lower()
             ]
     elif tag:
-        books = db.query(BookDocument).filter(
+        books = db.query(BookDocument).options(*BOOK_EAGER_LOAD).filter(
             BookDocument.tags.contains([tag])
         ).all()
         
@@ -1156,13 +1181,13 @@ def quick_search_books(
         
         keyword = keyword.strip()
         
-        books = db.query(BookDocument).filter(
+        books = db.query(BookDocument).options(*BOOK_EAGER_LOAD).filter(
             (BookDocument.title.ilike(f"%{keyword}%")) |
             (BookDocument.author.ilike(f"%{keyword}%"))
         ).all()
     
     return {
-        "books": [_build_book_response(book, db) for book in books],
+        "books": _build_books_response_bulk(books, db),
         "count": len(books),
         "keyword": keyword if keyword else "",
         "tag": tag
@@ -1220,39 +1245,30 @@ def get_recently_read_books(
     limit: int = 5,
     db: Session = Depends(get_db)
 ):
-    books = db.query(BookDocument).filter(
+    books = db.query(BookDocument).options(*BOOK_EAGER_LOAD).filter(
         BookDocument.last_read_time.isnot(None)
     ).order_by(BookDocument.last_read_time.desc()).limit(limit).all()
     
-    return [_build_book_response(book, db) for book in books]
+    return _build_books_response_bulk(books, db)
 
 
 @router.get("/reading-stats")
 def get_reading_stats(db: Session = Depends(get_db)):
-    total_reading_seconds = db.query(BookDocument).with_entities(
-        BookDocument.total_reading_seconds
-    ).all()
-    
-    total_seconds = sum(r[0] or 0 for r in total_reading_seconds)
-    
+    total_result = db.query(func.sum(BookDocument.total_reading_seconds)).scalar()
+    total_seconds = total_result or 0
+
     books_with_progress = db.query(BookDocument).filter(
         BookDocument.last_read_time.isnot(None)
     ).count()
-    
-    avg_speed_result = db.query(BookDocument).with_entities(
-        BookDocument.reading_speed_pages_per_hour
-    ).filter(BookDocument.reading_speed_pages_per_hour.isnot(None)).all()
-    
-    avg_speed = 0
-    if avg_speed_result:
-        speeds = [r[0] for r in avg_speed_result if r[0]]
-        if speeds:
-            avg_speed = sum(speeds) / len(speeds)
-    
+
+    avg_speed = db.query(func.avg(BookDocument.reading_speed_pages_per_hour)).filter(
+        BookDocument.reading_speed_pages_per_hour.isnot(None)
+    ).scalar() or 0
+
     return {
         "total_reading_hours": round(total_seconds / 3600, 1),
         "books_with_progress": books_with_progress,
-        "average_reading_speed": round(avg_speed, 1)
+        "average_reading_speed": round(float(avg_speed), 1)
     }
 
 
@@ -1591,18 +1607,21 @@ def get_country_timeline(country_id: str, db: Session = Depends(get_db)):
     if not country:
         raise HTTPException(status_code=404, detail="Country not found")
     
-    books = db.query(BookDocument).filter(
+    books = db.query(BookDocument).options(*BOOK_EAGER_LOAD).filter(
         (BookDocument.country_id == country_id) |
         (BookDocument.content_region_id == country_id) |
         (BookDocument.author_region_id == country_id)
     ).order_by(BookDocument.year_start).all()
+    
+    book_responses = _build_books_response_bulk(books, db)
+    book_map = {b.id: br for b, br in zip(books, book_responses)}
     
     timeline_dict = {}
     for book in books:
         year = book.year_start or book.year_end or 0
         if year not in timeline_dict:
             timeline_dict[year] = []
-        timeline_dict[year].append(_build_book_response(book, db))
+        timeline_dict[year].append(book_map[book.id])
     
     timeline = [
         TimelineEntry(year=year, books=books_list)
@@ -1614,114 +1633,67 @@ def get_country_timeline(country_id: str, db: Session = Depends(get_db)):
 
 @router.get("/countries/{country_id}/books", response_model=List[BookDocumentResponse])
 def get_country_books(country_id: str, db: Session = Depends(get_db)):
-    books = db.query(BookDocument).filter(
+    books = db.query(BookDocument).options(*BOOK_EAGER_LOAD).filter(
         (BookDocument.country_id == country_id) |
         (BookDocument.content_region_id == country_id) |
         (BookDocument.author_region_id == country_id)
     ).order_by(BookDocument.year_start).all()
     
-    return [_build_book_response(book, db) for book in books]
+    return _build_books_response_bulk(books, db)
 
 
-def _build_book_response(book: BookDocument, db: Session) -> BookDocumentResponse:
-    country = None
-    if book.country_id:
-        c = db.query(Country).filter(Country.id == book.country_id).first()
-        if c:
-            country = CountryResponse(
-                id=c.id,
-                name=c.name,
-                code=c.code,
-                region=c.region,
-                continent=c.continent,
-                geojson_properties=c.geojson_properties,
-                book_count=0,
-                created_at=c.created_at,
-                updated_at=c.updated_at
-            )
-    
-    category = None
-    if book.category_id:
-        cat = db.query(Category).filter(Category.id == book.category_id).first()
-        if cat:
-            category = CategoryResponse(
-                id=cat.id,
-                name=cat.name,
-                parent_id=cat.parent_id,
-                book_count=0,
-                created_at=cat.created_at,
-                updated_at=cat.updated_at
-            )
-    
-    time_period = None
-    if book.time_period_id:
-        tp = db.query(TimePeriod).filter(TimePeriod.id == book.time_period_id).first()
-        if tp:
-            time_period = TimePeriodResponse(
-                id=tp.id,
-                name=tp.name,
-                start_year=tp.start_year,
-                end_year=tp.end_year,
-                country_id=tp.country_id,
-                parent_id=tp.parent_id,
-                description=tp.description,
-                book_count=0,
-                children=[],
-                created_at=tp.created_at,
-                updated_at=tp.updated_at
-            )
-    
-    content_region = None
-    if book.content_region_id:
-        cr = db.query(Country).filter(Country.id == book.content_region_id).first()
-        if cr:
-            content_region = CountryResponse(
-                id=cr.id,
-                name=cr.name,
-                code=cr.code,
-                region=cr.region,
-                continent=cr.continent,
-                geojson_properties=cr.geojson_properties,
-                book_count=0,
-                created_at=cr.created_at,
-                updated_at=cr.updated_at
-            )
-    
-    author_region = None
-    if book.author_region_id:
-        ar = db.query(Country).filter(Country.id == book.author_region_id).first()
-        if ar:
-            author_region = CountryResponse(
-                id=ar.id,
-                name=ar.name,
-                code=ar.code,
-                region=ar.region,
-                continent=ar.continent,
-                geojson_properties=ar.geojson_properties,
-                book_count=0,
-                created_at=ar.created_at,
-                updated_at=ar.updated_at
-            )
-    
+def _country_to_response(c: Country) -> CountryResponse:
+    if not c:
+        return None
+    return CountryResponse(
+        id=c.id, name=c.name, code=c.code,
+        region=c.region, continent=c.continent,
+        geojson_properties=c.geojson_properties,
+        book_count=0, created_at=c.created_at, updated_at=c.updated_at
+    )
+
+def _category_to_response(cat: Category) -> CategoryResponse:
+    if not cat:
+        return None
+    return CategoryResponse(
+        id=cat.id, name=cat.name, parent_id=cat.parent_id,
+        book_count=0, created_at=cat.created_at, updated_at=cat.updated_at
+    )
+
+def _time_period_to_response(tp: TimePeriod) -> TimePeriodResponse:
+    if not tp:
+        return None
+    return TimePeriodResponse(
+        id=tp.id, name=tp.name, start_year=tp.start_year,
+        end_year=tp.end_year, country_id=tp.country_id,
+        parent_id=tp.parent_id, description=tp.description,
+        book_count=0, children=[], created_at=tp.created_at, updated_at=tp.updated_at
+    )
+
+def _build_book_response(book: BookDocument, db: Session, notes_count: int = None) -> BookDocumentResponse:
+    if notes_count is None:
+        notes_count = db.query(WorldTimelineEvent).filter(
+            WorldTimelineEvent.book_id == book.id
+        ).count()
+
+    country = _country_to_response(book.country) if book.country else None
+    category = _category_to_response(book.category) if book.category else None
+    time_period = _time_period_to_response(book.time_period) if book.time_period else None
+    content_region = _country_to_response(book.content_region) if book.content_region else None
+    author_region = _country_to_response(book.author_region) if book.author_region else None
+
     time_periods = [
         BookTimePeriodResponse(
-            id=tp.id,
-            book_id=tp.book_id,
+            id=tp.id, book_id=tp.book_id,
             theme_year_start=tp.theme_year_start,
             theme_year_end=tp.theme_year_end,
             theme_year_status=tp.theme_year_status,
-            start_page=tp.start_page,
-            end_page=tp.end_page,
+            start_page=tp.start_page, end_page=tp.end_page,
             description=tp.description,
-            created_at=tp.created_at,
-            updated_at=tp.updated_at
+            created_at=tp.created_at, updated_at=tp.updated_at
         )
         for tp in book.time_periods
     ]
-
-    notes_count = db.query(WorldTimelineEvent).filter(
-        WorldTimelineEvent.book_id == book.id
-    ).count()
 
     page_count = book.page_count
     if not page_count and book.file_path:
@@ -1737,26 +1709,16 @@ def _build_book_response(book: BookDocument, db: Session) -> BookDocumentRespons
             pass
 
     return BookDocumentResponse(
-        id=book.id,
-        title=book.title,
-        original_filename=book.original_filename,
-        author=book.author,
-        description=book.description,
-        file_path=book.file_path,
-        file_size=book.file_size,
-        cover_image=book.cover_image,
-        thumbnail=book.thumbnail,
-        country_id=book.country_id,
-        category_id=book.category_id,
-        time_period_id=book.time_period_id,
-        author_era=book.author_era,
-        year_start=book.year_start,
-        year_end=book.year_end,
-        theme_year_start=book.theme_year_start,
-        theme_year_end=book.theme_year_end,
-        theme_year_status=book.theme_year_status,
-        tags=book.tags,
-        extra_metadata=book.extra_metadata,
+        id=book.id, title=book.title,
+        original_filename=book.original_filename, author=book.author,
+        description=book.description, file_path=book.file_path,
+        file_size=book.file_size, cover_image=book.cover_image,
+        thumbnail=book.thumbnail, country_id=book.country_id,
+        category_id=book.category_id, time_period_id=book.time_period_id,
+        author_era=book.author_era, year_start=book.year_start,
+        year_end=book.year_end, theme_year_start=book.theme_year_start,
+        theme_year_end=book.theme_year_end, theme_year_status=book.theme_year_status,
+        tags=book.tags, extra_metadata=book.extra_metadata,
         content_region_id=book.content_region_id,
         author_region_id=book.author_region_id,
         content_era_start=book.content_era_start,
@@ -1777,15 +1739,38 @@ def _build_book_response(book: BookDocument, db: Session) -> BookDocumentRespons
         last_read_time=book.last_read_time,
         total_reading_seconds=book.total_reading_seconds or 0,
         reading_speed_pages_per_hour=book.reading_speed_pages_per_hour,
-        time_periods=time_periods,
-        country=country,
-        category=category,
-        time_period=time_period,
-        content_region=content_region,
+        time_periods=time_periods, country=country, category=category,
+        time_period=time_period, content_region=content_region,
         author_region=author_region,
-        created_at=book.created_at,
-        updated_at=book.updated_at
+        created_at=book.created_at, updated_at=book.updated_at
     )
+
+
+BOOK_EAGER_LOAD = [
+    joinedload(BookDocument.country),
+    joinedload(BookDocument.category),
+    joinedload(BookDocument.time_period),
+    joinedload(BookDocument.content_region),
+    joinedload(BookDocument.author_region),
+    joinedload(BookDocument.time_periods),
+]
+
+
+def _build_books_response_bulk(books: List[BookDocument], db: Session) -> List[BookDocumentResponse]:
+    if not books:
+        return []
+    book_ids = [b.id for b in books]
+    notes_count_rows = db.query(
+        WorldTimelineEvent.book_id,
+        func.count(WorldTimelineEvent.id)
+    ).filter(
+        WorldTimelineEvent.book_id.in_(book_ids)
+    ).group_by(WorldTimelineEvent.book_id).all()
+    notes_count_map = dict(notes_count_rows)
+    return [
+        _build_book_response(book, db, notes_count=notes_count_map.get(book.id, 0))
+        for book in books
+    ]
 
 
 class ScannedFile(BaseModel):

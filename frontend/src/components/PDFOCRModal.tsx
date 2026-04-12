@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { X, Loader2, CheckCircle, AlertCircle, FileText, XCircle, Cpu, Edit3, Save } from 'lucide-react';
-import { pdfOcrApi } from '../api';
+import { X, Loader2, CheckCircle, AlertCircle, FileText, XCircle, Cpu, Edit3, Save, Sparkles } from 'lucide-react';
+import { pdfOcrApi, chapterNoteApi } from '../api';
+import ChapterNoteViewer from './ChapterNoteViewer';
 
 interface PDFOCRModalProps {
   isOpen: boolean;
   onClose: () => void;
   filePath: string;
   bookTitle: string;
+  bookId?: string;
+  documentId?: string;
   onOCRComplete: (textContent: string) => void;
 }
 
@@ -35,6 +38,8 @@ const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
   onClose,
   filePath,
   bookTitle,
+  bookId,
+  documentId,
   onOCRComplete
 }) => {
   const onOCRCompleteRef = useRef(onOCRComplete);
@@ -60,10 +65,19 @@ const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
   const [editedText, setEditedText] = useState('');
   const [concurrency, setConcurrency] = useState(1);
 
+  const [noteViewMode, setNoteViewMode] = useState(false);
+  const [chapterNoteId, setChapterNoteId] = useState<string | null>(null);
+  const [markdownContent, setMarkdownContent] = useState<string | null>(null);
+  const [isGeneratingNote, setIsGeneratingNote] = useState(false);
+
+  const notStartedRetryCount = useRef(0);
+  const NOT_STARTED_MAX_RETRIES = 3;
+
   const startOCR = useCallback(async () => {
     if (!filePath) return;
     
     setIsProcessing(true);
+    notStartedRetryCount.current = 0;
     setStatus({
       status: 'initializing',
       progress: 0,
@@ -123,21 +137,42 @@ const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
         text_file_path: newStatus.text_file_path || null
       });
 
-      if (newStatus.status === 'completed') {
+      if (newStatus.status === 'not_started') {
+        notStartedRetryCount.current += 1;
+        
+        if (notStartedRetryCount.current <= NOT_STARTED_MAX_RETRIES) {
+          try {
+            await pdfOcrApi.extractTextAsync(filePath, { concurrency });
+          } catch (retryError: any) {
+            if (notStartedRetryCount.current >= NOT_STARTED_MAX_RETRIES) {
+              setStatus(prev => ({
+                ...prev,
+                status: 'failed',
+                error: 'OCR 任务启动失败，请重试'
+              }));
+              setIsProcessing(false);
+            }
+          }
+        } else {
+          setStatus(prev => ({
+            ...prev,
+            status: 'failed',
+            error: 'OCR 任务未能成功启动，请重试'
+          }));
+          setIsProcessing(false);
+        }
+      } else if (newStatus.status === 'completed') {
         setIsProcessing(false);
-        console.log('OCR completed, text_content length:', newStatus.text_content?.length);
-        console.log('OCR completed, text_file_path:', newStatus.text_file_path);
+        notStartedRetryCount.current = 0;
         
         let textToUse = newStatus.text_content;
         
         if (!textToUse && newStatus.text_file_path) {
-          console.log('text_content is empty, trying to read from file...');
           try {
             const textResponse = await pdfOcrApi.getOcrText(filePath);
             textToUse = textResponse.data;
-            console.log('Read text from file, length:', textToUse?.length);
           } catch (e) {
-            console.error('Failed to read OCR text file:', e);
+            console.error('[前端OCR] 读取OCR文本文件失败:', e);
           }
         }
         
@@ -145,22 +180,23 @@ const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
           setEditedText(textToUse);
           setStatus(prev => ({ ...prev, text_content: textToUse }));
           setTimeout(() => {
-            console.log('Calling onOCRComplete with text length:', textToUse?.length);
             onOCRCompleteRef.current(textToUse);
           }, 300);
         } else {
-          console.log('No text available after all attempts');
           setTimeout(() => {
             onOCRCompleteRef.current('');
           }, 300);
         }
       } else if (newStatus.status === 'failed' || newStatus.status === 'cancelled') {
         setIsProcessing(false);
+        notStartedRetryCount.current = 0;
+      } else {
+        notStartedRetryCount.current = 0;
       }
     } catch (error: any) {
-      console.error('Failed to poll OCR status:', error);
+      console.error('[前端OCR] 轮询状态失败:', error);
     }
-  }, [filePath]);
+  }, [filePath, concurrency]);
 
   const pollGpuStatus = useCallback(async () => {
     try {
@@ -182,6 +218,46 @@ const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
       console.error('Failed to save OCR text:', error);
     }
   }, [filePath, editedText]);
+
+  const handleGenerateNote = useCallback(async () => {
+    const textContent = status.text_content || editedText;
+    if (!textContent) return;
+
+    setIsGeneratingNote(true);
+    setMarkdownContent(null);
+
+    try {
+      const createResponse = await chapterNoteApi.create({
+        book_id: bookId,
+        document_id: documentId,
+        chapter_title: bookTitle,
+        original_text: textContent,
+      });
+      
+      const noteId = createResponse.data.id;
+      setChapterNoteId(noteId);
+
+      const generateResponse = await chapterNoteApi.generate({
+        original_text: textContent,
+        chapter_title: bookTitle,
+      });
+
+      const mdContent = generateResponse.data.markdown_content;
+      setMarkdownContent(mdContent);
+
+      await chapterNoteApi.update(noteId, {
+        markdown_content: mdContent,
+        status: 'completed',
+      });
+
+      setNoteViewMode(true);
+    } catch (error: any) {
+      console.error('Failed to generate chapter note:', error);
+      alert('生成笔记失败: ' + (error.response?.data?.detail || error.message));
+    } finally {
+      setIsGeneratingNote(false);
+    }
+  }, [status.text_content, editedText, bookTitle, bookId, documentId]);
 
   useEffect(() => {
     if (isOpen && isProcessing) {
@@ -209,6 +285,10 @@ const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
       });
       setIsProcessing(false);
       setIsEditing(false);
+      setNoteViewMode(false);
+      setChapterNoteId(null);
+      setMarkdownContent(null);
+      setIsGeneratingNote(false);
     }
   }, [isOpen]);
 
@@ -218,6 +298,11 @@ const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
     switch (status.status) {
       case 'idle':
         return <FileText size={48} className="status-icon" />;
+      case 'not_started':
+      case 'initializing':
+      case 'loading_model':
+      case 'processing':
+        return <Loader2 size={48} className="status-icon spinning" />;
       case 'completed':
         return <CheckCircle size={48} className="status-icon success" />;
       case 'failed':
@@ -232,6 +317,11 @@ const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
     switch (status.status) {
       case 'idle':
         return 'var(--color-text-secondary)';
+      case 'not_started':
+      case 'initializing':
+      case 'loading_model':
+      case 'processing':
+        return 'var(--color-primary)';
       case 'completed':
         return 'var(--color-success)';
       case 'failed':
@@ -241,6 +331,45 @@ const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
         return 'var(--color-primary)';
     }
   };
+
+  const getStatusMessage = () => {
+    if (status.status === 'idle') {
+      return '请选择并行数量，然后点击"开始处理"';
+    }
+    if (status.had_text) {
+      return 'PDF 已包含文字层，无需 OCR 处理';
+    }
+    switch (status.status) {
+      case 'not_started':
+        return '正在准备启动 OCR 任务...';
+      case 'initializing':
+        return status.message || '正在初始化 OCR 处理...';
+      case 'loading_model':
+        return status.message || '正在加载 OCR 模型，请稍候...';
+      case 'processing':
+        return status.message || '正在处理中...';
+      default:
+        return status.message;
+    }
+  };
+
+  if (noteViewMode) {
+    return (
+      <div className="pdf-ocr-modal-overlay">
+        <div className="pdf-ocr-modal" style={{ width: '90vw', maxWidth: 1200, height: '85vh' }}>
+          <ChapterNoteViewer
+            chapterTitle={bookTitle}
+            originalText={status.text_content || editedText}
+            markdownContent={markdownContent}
+            isGenerating={isGeneratingNote}
+            onBack={() => setNoteViewMode(false)}
+            bookId={bookId}
+            noteId={chapterNoteId}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pdf-ocr-modal-overlay">
@@ -306,9 +435,7 @@ const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
             {getStatusIcon()}
             
             <div className="status-message" style={{ color: getStatusColor() }}>
-              {status.status === 'idle' 
-                ? '请选择并行数量，然后点击"开始处理"' 
-                : (status.had_text ? 'PDF 已包含文字层，无需 OCR 处理' : status.message)}
+              {getStatusMessage()}
             </div>
 
             {status.error && (
@@ -327,6 +454,17 @@ const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
                 </div>
                 <div className="progress-text">
                   {status.current_page} / {status.total_pages} 页 ({status.progress}%)
+                </div>
+              </div>
+            )}
+
+            {isProcessing && status.total_pages === 0 && (status.status === 'initializing' || status.status === 'loading_model') && (
+              <div className="progress-section">
+                <div className="progress-bar-container">
+                  <div className="progress-bar indeterminate" />
+                </div>
+                <div className="progress-text">
+                  {status.status === 'loading_model' ? '加载 OCR 模型中...' : '初始化中...'}
                 </div>
               </div>
             )}
@@ -374,10 +512,27 @@ const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
                       </button>
                     </>
                   ) : (
-                    <button className="btn-icon" onClick={() => setIsEditing(true)}>
-                      <Edit3 size={16} />
-                      编辑
-                    </button>
+                    <>
+                      <button 
+                        className="btn-icon generate-note-btn" 
+                        onClick={handleGenerateNote}
+                        disabled={isGeneratingNote}
+                        style={{ 
+                          display: 'flex', alignItems: 'center', gap: 4, 
+                          background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', 
+                          color: 'white', border: 'none', borderRadius: 6, 
+                          padding: '4px 10px', cursor: isGeneratingNote ? 'wait' : 'pointer',
+                          fontSize: 12, fontWeight: 500
+                        }}
+                      >
+                        <Sparkles size={14} />
+                        {isGeneratingNote ? '整理中...' : '快速制作笔记'}
+                      </button>
+                      <button className="btn-icon" onClick={() => setIsEditing(true)}>
+                        <Edit3 size={16} />
+                        编辑
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -398,7 +553,7 @@ const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
           <div className="ocr-info">
             <p>
               OCR 处理会识别扫描型 PDF 中的文字。
-              处理完成后，右侧将显示可复制粘贴的文字内容。
+              处理完成后，可点击"快速制作笔记"将文本整理为结构清晰的Markdown笔记。
             </p>
           </div>
         </div>
@@ -439,7 +594,7 @@ const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
               </button>
             </>
           )}
-          {isProcessing && status.status !== 'completed' && status.status !== 'failed' && status.status !== 'cancelled' && (
+          {isProcessing && !['completed', 'failed', 'cancelled'].includes(status.status) && (
             <button className="btn btn-danger" onClick={cancelOCR}>
               <XCircle size={16} />
               取消处理

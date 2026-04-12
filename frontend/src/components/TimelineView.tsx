@@ -1,16 +1,8 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
 import { TimelineEntry, BookDocument, Country, TimePeriod } from '../types';
-import { BookOpen, Calendar, Trash2, ChevronUp, ChevronDown, Edit3, X, Save, MapPin, Clock, CheckSquare, Square, Plus, Tag, Cloud } from 'lucide-react';
+import { Calendar, Trash2, ChevronUp, ChevronDown, Edit3, X, Save, CheckSquare, Square, Plus, Tag } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 import { bookApi, countryApi, timePeriodApi } from '../api';
-
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
-
-// PDF.js options for WASM support (needed for JPEG2000 image decoding)
-const pdfOptions = {
-  wasmUrl: '/',
-};
 
 interface TimelineViewProps {
   timeline: TimelineEntry[];
@@ -37,7 +29,6 @@ const TimelineView: React.FC<TimelineViewProps> = ({
     bookId: '',
     bookTitle: '',
   });
-  const [pdfErrors, setPdfErrors] = useState<Set<string>>(new Set());
 
   const [editingBook, setEditingBook] = useState<BookDocument | null>(null);
   const [editForm, setEditForm] = useState<Partial<BookDocument>>({});
@@ -105,25 +96,6 @@ const TimelineView: React.FC<TimelineViewProps> = ({
     [...timeline].sort((a, b) => a.year - b.year), 
     [timeline]
   );
-
-  // 获取 PDF 第一页的 URL 作为封面
-  const getPdfFirstPageUrl = (book: BookDocument): string | null => {
-    if (!book.file_path) return null;
-    
-    let normalizedPath = book.file_path.replace(/\\/g, '/');
-    
-    if (normalizedPath.startsWith('uploads/')) {
-      normalizedPath = normalizedPath.substring('uploads/'.length);
-    } else if (normalizedPath.startsWith('/uploads/')) {
-      normalizedPath = normalizedPath.substring('/uploads/'.length);
-    }
-    
-    if (normalizedPath.startsWith('books/')) {
-      return `/uploads/${normalizedPath}`;
-    }
-    
-    return `/uploads/books/${normalizedPath}`;
-  };
 
   useEffect(() => {
     loadCountries();

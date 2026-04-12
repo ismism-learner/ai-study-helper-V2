@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BookDocument, Document } from '../types';
 import { bookApi, documentApi, worldTimelineApi } from '../api';
-import { Clock, Tag, BookOpen, Filter, Calendar, X, FileText, ChevronDown, ChevronUp, Search, Download } from 'lucide-react';
+import { Clock, Tag, BookOpen, Calendar, X, FileText, ChevronDown, ChevronUp, Search, Download } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
 
 interface TimelineEvent {
@@ -139,7 +139,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
     try {
       const [booksResponse, docsResponse, timelineEventsResponse] = await Promise.all([
         bookApi.list({}),
-        documentApi.list({ limit: 1000 }),
+        documentApi.list({}),
         worldTimelineApi.getAllTimelineEvents()
       ]);
       setBooks(booksResponse.data);

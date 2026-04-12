@@ -13,7 +13,6 @@ import {
   Sun,
   Moon,
   BookOpen,
-  Loader2,
   GripVertical,
   X
 } from 'lucide-react';
@@ -44,13 +43,13 @@ const EpubReaderView: React.FC<EpubReaderViewProps> = ({ book, fileUrl, onBack }
   const [fontSize, setFontSize] = useState(18);
   const [themeIndex, setThemeIndex] = useState(2);
   const [toc, setToc] = useState<NavItem[]>([]);
-  const [currentLocation, setCurrentLocation] = useState<string>('');
+  const [, setCurrentLocation] = useState<string>('');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentChapter, setCurrentChapter] = useState<string>('');
   const [currentSpineIndex, setCurrentSpineIndex] = useState(0);
-  const [totalSpineItems, setTotalSpineItems] = useState(0);
-  const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
-  const [totalChapters, setTotalChapters] = useState(0);
+  const [, setTotalSpineItems] = useState(0);
+  const [, setCurrentChapterIndex] = useState(0);
+  const [, setTotalChapters] = useState(0);
   
   const [toolbarPosition, setToolbarPosition] = useState({ x: 20, y: 20 });
   const [isDraggingToolbar, setIsDraggingToolbar] = useState(false);
@@ -62,29 +61,13 @@ const EpubReaderView: React.FC<EpubReaderViewProps> = ({ book, fileUrl, onBack }
   
   const [miniTocPosition, setMiniTocPosition] = useState({ x: 0, y: 0 });
   const [isDraggingMiniToc, setIsDraggingMiniToc] = useState(false);
-  const [miniTocDragOffset, setMiniTocDragOffset] = useState({ x: 0, y: 0 });
-  const miniTocRef = useRef<HTMLDivElement>(null);
+  const [miniTocDragOffset] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     if (showMiniToc && miniTocPosition.x === 0 && miniTocPosition.y === 0) {
       setMiniTocPosition({ x: window.innerWidth - 260, y: 80 });
     }
-  }, [showMiniToc]);
-
-  const handleMiniTocMouseDown = useCallback((e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.mini-toc-close, .mini-toc-item')) {
-      return;
-    }
-    
-    if (miniTocRef.current) {
-      const rect = miniTocRef.current.getBoundingClientRect();
-      setMiniTocDragOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      });
-      setIsDraggingMiniToc(true);
-    }
-  }, []);
+  }, [showMiniToc, miniTocPosition.x, miniTocPosition.y]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -154,7 +137,7 @@ const EpubReaderView: React.FC<EpubReaderViewProps> = ({ book, fileUrl, onBack }
         const ePubBook = ePub(fileUrl);
         bookRef.current = ePubBook;
 
-        const rendition = ePubBook.renderTo(viewerRef.current, {
+        const rendition = ePubBook.renderTo(viewerRef.current!, {
           width: '100%',
           height: '100%',
           spread: 'none',
@@ -189,8 +172,8 @@ const EpubReaderView: React.FC<EpubReaderViewProps> = ({ book, fileUrl, onBack }
           if (spine && nav) {
             const item = spine.get(location.start);
             if (item) {
-              setCurrentSpineIndex(item.index);
-              setTotalSpineItems(spine.length);
+               setCurrentSpineIndex(item.index);
+               setTotalSpineItems((spine as any).length || 0);
               
               const tocItems = nav.toc || [];
               setTotalChapters(tocItems.length);
@@ -217,9 +200,9 @@ const EpubReaderView: React.FC<EpubReaderViewProps> = ({ book, fileUrl, onBack }
                   for (let i = 0; i < tocItems.length; i++) {
                     const tocItem = tocItems[i];
                     const tocHref = (tocItem.href || '').split('#')[0];
-                    
-                    for (let j = 0; j < spine.length; j++) {
-                      const spineItem = spine.get(j);
+                   
+                   for (let j = 0; j < (spine as any).length; j++) {
+                       const spineItem = spine.get(j);
                       if (spineItem && spineItem.href) {
                         const spineHref = spineItem.href.split('#')[0];
                         if (spineHref === tocHref) {

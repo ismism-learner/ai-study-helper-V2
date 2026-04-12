@@ -150,7 +150,7 @@
 .book-management-panel .country-tag.empty,
 .book-management-panel .period-tag.empty {
   background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  color: var(--danger-500);
 }
 
 .book-management-panel .col-actions {
@@ -177,7 +177,7 @@
 }
 
 .book-management-panel .action-btn.delete:hover {
-  color: #ef4444;
+  color: var(--danger-500);
 }
 
 .upload-modal {
@@ -326,7 +326,7 @@
 
 .page-navigation .page-total {
   font-size: 14px;
-  color: #a0a0a0;
+  color: var(--text-muted);
 }
 
 .time-periods-panel {
@@ -394,7 +394,7 @@
 
 .time-periods-panel .period-years {
   font-size: 11px;
-  color: #a0a0a0;
+  color: var(--text-muted);
 }
 
 .text-selection-popup {
@@ -435,7 +435,7 @@
   background: rgba(0, 0, 0, 0.3);
   border-radius: 6px;
   font-size: 12px;
-  color: #a0a0a0;
+  color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -465,7 +465,7 @@
 }
 
 .book-management-panel .header-stats .stat-item.success {
-  color: var(--success-color, #10b981);
+  color: var(--success-color, var(--success-500));
   background: rgba(16, 185, 129, 0.1);
 }
 
@@ -482,7 +482,7 @@
   min-width: 18px;
   height: 18px;
   padding: 0 4px;
-  background: var(--success-color, #10b981);
+  background: var(--success-color, var(--success-500));
   color: white;
   font-size: 10px;
   font-weight: 600;
@@ -508,7 +508,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   color: white;
   cursor: move;
   user-select: none;
@@ -724,7 +724,7 @@
 .quick-tag-floating-window .success-message {
   margin-top: 10px;
   padding: 8px 12px;
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: var(--gradient-success);
   color: white;
   border-radius: 6px;
   font-size: 12px;

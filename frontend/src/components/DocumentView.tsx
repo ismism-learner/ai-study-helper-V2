@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Document, Highlight } from '../types';
@@ -21,8 +21,11 @@ const DocumentView: React.FC<DocumentViewProps> = ({ document: doc, highlightedK
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const highlightMap = new Map<string, Highlight>();
-  (doc.highlights || []).forEach(h => highlightMap.set(h.id, h));
+  const highlightMap = useMemo(() => {
+    const map = new Map<string, Highlight>();
+    (doc.highlights || []).forEach(h => map.set(h.id, h));
+    return map;
+  }, [doc.highlights]);
 
   useEffect(() => {
     if (highlightedKeyword && contentRef.current) {

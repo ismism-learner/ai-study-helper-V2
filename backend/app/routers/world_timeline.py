@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
@@ -277,17 +278,17 @@ def search_timeline_events(
 
 @router.get("/library/timeline-events/all")
 def get_all_timeline_events(db: Session = Depends(get_db)):
-    """获取所有时间节点记录（包含书籍标签信息）"""
-    # 查询 WorldTimelineEvent（关联到书籍）
-    world_events = db.query(WorldTimelineEvent).order_by(WorldTimelineEvent.event_date).all()
-    # 查询 DocumentTimelineEvent（直接关联到文档）
-    document_events = db.query(DocumentTimelineEvent).order_by(DocumentTimelineEvent.event_date).all()
+    world_events = db.query(WorldTimelineEvent).options(
+        joinedload(WorldTimelineEvent.book)
+    ).order_by(WorldTimelineEvent.event_date).all()
+    document_events = db.query(DocumentTimelineEvent).options(
+        joinedload(DocumentTimelineEvent.document)
+    ).order_by(DocumentTimelineEvent.event_date).all()
     
     result = []
     
-    # 处理 WorldTimelineEvent
     for event in world_events:
-        book = db.query(BookDocument).filter(BookDocument.id == event.book_id).first()
+        book = event.book
         event_data = {
             "id": event.id,
             "book_id": event.book_id,
@@ -307,9 +308,8 @@ def get_all_timeline_events(db: Session = Depends(get_db)):
         }
         result.append(event_data)
     
-    # 处理 DocumentTimelineEvent
     for event in document_events:
-        doc = db.query(Document).filter(Document.id == event.document_id).first()
+        doc = event.document
         event_data = {
             "id": event.id,
             "book_id": None,
@@ -329,7 +329,6 @@ def get_all_timeline_events(db: Session = Depends(get_db)):
         }
         result.append(event_data)
     
-    # 按日期排序
     result.sort(key=lambda x: x['event_date'])
     
     return result

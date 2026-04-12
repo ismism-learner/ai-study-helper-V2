@@ -202,19 +202,19 @@ const DuplicateManager: React.FC<DuplicateManagerProps> = () => {
           gap: 12
         }}>
           <div>
-            <div style={{ fontSize: 12, color: '#666' }}>扫描总数</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>扫描总数</div>
             <div style={{ fontSize: 20, fontWeight: 'bold' }}>{stats.total_scanned}</div>
           </div>
           <div>
-            <div style={{ fontSize: 12, color: '#666' }}>完全重复</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>完全重复</div>
             <div style={{ fontSize: 20, fontWeight: 'bold', color: '#dc3545' }}>{stats.exact_duplicates}</div>
           </div>
           <div>
-            <div style={{ fontSize: 12, color: '#666' }}>内容重复</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>内容重复</div>
             <div style={{ fontSize: 20, fontWeight: 'bold', color: '#fd7e14' }}>{stats.content_duplicates}</div>
           </div>
           <div>
-            <div style={{ fontSize: 12, color: '#666' }}>元数据重复</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>元数据重复</div>
             <div style={{ fontSize: 20, fontWeight: 'bold', color: '#ffc107' }}>{stats.metadata_duplicates}</div>
           </div>
         </div>
@@ -227,7 +227,7 @@ const DuplicateManager: React.FC<DuplicateManagerProps> = () => {
             <p>加载中...</p>
           </div>
         ) : groups.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>
+          <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
             <CheckCircle size={48} style={{ marginBottom: 16, color: '#28a745' }} />
             <p>没有发现重复书籍</p>
             <p style={{ fontSize: 12 }}>点击"计算文件哈希"然后"扫描重复"来检测重复书籍</p>
@@ -295,11 +295,11 @@ const DuplicateManager: React.FC<DuplicateManagerProps> = () => {
                             </span>
                           )}
                         </div>
-                        <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+                         <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
                           {book.author && <span>作者: {book.author} | </span>}
                           <span>大小: {formatFileSize(book.file_size ?? null)}</span>
                         </div>
-                        <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>
+                         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
                           {book.file_path}
                         </div>
                       </div>
