@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List
 from app.database import get_db
-from app.models import Folder
+from app.models import Folder, Document
 
 router = APIRouter()
 
@@ -10,6 +11,13 @@ router = APIRouter()
 @router.get("/folders", response_model=List[dict])
 def list_folders(db: Session = Depends(get_db)):
     folders = db.query(Folder).all()
+
+    doc_counts = dict(
+        db.query(Document.folder_id, func.count(Document.id))
+        .group_by(Document.folder_id)
+        .all()
+    )
+
     return [
         {
             "id": f.id,
@@ -17,7 +25,7 @@ def list_folders(db: Session = Depends(get_db)):
             "parent_id": f.parent_id,
             "created_at": f.created_at,
             "updated_at": f.updated_at,
-            "document_count": len(f.documents)
+            "document_count": doc_counts.get(f.id, 0),
         }
         for f in folders
     ]
@@ -26,8 +34,7 @@ def list_folders(db: Session = Depends(get_db)):
 @router.post("/folders", response_model=dict)
 def create_folder(folder_data: dict, db: Session = Depends(get_db)):
     folder = Folder(
-        name=folder_data.get("name"),
-        parent_id=folder_data.get("parent_id")
+        name=folder_data.get("name"), parent_id=folder_data.get("parent_id")
     )
     db.add(folder)
     db.commit()
@@ -38,7 +45,7 @@ def create_folder(folder_data: dict, db: Session = Depends(get_db)):
         "parent_id": folder.parent_id,
         "created_at": folder.created_at,
         "updated_at": folder.updated_at,
-        "document_count": 0
+        "document_count": 0,
     }
 
 
@@ -55,13 +62,18 @@ def update_folder(folder_id: str, folder_data: dict, db: Session = Depends(get_d
 
     db.commit()
     db.refresh(folder)
+    doc_count = (
+        db.query(func.count(Document.id))
+        .filter(Document.folder_id == folder.id)
+        .scalar()
+    )
     return {
         "id": folder.id,
         "name": folder.name,
         "parent_id": folder.parent_id,
         "created_at": folder.created_at,
         "updated_at": folder.updated_at,
-        "document_count": len(folder.documents)
+        "document_count": doc_count,
     }
 
 

@@ -286,6 +286,57 @@
   --border-strong: hsl(var(--hue-neutral), 20%, 80%);
 }
 
+/* 三相笔记主题（紫色系 - 源自 Neo4j 知识图谱项目风格） */
+[data-theme="sanxiang"] {
+  --hue-primary: 258;
+  --hue-accent: 270;
+  --hue-success: 142;
+  --hue-warning: 38;
+  --hue-danger: 0;
+  --hue-neutral: 240;
+  --saturation-primary: 40%;
+  --saturation-accent: 50%;
+
+  --bg-base: hsl(240, 20%, 10%);
+  --bg-surface: hsl(240, 18%, 14%);
+  --bg-elevated: hsl(240, 16%, 18%);
+  --bg-muted: hsl(240, 18%, 14%);
+  --bg-hover: hsla(258, 40%, 50%, 0.1);
+  --bg-active: hsla(258, 40%, 50%, 0.15);
+
+  --text-primary: hsl(258, 20%, 92%);
+  --text-secondary: hsl(240, 10%, 65%);
+  --text-muted: hsl(240, 8%, 50%);
+  --text-inverse: hsl(240, 20%, 10%);
+
+  --border-default: hsl(240, 15%, 22%);
+  --border-subtle: hsl(240, 12%, 18%);
+  --border-strong: hsl(240, 18%, 28%);
+  --border-focus: hsl(258, 40%, 55%);
+
+  --primary-color: hsl(258, 40%, 55%);
+  --primary-hover: hsl(258, 45%, 50%);
+  --primary-light: hsla(258, 40%, 55%, 0.15);
+  --primary-lighter: hsla(258, 40%, 55%, 0.08);
+  --primary-focus-ring: hsla(258, 40%, 55%, 0.25);
+  --primary-shadow: hsla(258, 40%, 55%, 0.25);
+  --primary-shadow-hover: hsla(258, 40%, 55%, 0.35);
+  --primary-border: hsla(258, 40%, 55%, 0.3);
+
+  --glass-bg: hsla(240, 18%, 14%, 0.85);
+  --glass-border: hsla(258, 40%, 55%, 0.15);
+  --glass-blur: 16px;
+
+  --gradient-primary: linear-gradient(135deg, hsl(258, 40%, 55%), hsl(270, 50%, 50%));
+  --gradient-primary-hover: linear-gradient(135deg, hsl(258, 45%, 60%), hsl(270, 55%, 55%));
+  --gradient-accent: linear-gradient(135deg, hsl(270, 50%, 50%), hsl(280, 55%, 45%));
+  --gradient-success: linear-gradient(135deg, hsl(142, 71%, 45%), hsl(142, 71%, 55%));
+  --gradient-danger: linear-gradient(135deg, hsl(0, 84%, 60%), hsl(0, 84%, 54%));
+  --gradient-warning: linear-gradient(135deg, hsl(38, 96%, 51%), hsl(38, 96%, 60%));
+
+  --shadow-glow: 0 0 20px hsla(258, 40%, 55%, 0.3);
+}
+
 *,
 *::before,
 *::after {

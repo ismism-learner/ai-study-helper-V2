@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Highlight, CreateHighlightRequest } from '../types';
 import { highlightApi } from '../api';
+import { cognitiveChainApi } from '../api/knowledgeGraph';
 import { Plus, X } from 'lucide-react';
 
 interface DocumentEditorProps {
@@ -10,6 +11,7 @@ interface DocumentEditorProps {
   content: string;
   highlights: Highlight[];
   onHighlightCreated: (highlight: Highlight) => void;
+  onAskQuestion?: (question: string) => void;
 }
 
 interface Selection {
@@ -30,12 +32,16 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
   content,
   highlights,
   onHighlightCreated,
+  onAskQuestion,
 }) => {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [customPrompt, setCustomPrompt] = useState('');
   const [showPromptModal, setShowPromptModal] = useState(false);
   const [explanationPopup, setExplanationPopup] = useState<ExplanationPopup | null>(null);
+  const [currentChainId, setCurrentChainId] = useState<string | null>(null);
+  const [currentParentNodeId, setCurrentParentNodeId] = useState<string | null>(null);
+  const [isAskingQuestion, setIsAskingQuestion] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -168,6 +174,59 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
     }
   };
 
+  const handleAskQuestion = async () => {
+    if (!selection) return;
+    setIsAskingQuestion(true);
+    try {
+      if (onAskQuestion) {
+        onAskQuestion(selection.text);
+      } else {
+        const res = await cognitiveChainApi.createChain({
+          root_concept: selection.text,
+          context: selection.text,
+          source_doc_id: documentId,
+        });
+        const chain = res.data;
+        setCurrentChainId(chain.id);
+        const rootNode = chain.nodes?.[0];
+        if (rootNode) {
+          setCurrentParentNodeId(rootNode.id);
+        }
+      }
+    } catch (error) {
+      console.error('提问失败:', error);
+    } finally {
+      setIsAskingQuestion(false);
+      setSelection(null);
+    }
+  };
+
+  const handleFollowUp = async () => {
+    if (!selection) return;
+    setIsAskingQuestion(true);
+    try {
+      if (onAskQuestion) {
+        onAskQuestion(selection.text);
+      } else {
+        if (!currentChainId || !currentParentNodeId) return;
+        const res = await cognitiveChainApi.expandChain({
+          chain_id: currentChainId,
+          parent_node_id: currentParentNodeId,
+          concept_to_explain: selection.text,
+          context: selection.text,
+          source_doc_id: documentId,
+        });
+        const node = res.data;
+        setCurrentParentNodeId(node.id);
+      }
+    } catch (error) {
+      console.error('追问失败:', error);
+    } finally {
+      setIsAskingQuestion(false);
+      setSelection(null);
+    }
+  };
+
   const renderContentWithHighlights = () => {
     if (highlights.length === 0) {
       return <div className="document-content">{content}</div>;
@@ -236,6 +295,22 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
           >
             <Plus size={16} style={{ marginRight: 4 }} />
             高亮标记
+          </button>
+          <button
+            className="btn btn-secondary"
+            onClick={handleAskQuestion}
+            disabled={isAskingQuestion}
+            title="向认知链提问"
+          >
+            💡 提问
+          </button>
+          <button
+            className="btn btn-secondary"
+            onClick={handleFollowUp}
+            disabled={isAskingQuestion || !currentChainId}
+            title={currentChainId ? '在当前认知链中追问' : '请先提问创建认知链'}
+          >
+            🔗 追问
           </button>
           <button
             className="btn btn-secondary"

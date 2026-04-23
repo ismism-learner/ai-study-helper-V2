@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Settings, RefreshCw, Cloud, CheckCircle, XCircle, Loader2, ExternalLink, Copy, Palette } from 'lucide-react';
+import { Settings, RefreshCw, Cloud, CheckCircle, XCircle, Loader2, ExternalLink, Copy, Palette, Database } from 'lucide-react';
 import { quarkApi } from '../api';
 import DuplicateManager from './DuplicateManager';
 import ThemeSwitcher from './ThemeSwitcher';
@@ -14,6 +14,8 @@ interface SettingsData {
   api_key: string;
   api_base: string;
   model_name: string;
+  ai_backend_type: string;
+  opencode_cli_path: string;
   framework_prompt: string;
   explain_prompt: string;
   optimize_prompt: string;
@@ -22,6 +24,12 @@ interface SettingsData {
   chapter_note_prompt: string;
   timeline_prompt: string;
   batch_upload_size: number;
+  neo4j_enabled: boolean;
+  neo4j_uri: string;
+  neo4j_user: string;
+  neo4j_password: string;
+  kg_concept_prompt: string;
+  quick_summary_prompt: string;
 }
 
 interface QuarkConfig {
@@ -110,6 +118,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     api_key: '',
     api_base: '',
     model_name: '',
+    ai_backend_type: 'api',
+    opencode_cli_path: 'opencode',
     framework_prompt: '',
     explain_prompt: '',
     optimize_prompt: '',
@@ -118,13 +128,36 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     chapter_note_prompt: '',
     timeline_prompt: '',
     batch_upload_size: 5,
+    neo4j_enabled: false,
+    neo4j_uri: 'bolt://localhost:7687',
+    neo4j_user: 'neo4j',
+    neo4j_password: '',
+    kg_concept_prompt: '',
+    quick_summary_prompt: '',
   });
   const [fullApiKey, setFullApiKey] = useState('');
   const [models, setModels] = useState<string[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'api' | 'prompts' | 'batch' | 'quark' | 'duplicates'>('api');
+  const [activeTab, setActiveTab] = useState<'api' | 'api-configs' | 'prompts' | 'batch' | 'quark' | 'duplicates' | 'neo4j'>('api-configs');
+  
+  // API配置管理状态
+  const [apiConfigs, setApiConfigs] = useState<Array<{
+    id: string;
+    name: string;
+    api_key: string;
+    api_base: string;
+    model_name: string;
+    is_active: boolean;
+  }>>([]);
+  const [newConfig, setNewConfig] = useState({
+    name: '',
+    api_key: '',
+    api_base: '',
+    model_name: '',
+  });
+  const [showAddForm, setShowAddForm] = useState(false);
   
   const [quarkConfig, setQuarkConfig] = useState<QuarkConfig>({
     has_cookie: false,
@@ -140,7 +173,54 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     loadSettings();
     loadModels();
     loadQuarkConfig();
+    loadApiConfigs();
   }, []);
+
+  const loadApiConfigs = async () => {
+    try {
+      const response = await axios.get('/api/api-configs');
+      setApiConfigs(response.data);
+    } catch (err) {
+      console.error('Failed to load API configs:', err);
+    }
+  };
+
+  const handleAddApiConfig = async () => {
+    if (!newConfig.name || !newConfig.api_key || !newConfig.api_base || !newConfig.model_name) {
+      setError('请填写所有字段');
+      return;
+    }
+    try {
+      await axios.post('/api/api-configs', newConfig);
+      setNewConfig({ name: '', api_key: '', api_base: '', model_name: '' });
+      setShowAddForm(false);
+      loadApiConfigs();
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { detail?: string } } };
+      setError(axiosErr.response?.data?.detail || '添加失败');
+    }
+  };
+
+  const handleActivateConfig = async (configId: string) => {
+    try {
+      await axios.post(`/api/api-configs/${configId}/activate`);
+      loadApiConfigs();
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { detail?: string } } };
+      setError(axiosErr.response?.data?.detail || '激活失败');
+    }
+  };
+
+  const handleDeleteConfig = async (configId: string) => {
+    if (!window.confirm('确定要删除这个API配置吗？')) return;
+    try {
+      await axios.delete(`/api/api-configs/${configId}`);
+      loadApiConfigs();
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { detail?: string } } };
+      setError(axiosErr.response?.data?.detail || '删除失败');
+    }
+  };
 
   const loadQuarkConfig = async () => {
     try {
@@ -235,6 +315,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
         api_key: fullApiKey || undefined,
         api_base: settings.api_base,
         model_name: settings.model_name,
+        ai_backend_type: settings.ai_backend_type,
+        opencode_cli_path: settings.opencode_cli_path,
         framework_prompt: settings.framework_prompt,
         explain_prompt: settings.explain_prompt,
         optimize_prompt: settings.optimize_prompt,
@@ -243,6 +325,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
         chapter_note_prompt: settings.chapter_note_prompt,
         timeline_prompt: settings.timeline_prompt,
         batch_upload_size: settings.batch_upload_size,
+        neo4j_enabled: settings.neo4j_enabled,
+        neo4j_uri: settings.neo4j_uri,
+        neo4j_user: settings.neo4j_user,
+        neo4j_password: settings.neo4j_password,
+        kg_concept_prompt: settings.kg_concept_prompt,
+        quick_summary_prompt: settings.quick_summary_prompt,
       });
       alert('设置保存成功！用户自定义提示词将被持久化保存。');
       onClose();
@@ -293,18 +381,25 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
           </div>
         )}
 
-        <div className="settings-tabs" style={{ display: 'flex', gap: 8, marginBottom: 16, borderBottom: '1px solid #e9ecef', paddingBottom: 12 }}>
+        <div className="settings-tabs" style={{ display: 'flex', gap: 8, marginBottom: 16, borderBottom: '1px solid #e9ecef', paddingBottom: 12, flexWrap: 'wrap' }}>
+          <button
+            className={`btn ${activeTab === 'api-configs' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setActiveTab('api-configs')}
+            style={{ flex: 1, minWidth: 100 }}
+          >
+            API 配置管理
+          </button>
           <button
             className={`btn ${activeTab === 'api' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setActiveTab('api')}
-            style={{ flex: 1 }}
+            style={{ flex: 1, minWidth: 100 }}
           >
-            API 配置
+            默认设置
           </button>
           <button
             className={`btn ${activeTab === 'prompts' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setActiveTab('prompts')}
-            style={{ flex: 1 }}
+            style={{ flex: 1, minWidth: 100 }}
           >
             提示词设置
           </button>
@@ -331,9 +426,145 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
             <Copy size={14} style={{ marginRight: 4 }} />
             重复检测
           </button>
+          <button
+            className={`btn ${activeTab === 'neo4j' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setActiveTab('neo4j')}
+            style={{ flex: 1 }}
+          >
+            <Database size={14} style={{ marginRight: 4 }} />
+            知识图谱
+          </button>
         </div>
 
         <div style={{ flex: 1, overflow: 'auto', paddingRight: 8 }}>
+          {activeTab === 'api-configs' && (
+            <>
+              <div style={{ marginBottom: 20 }}>
+                <h4 style={{ marginBottom: 12, color: 'var(--text-primary)' }}>API 配置列表</h4>
+                <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 16 }}>
+                  管理多个API配置，勾选激活要使用的配置。激活的配置将用于所有AI调用。
+                </p>
+                
+                {apiConfigs.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 30, color: 'var(--text-muted)', background: 'var(--bg-surface)', borderRadius: 8 }}>
+                    暂无API配置，请添加一个
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {apiConfigs.map((config) => (
+                      <div 
+                        key={config.id}
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: 12,
+                          padding: 16,
+                          background: config.is_active ? 'var(--bg-elevated)' : 'var(--bg-surface)',
+                          border: config.is_active ? '2px solid var(--primary-500)' : '1px solid var(--border-default)',
+                          borderRadius: 8,
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => handleActivateConfig(config.id)}
+                      >
+                        <input
+                          type="radio"
+                          checked={config.is_active}
+                          onChange={() => handleActivateConfig(config.id)}
+                          style={{ width: 18, height: 18, cursor: 'pointer' }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
+                            {config.name}
+                            {config.is_active && <span style={{ marginLeft: 8, color: 'var(--primary-500)', fontSize: 12 }}>● 使用中</span>}
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                            <div>API: {config.api_base}</div>
+                            <div>模型: {config.model_name}</div>
+                            <div>Key: {config.api_key.substring(0, 8)}...{config.api_key.substring(config.api_key.length - 4)}</div>
+                          </div>
+                        </div>
+                        <button
+                          className="btn btn-secondary"
+                          style={{ padding: '4px 8px', fontSize: 12 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteConfig(config.id);
+                          }}
+                        >
+                          删除
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <h4 style={{ margin: 0, color: 'var(--text-primary)' }}>添加新配置</h4>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => setShowAddForm(!showAddForm)}
+                  >
+                    {showAddForm ? '取消' : '+ 添加配置'}
+                  </button>
+                </div>
+
+                {showAddForm && (
+                  <div style={{ background: 'var(--bg-surface)', padding: 16, borderRadius: 8, border: '1px solid var(--border-default)' }}>
+                    <div className="form-group">
+                      <label>配置名称</label>
+                      <input
+                        type="text"
+                        className="input"
+                        value={newConfig.name}
+                        onChange={(e) => setNewConfig({ ...newConfig, name: e.target.value })}
+                        placeholder="例如：星火API、New API..."
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>API Key</label>
+                      <input
+                        type="password"
+                        className="input"
+                        value={newConfig.api_key}
+                        onChange={(e) => setNewConfig({ ...newConfig, api_key: e.target.value })}
+                        placeholder="输入API密钥..."
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>API Base URL</label>
+                      <input
+                        type="text"
+                        className="input"
+                        value={newConfig.api_base}
+                        onChange={(e) => setNewConfig({ ...newConfig, api_base: e.target.value })}
+                        placeholder="例如：https://api.openai.com/v1"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>模型名称</label>
+                      <input
+                        type="text"
+                        className="input"
+                        value={newConfig.model_name}
+                        onChange={(e) => setNewConfig({ ...newConfig, model_name: e.target.value })}
+                        placeholder="例如：gpt-4, astron-code-latest"
+                      />
+                    </div>
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleAddApiConfig}
+                      style={{ marginTop: 8 }}
+                    >
+                      保存配置
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
           {activeTab === 'api' && (
             <>
               <div className="form-group">
@@ -396,6 +627,49 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   placeholder="例如: gpt-4, gpt-3.5-turbo"
                 />
               </div>
+
+              <div className="form-group" style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border-subtle)' }}>
+                <label style={{ fontWeight: 600, marginBottom: 12, display: 'block' }}>AI 后端模式</label>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button
+                    className={`btn ${settings.ai_backend_type === 'api' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: 1, padding: '12px 16px' }}
+                    onClick={() => setSettings({ ...settings, ai_backend_type: 'api' })}
+                  >
+                    <Cloud size={16} style={{ marginRight: 8 }} />
+                    API 模式
+                  </button>
+                  <button
+                    className={`btn ${settings.ai_backend_type === 'cli' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: 1, padding: '12px 16px' }}
+                    onClick={() => setSettings({ ...settings, ai_backend_type: 'cli' })}
+                  >
+                    <Settings size={16} style={{ marginRight: 8 }} />
+                    CLI 模式
+                  </button>
+                </div>
+                <small style={{ color: 'var(--text-muted)', marginTop: 8, display: 'block' }}>
+                  {settings.ai_backend_type === 'api' 
+                    ? '使用 New API 或其他 OpenAI 兼容 API 调用 AI' 
+                    : '使用本地 OpenCode CLI 调用 AI'}
+                </small>
+              </div>
+
+              {settings.ai_backend_type === 'cli' && (
+                <div className="form-group">
+                  <label>OpenCode CLI 路径</label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={settings.opencode_cli_path}
+                    onChange={(e) => setSettings({ ...settings, opencode_cli_path: e.target.value })}
+                    placeholder="opencode"
+                  />
+                  <small style={{ color: 'var(--text-muted)' }}>
+                    CLI 可执行文件的路径或命令名（如果已在 PATH 中，直接输入命令名即可）
+                  </small>
+                </div>
+              )}
             </>
           )}
 
@@ -540,6 +814,40 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 />
                 <small style={{ color: '#6c757d' }}>
                   使用 {"{content}"} 作为文档内容的占位符。用于从文档中提取历史事件时间点。
+                </small>
+              </div>
+
+              {/* 认知链概念解释提示词 */}
+              <div className="prompt-section" style={{ marginBottom: 20 }}>
+                <div className="prompt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <h4 style={{ margin: 0, color: '#495057' }}>认知链概念解释提示词</h4>
+                </div>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 200, fontFamily: 'monospace', fontSize: 13 }}
+                  value={settings.kg_concept_prompt}
+                  onChange={(e) => setSettings({ ...settings, kg_concept_prompt: e.target.value })}
+                  placeholder="输入认知链概念解释的提示词..."
+                />
+                <small style={{ color: '#6c757d' }}>
+                  用于右键提问功能。AI需要输出JSON格式，包含 label（概念简称）、definition（定义）、domain（领域）、key_concepts（相关概念）、suggested_questions（追问建议）。
+                </small>
+              </div>
+
+              {/* 快速梳理提示词 */}
+              <div className="prompt-section" style={{ marginBottom: 20 }}>
+                <div className="prompt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <h4 style={{ margin: 0, color: '#495057' }}>快速梳理提示词</h4>
+                </div>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 200, fontFamily: 'monospace', fontSize: 13 }}
+                  value={settings.quick_summary_prompt}
+                  onChange={(e) => setSettings({ ...settings, quick_summary_prompt: e.target.value })}
+                  placeholder="输入快速梳理的提示词..."
+                />
+                <small style={{ color: '#6c757d' }}>
+                  用于右键"快速梳理"功能。AI需要输出JSON格式，包含 label（章节标题）、definition（核心概述）、key_concepts（核心概念）、structure（逻辑要点）。
                 </small>
               </div>
 
@@ -769,6 +1077,99 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
           {activeTab === 'duplicates' && (
             <DuplicateManager />
+          )}
+
+          {activeTab === 'neo4j' && (
+            <>
+              <div style={{ marginBottom: 20 }}>
+                <h4 style={{ margin: '0 0 12px 0', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Database size={18} />
+                  Neo4j 知识图谱配置
+                </h4>
+                <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 16 }}>
+                  配置 Neo4j 图数据库连接，启用知识图谱和认知链功能。
+                  推荐使用 Docker 启动：<code style={{ background: 'var(--bg-elevated)', padding: '2px 6px', borderRadius: 4, fontSize: 12 }}>docker compose up -d neo4j</code>
+                </p>
+
+                <div className="form-group" style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={settings.neo4j_enabled}
+                      onChange={(e) => setSettings({ ...settings, neo4j_enabled: e.target.checked })}
+                      style={{ width: 18, height: 18, cursor: 'pointer' }}
+                    />
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>启用 Neo4j 知识图谱</span>
+                  </label>
+                  <small style={{ color: 'var(--text-muted)', marginLeft: 26 }}>
+                    启用后可在文档三面板中使用「问答」和「知识图谱」功能
+                  </small>
+                </div>
+
+                {settings.neo4j_enabled && (
+                  <div style={{ background: 'var(--bg-surface)', padding: 16, borderRadius: 8, border: '1px solid var(--border-default)' }}>
+                    <div className="form-group">
+                      <label>连接 URI</label>
+                      <input
+                        type="text"
+                        className="input"
+                        value={settings.neo4j_uri}
+                        onChange={(e) => setSettings({ ...settings, neo4j_uri: e.target.value })}
+                        placeholder="bolt://localhost:7687"
+                      />
+                      <small style={{ color: 'var(--text-muted)' }}>
+                        Docker 默认: bolt://localhost:7687 | Aura 云端: neo4j+s://xxxxx.databases.neo4j.io
+                      </small>
+                    </div>
+
+                    <div className="form-group">
+                      <label>用户名</label>
+                      <input
+                        type="text"
+                        className="input"
+                        value={settings.neo4j_user}
+                        onChange={(e) => setSettings({ ...settings, neo4j_user: e.target.value })}
+                        placeholder="neo4j"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>密码</label>
+                      <input
+                        type="password"
+                        className="input"
+                        value={settings.neo4j_password}
+                        onChange={(e) => setSettings({ ...settings, neo4j_password: e.target.value })}
+                        placeholder="输入 Neo4j 密码"
+                      />
+                      <small style={{ color: 'var(--text-muted)' }}>
+                        Docker 默认密码: password123
+                      </small>
+                    </div>
+
+                    <div style={{ background: 'var(--bg-elevated)', padding: 12, borderRadius: 8, marginTop: 8 }}>
+                      <p style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                        快速启动 Neo4j (Docker)
+                      </p>
+                      <code style={{ display: 'block', fontSize: 12, color: 'var(--text-secondary)', background: 'var(--bg-base)', padding: 8, borderRadius: 4, fontFamily: 'monospace' }}>
+                        docker compose up -d neo4j
+                      </code>
+                      <p style={{ margin: '8px 0 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
+                        启动后访问 <a href="http://localhost:7474" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-500)' }}>http://localhost:7474</a> 查看 Neo4j 浏览器
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {!settings.neo4j_enabled && (
+                  <div style={{ textAlign: 'center', padding: 30, color: 'var(--text-muted)', background: 'var(--bg-surface)', borderRadius: 8, marginTop: 12 }}>
+                    <Database size={32} style={{ marginBottom: 8, opacity: 0.5 }} />
+                    <p style={{ margin: 0 }}>知识图谱功能未启用</p>
+                    <p style={{ margin: '4px 0 0 0', fontSize: 12 }}>勾选上方开关以启用</p>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
 

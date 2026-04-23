@@ -49,11 +49,15 @@ export const bookApi = {
     year_from?: number;
     year_to?: number;
     search?: string;
+    skip?: number;
+    limit?: number;
   }) => libraryApi.get<BookDocument[]>('/books', { params }),
 
   getTags: () => libraryApi.get<{ tags: string[] }>('/tags'),
 
   get: (id: string) => libraryApi.get<BookDocument>(`/books/${id}`),
+
+  getCover: (id: string) => libraryApi.get<{ cover_image: string | null; thumbnail: string | null }>(`/books/${id}/cover`),
 
   upload: (data: {
     file: File;

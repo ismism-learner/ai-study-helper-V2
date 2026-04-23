@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { optimizeApi, worldTimelineApi, quickNoteApi, QuickNote } from '../../api';
+import { useUndoRedo } from '../../hooks/useUndoRedo';
 import {
   PDFNote,
   PDFNotesPanelProps,
@@ -37,7 +38,7 @@ export function usePDFNotes(
   currentPage: number,
   onNoteClick?: (note: PDFNote) => void
 ): UsePDFNotesReturn {
-  const [notes, setNotes] = useState<PDFNote[]>([]);
+  const { state: notes, push: pushNotes, undo: undoNotes, redo: redoNotes, canUndo: canUndoNotes, canRedo: canRedoNotes, reset: resetNotes } = useUndoRedo<PDFNote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
@@ -182,7 +183,7 @@ export function usePDFNotes(
         localStorage.setItem(`pdf_notes_${documentId}`, JSON.stringify(mockNotes));
       }
 
-      setNotes(localNotes);
+      resetNotes(localNotes);
     } catch (error) {
       console.error('Failed to load notes:', error);
     } finally {
@@ -273,9 +274,9 @@ export function usePDFNotes(
   }, [currentPage, editingNote]);
 
   const saveNotes = useCallback((updatedNotes: PDFNote[]) => {
-    setNotes(updatedNotes);
+    pushNotes(updatedNotes);
     localStorage.setItem(`pdf_notes_${documentId}`, JSON.stringify(updatedNotes));
-  }, [documentId]);
+  }, [documentId, pushNotes]);
 
   const filteredNotes = useMemo(() => {
     let filtered = [...notes];
@@ -823,5 +824,9 @@ export function usePDFNotes(
     handleBatchTimelineGenerate,
     handleSaveTimelineNotes,
     parseTimeInput,
+    undoNotes,
+    redoNotes,
+    canUndoNotes,
+    canRedoNotes,
   };
 }

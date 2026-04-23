@@ -164,6 +164,8 @@ class SettingsResponse(BaseModel):
     api_key: str
     api_base: str
     model_name: str
+    ai_backend_type: str = "api"
+    opencode_cli_path: str = "opencode"
     framework_prompt: str
     explain_prompt: str
     optimize_prompt: str
@@ -171,7 +173,18 @@ class SettingsResponse(BaseModel):
     chapter_note_system_prompt: str = ""
     chapter_note_prompt: str = ""
     timeline_prompt: str = ""
+    long_text_rewrite_system_prompt: str = ""
+    long_text_rewrite_prompt: str = ""
     batch_upload_size: int = 5
+    neo4j_enabled: bool = False
+    neo4j_uri: str = "bolt://localhost:7687"
+    neo4j_user: str = "neo4j"
+    neo4j_password: str = ""
+    kg_concept_prompt: str = ""
+    quick_summary_prompt: str = ""
+
+    class Config:
+        from_attributes = True
 
 
 class ModelsResponse(BaseModel):
@@ -182,6 +195,8 @@ class SettingsUpdate(BaseModel):
     api_key: Optional[str] = None
     api_base: Optional[str] = None
     model_name: Optional[str] = None
+    ai_backend_type: Optional[str] = None
+    opencode_cli_path: Optional[str] = None
     framework_prompt: Optional[str] = None
     explain_prompt: Optional[str] = None
     optimize_prompt: Optional[str] = None
@@ -189,7 +204,41 @@ class SettingsUpdate(BaseModel):
     chapter_note_system_prompt: Optional[str] = None
     chapter_note_prompt: Optional[str] = None
     timeline_prompt: Optional[str] = None
+    long_text_rewrite_system_prompt: Optional[str] = None
+    long_text_rewrite_prompt: Optional[str] = None
     batch_upload_size: Optional[int] = None
+    neo4j_enabled: Optional[bool] = None
+    neo4j_uri: Optional[str] = None
+    neo4j_user: Optional[str] = None
+    neo4j_password: Optional[str] = None
+    kg_concept_prompt: Optional[str] = None
+    quick_summary_prompt: Optional[str] = None
+
+
+class APIConfigCreate(BaseModel):
+    name: str
+    api_key: str
+    api_base: str
+    model_name: str
+
+
+class APIConfigUpdate(BaseModel):
+    name: Optional[str] = None
+    api_key: Optional[str] = None
+    api_base: Optional[str] = None
+    model_name: Optional[str] = None
+
+
+class APIConfigResponse(BaseModel):
+    id: str
+    name: str
+    api_key: str
+    api_base: str
+    model_name: str
+    is_active: bool
+
+    class Config:
+        from_attributes = True
 
 
 class ParagraphOptimizeRequest(BaseModel):
@@ -322,3 +371,20 @@ class ChapterNoteResponse(BaseModel):
 class ChapterNoteGenerateRequest(BaseModel):
     original_text: str
     chapter_title: Optional[str] = None
+
+
+class StructureGenerateRequest(BaseModel):
+    original_text: str
+    chapter_title: Optional[str] = None
+
+
+class SectionGenerateRequest(BaseModel):
+    section_text: str
+    section_info: dict
+    structure: dict
+    chapter_title: Optional[str] = None
+
+
+class SplitByStructureRequest(BaseModel):
+    original_text: str
+    structure: dict

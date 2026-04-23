@@ -37,6 +37,11 @@ const themes: Theme[] = [
     name: '白蓝主题',
     preview: { bg: '#ffffff', accent: '#3b82f6', text: '#0f172a' }
   },
+  {
+    id: 'sanxiang',
+    name: '三相笔记',
+    preview: { bg: '#12101a', accent: '#8B7EC8', text: '#e8e0f0' }
+  },
 ];
 
 interface ThemeSwitcherProps {
@@ -129,4 +134,4 @@ const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ className = '' }) => {
   );
 };
 
-export default ThemeSwitcher;
+export default React.memo(ThemeSwitcher);

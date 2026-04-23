@@ -272,4 +272,4 @@ const HighlightPanel: React.FC<HighlightPanelProps> = ({
   );
 };
 
-export default HighlightPanel;
+export default React.memo(HighlightPanel);

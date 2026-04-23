@@ -125,4 +125,8 @@ export interface UsePDFNotesReturn {
   handleBatchTimelineGenerate: () => Promise<void>;
   handleSaveTimelineNotes: () => Promise<void>;
   parseTimeInput: (inputStr: string) => { event_date: string; display: string } | null;
+  undoNotes: () => boolean;
+  redoNotes: () => boolean;
+  canUndoNotes: boolean;
+  canRedoNotes: boolean;
 }

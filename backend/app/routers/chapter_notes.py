@@ -10,10 +10,16 @@ from app.schemas import (
     ChapterNoteUpdate,
     ChapterNoteResponse,
     ChapterNoteGenerateRequest,
+    StructureGenerateRequest,
+    SectionGenerateRequest,
+    SplitByStructureRequest,
 )
 from app.services.chapter_note_service import (
     generate_chapter_note,
     generate_chapter_note_stream,
+    generate_structure,
+    generate_section_note,
+    split_text_by_structure,
 )
 
 router = APIRouter()
@@ -134,6 +140,52 @@ async def generate_chapter_note_markdown_stream(
             "Connection": "keep-alive",
         },
     )
+
+
+@router.post("/chapter-notes/generate-structure")
+async def generate_structure_endpoint(
+    request: StructureGenerateRequest, db: Session = Depends(get_db)
+):
+    try:
+        structure = await generate_structure(
+            original_text=request.original_text,
+            chapter_title=request.chapter_title or "未命名文档",
+        )
+        return {"structure": structure}
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"生成结构表失败: {str(e)}")
+
+
+@router.post("/chapter-notes/generate-section")
+async def generate_section_endpoint(
+    request: SectionGenerateRequest, db: Session = Depends(get_db)
+):
+    try:
+        markdown_content = await generate_section_note(
+            section_text=request.section_text,
+            section_info=request.section_info,
+            structure=request.structure,
+            chapter_title=request.chapter_title or "未命名章节",
+        )
+        return {"markdown_content": markdown_content}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"生成章节内容失败: {str(e)}")
+
+
+@router.post("/chapter-notes/split-by-structure")
+async def split_by_structure_endpoint(
+    request: SplitByStructureRequest, db: Session = Depends(get_db)
+):
+    try:
+        sections = split_text_by_structure(
+            original_text=request.original_text,
+            structure=request.structure,
+        )
+        return {"sections": sections}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"切分文本失败: {str(e)}")
 
 
 @router.post("/chapter-notes/{note_id}/generate")

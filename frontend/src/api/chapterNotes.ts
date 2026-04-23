@@ -30,6 +30,42 @@ export interface ChapterNoteGenerateRequest {
   chapter_title?: string;
 }
 
+export interface StructureGenerateRequest {
+  original_text: string;
+  chapter_title?: string;
+}
+
+export interface SectionGenerateRequest {
+  section_text: string;
+  section_info: {
+    title?: string;
+    summary?: string;
+    start_line?: number;
+    end_line?: number;
+    sections?: { title: string; summary: string; key_points?: string[]; start_line?: number; end_line?: number }[];
+    [key: string]: unknown;
+  };
+  structure: {
+    book_title?: string;
+    total_chapters?: number;
+    chapters: { index: number; title: string; summary?: string; start_line?: number; end_line?: number; sections?: { title: string; summary: string; key_points?: string[]; start_line?: number; end_line?: number }[] }[];
+    [key: string]: unknown;
+  };
+  chapter_title?: string;
+}
+
+export interface SplitByStructureRequest {
+  original_text: string;
+  structure: SectionGenerateRequest['structure'];
+}
+
+export interface SplitSection {
+  index: number;
+  title: string;
+  text: string;
+  section_info: SectionGenerateRequest['section_info'];
+}
+
 export const chapterNoteApi = {
   create: (data: ChapterNoteCreateRequest) =>
     api.post<ChapterNote>('/chapter-notes', data),
@@ -53,6 +89,15 @@ export const chapterNoteApi = {
 
   generate: (data: ChapterNoteGenerateRequest) =>
     api.post<{ markdown_content: string }>('/chapter-notes/generate', data),
+
+  generateStructure: (data: StructureGenerateRequest) =>
+    api.post<{ structure: SectionGenerateRequest['structure'] }>('/chapter-notes/generate-structure', data),
+
+  generateSection: (data: SectionGenerateRequest) =>
+    api.post<{ markdown_content: string }>('/chapter-notes/generate-section', data),
+
+  splitByStructure: (data: SplitByStructureRequest) =>
+    api.post<{ sections: SplitSection[] }>('/chapter-notes/split-by-structure', data),
 
   generateAndSave: (noteId: string) =>
     api.post<ChapterNote>(`/chapter-notes/${noteId}/generate`),

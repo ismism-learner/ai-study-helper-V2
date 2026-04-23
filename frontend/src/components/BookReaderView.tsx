@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { BookDocument } from '../types';
-import { bookApi, pdfOcrApi, chapterNoteApi } from '../api';
-import { ArrowLeft, ZoomIn, ZoomOut, Maximize2, Minimize2, FileText, Download, RefreshCw, BookOpen, ChevronLeft, ChevronRight, GripVertical, ScanText, X, Sparkles } from 'lucide-react';
+import { bookApi, pdfOcrApi, chapterNoteApi, highlightApi } from '../api';
+import { cognitiveChainApi, knowledgeGraphApi } from '../api/knowledgeGraph';
+import { ArrowLeft, ZoomIn, ZoomOut, Maximize2, Minimize2, FileText, Download, RefreshCw, BookOpen, ChevronLeft, ChevronRight, GripVertical, ScanText, Sparkles, MessageCircle, Network } from 'lucide-react';
 import PDFNotesPanel from './PDFNotesPanel';
+import ResizablePanels from './ResizablePanels';
+import KnowledgeGraphPanel from './KnowledgeGraphPanel';
+import CognitiveChainPanel from './CognitiveChainPanel';
 
 const EpubReaderView = lazy(() => import('./EpubReaderView'));
 import PDFOCRModal from './PDFOCRModal';
@@ -24,6 +28,24 @@ interface BookReaderViewProps {
 const BUFFER_PAGES = 3;
 const UNLOAD_BUFFER_PAGES = 5;
 const PAGE_HEIGHT_ESTIMATE = 800;
+
+/**
+ * 根据当前页码计算应渲染的页面集合
+ * 逻辑：当前页 ± bufferPages，简单直接
+ */
+function getVisiblePagesFromPage(
+  currentPageNum: number,
+  totalPages: number,
+  bufferPages: number
+): Set<number> {
+  const startPage = Math.max(1, currentPageNum - bufferPages);
+  const endPage = Math.min(totalPages, currentPageNum + bufferPages);
+  const result = new Set<number>();
+  for (let i = startPage; i <= endPage; i++) {
+    result.add(i);
+  }
+  return result;
+}
 
 const SUPPORTED_EXTENSIONS = ['pdf'];
 
@@ -61,7 +83,9 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   const [showPDFNotes, setShowPDFNotes] = useState(false);
   const [book] = useState<BookDocument>(propsBook);
   const [containerWidth, setContainerWidth] = useState<number>(800);
-  const [visiblePages, setVisiblePages] = useState<Set<number>>(new Set());
+  const visiblePagesRef = useRef<Set<number>>(new Set());
+  const [visiblePagesKey, setVisiblePagesKey] = useState(0);
+  void visiblePagesKey; // triggers re-render when visible pages change
   const pageHeightsRef = useRef<Map<number, number>>(new Map());
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [jumpPageInput, setJumpPageInput] = useState<string>('');
@@ -71,11 +95,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [showOCRModal, setShowOCRModal] = useState(false);
   const [ocrText, setOcrText] = useState<string | null>(null);
-  const [showOCRPanel, setShowOCRPanel] = useState(false);
   const [fixNotification, setFixNotification] = useState<string | null>(null);
-  const [showTagDetector, setShowTagDetector] = useState(false);
-  const [detectedTags, setDetectedTags] = useState<{ text: string; count: number }[]>([]);
-  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [editMode, setEditMode] = useState(false);
   const [editText, setEditText] = useState<string>('');
   const [editChapters, setEditChapters] = useState<string[]>([]);
@@ -88,19 +108,34 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   const [isGeneratingNote, setIsGeneratingNote] = useState(false);
   const [chapterNoteId, setChapterNoteId] = useState<string | null>(null);
   const [rightPanelMode, setRightPanelMode] = useState<'ocr' | 'cards'>('ocr');
-  const [chapterNotesMap, setChapterNotesMap] = useState<Map<number, { chapterTitle: string; chapterIndex: number; markdownContent: string | null; isGenerating: boolean; noteId: string | null }>>(new Map());
+  const chapterNotesMapRef = useRef<Map<number, { chapterTitle: string; chapterIndex: number; markdownContent: string | null; isGenerating: boolean; noteId: string | null }>>(new Map());
+  const [chapterNotesKey, setChapterNotesKey] = useState(0);
+  void chapterNotesKey; // triggers re-render when chapter notes change
   const [contextMenu, setContextMenu] = useState<{
     show: boolean;
     x: number;
     y: number;
     selectedText: string;
+    selectionStart?: number;
   } | null>(null);
+  const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
+  const [hasActiveChain, setHasActiveChain] = useState(false);
+  const [isChainLoading, setIsChainLoading] = useState(false);
+  const [graphRefreshKey, setGraphRefreshKey] = useState(0);
+  const [explanationPopup, setExplanationPopup] = useState<{text: string; explanation: string; position: {x: number; y: number}} | null>(null);
+  const [isExplaining, setIsExplaining] = useState(false);
+  const [externalMessage, setExternalMessage] = useState<{ role: 'user' | 'assistant' | 'system'; content: string; nodeType?: string } | null>(null);
+  const [ocrHighlights, setOcrHighlights] = useState<string[]>([]);
+  const contextMenuRef = useRef<typeof contextMenu>(null);
+  const updateContextMenu = useCallback((val: typeof contextMenu) => {
+    contextMenuRef.current = val;
+    setContextMenu(val);
+  }, []);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const ocrPanelRef = useRef<HTMLDivElement>(null);
-  const pdfScrollRef = useRef<HTMLDivElement>(null);
   const readerContentRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const currentPageRef = useRef<number>(1);
@@ -115,12 +150,11 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   const editCurrentChapterRef = useRef<number>(0);
 
   const pdfContainerRef = useCallback((node: HTMLDivElement | null) => {
-    if (showOCRPanel) {
-      (pdfScrollRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-    } else {
-      (scrollContainerRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-    }
-  }, [showOCRPanel]);
+    // 找到实际的滚动容器：ResizablePanels 创建的 .panel-content
+    // 它是 .panel-pdf-viewer 的父元素，拥有 overflow: auto
+    const scrollContainer = node?.closest('.panel-content') as HTMLDivElement | null;
+    (scrollContainerRef as React.MutableRefObject<HTMLDivElement | null>).current = scrollContainer || node;
+  }, []);
 
   useEffect(() => {
     currentPageRef.current = currentPage;
@@ -142,6 +176,16 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   }, [editCurrentChapter]);
 
   useEffect(() => {
+    const handleClickOutside = () => {
+      if (explanationPopup) setExplanationPopup(null);
+    };
+    if (explanationPopup) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [explanationPopup]);
+
+  useEffect(() => {
     editChaptersRef.current = editChapters;
   }, [editChapters]);
 
@@ -153,7 +197,8 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     const targetPage = initialPage || book.last_read_page || 1;
     setCurrentPage(targetPage);
     currentPageRef.current = targetPage;
-    setVisiblePages(new Set());
+    visiblePagesRef.current = new Set();
+    setVisiblePagesKey(k => k + 1);
     pageHeightsRef.current = new Map();
     readingStartTimeRef.current = Date.now();
     lastSaveTimeRef.current = Date.now();
@@ -207,7 +252,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
 
   useEffect(() => {
     const updateWidth = () => {
-      const container = showOCRPanel ? pdfScrollRef.current : readerContentRef.current;
+      const container = scrollContainerRef.current;
       if (container) {
         setContainerWidth(container.clientWidth - 40);
       }
@@ -216,14 +261,14 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     updateWidth();
     window.addEventListener('resize', updateWidth);
     return () => window.removeEventListener('resize', updateWidth);
-  }, [showOCRPanel]);
+  }, []);
 
   useEffect(() => {
-    const container = showOCRPanel ? pdfScrollRef.current : readerContentRef.current;
+    const container = scrollContainerRef.current;
     if (container) {
       setContainerWidth(container.clientWidth - 40);
     }
-  }, [scale, showOCRPanel]);
+  }, [scale]);
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     console.log('PDF loaded successfully, pages:', numPages);
@@ -242,12 +287,13 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     for (let i = Math.max(1, targetPage - BUFFER_PAGES); i <= Math.min(numPages, targetPage + BUFFER_PAGES); i++) {
       initialVisible.add(i);
     }
-    setVisiblePages(initialVisible);
+    visiblePagesRef.current = initialVisible;
+    setVisiblePagesKey(k => k + 1);
     
     if (targetPage > 1 && targetPage <= numPages) {
       const scrollToTarget = () => {
         const pageElement = pageRefs.current.get(targetPage);
-        const scrollContainer = showOCRPanel ? pdfScrollRef.current : readerContentRef.current;
+        const scrollContainer = scrollContainerRef.current;
         if (pageElement && scrollContainer) {
           isScrollingProgrammatically.current = true;
           pageElement.scrollIntoView({ behavior: 'instant', block: 'start' });
@@ -335,10 +381,9 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     setShowOCRModal(false);
     if (text && text.trim()) {
       setOcrText(text);
-      setShowOCRPanel(true);
       setTimeout(() => {
-        if (pdfScrollRef.current) {
-          pdfScrollRef.current.scrollTop = 0;
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = 0;
         }
         if (ocrPanelRef.current) {
           ocrPanelRef.current.scrollTop = 0;
@@ -357,9 +402,10 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     
     for (const line of lines) {
       if (line.trim().startsWith(CHAPTER_MARKER)) {
-        // Always push current chapter content to preserve all ==== markers for lossless round-trip
-        chapters.push(currentChapter.join('\n'));
-        // Preserve raw content after ==== (including original spacing) for lossless round-trip
+        const chapterContent = currentChapter.join('\n').trim();
+        if (chapterContent || chapters.length > 0) {
+          chapters.push(chapterContent);
+        }
         currentChapter = [line.trim().substring(CHAPTER_MARKER.length)];
       } else {
         currentChapter.push(line);
@@ -367,10 +413,9 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     }
     
     if (currentChapter.length > 0) {
-      chapters.push(currentChapter.join('\n'));
+      chapters.push(currentChapter.join('\n').trim());
     }
     
-    // Filter out trailing empty chapter (from text ending with ====)
     while (chapters.length > 1 && chapters[chapters.length - 1] === '') {
       chapters.pop();
     }
@@ -391,7 +436,10 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
 
   /** Reassemble editChapters (with ==== prefixes) back into full OCR text */
   const reassembleFromEditChapters = useCallback((chapters: string[]): string => {
-    return chapters.map(ch => ch.replace(/\n+$/, '')).join('\n');
+    return chapters
+      .map(ch => ch.replace(/\n+$/, '').replace(/^\n+/, ''))
+      .filter(ch => ch.length > 0)
+      .join('\n');
   }, []);
 
   useEffect(() => {
@@ -472,33 +520,21 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     return result.join('\n');
   }, []);
 
-  const detectChapterTags = useCallback((text: string, threshold: number = 3): { text: string; count: number }[] => {
-    const lines = text.split('\n');
-    const lineCounts = new Map<string, number>();
-    
-    lines.forEach(line => {
-      const trimmed = line.trim();
-      if (trimmed.length > 0 && trimmed.length < 100) {
-        lineCounts.set(trimmed, (lineCounts.get(trimmed) || 0) + 1);
-      }
-    });
-    
-    const tags: { text: string; count: number }[] = [];
-    lineCounts.forEach((count, text) => {
-      if (count >= threshold) {
-        tags.push({ text, count });
-      }
-    });
-    
-    return tags.sort((a, b) => b.count - a.count);
-  }, []);
-
   const saveOCRText = useCallback(async (text: string) => {
-    if (!book.file_path || !text) return;
+    console.log('[SAVE OCR TEXT] 开始保存');
+    console.log('[SAVE OCR TEXT] book.file_path:', book.file_path);
+    console.log('[SAVE OCR TEXT] text length:', text?.length);
+    console.log('[SAVE OCR TEXT] text preview:', text?.substring(0, 100));
+    if (!book.file_path || !text) {
+      console.log('[SAVE OCR TEXT] 跳过保存 - file_path 或 text 为空');
+      return;
+    }
     try {
-      await pdfOcrApi.saveOcrText(book.file_path, text);
+      console.log('[SAVE OCR TEXT] 调用 API...');
+      const result = await pdfOcrApi.saveOcrText(book.file_path, text);
+      console.log('[SAVE OCR TEXT] API 返回:', result.data);
     } catch (error) {
-      console.error('Failed to save OCR text:', error);
+      console.error('[SAVE OCR TEXT] 保存失败:', error);
     }
   }, [book.file_path]);
 
@@ -510,56 +546,6 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [editMode, editText, saveOCRText]);
-
-  const handleDetectTags = useCallback(() => {
-    if (!ocrText) return;
-    
-    const tags = detectChapterTags(ocrText, 3);
-    setDetectedTags(tags);
-    setShowTagDetector(true);
-    setSelectedTags(new Set());
-  }, [ocrText, detectChapterTags]);
-
-  const handleToggleTag = useCallback((tagText: string) => {
-    setSelectedTags(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(tagText)) {
-        newSet.delete(tagText);
-      } else {
-        newSet.add(tagText);
-      }
-      return newSet;
-    });
-  }, []);
-
-  const handleDeleteSelectedTags = useCallback(async () => {
-    if (!ocrText || selectedTags.size === 0) return;
-    
-    let newText = ocrText;
-    selectedTags.forEach(tag => {
-      const escapedTag = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`^${escapedTag}$`, 'gm');
-      newText = newText.replace(regex, '');
-    });
-    
-    newText = newText.replace(/\n{3,}/g, '\n\n').trim();
-    setOcrText(newText);
-    await saveOCRText(newText);
-    setFixNotification(`已删除 ${selectedTags.size} 个章节标签`);
-    setTimeout(() => setFixNotification(null), 2000);
-    
-    setShowTagDetector(false);
-    setSelectedTags(new Set());
-    setDetectedTags([]);
-  }, [ocrText, selectedTags, saveOCRText]);
-
-  const handleSelectAllTags = useCallback(() => {
-    if (selectedTags.size === detectedTags.length) {
-      setSelectedTags(new Set());
-    } else {
-      setSelectedTags(new Set(detectedTags.map(t => t.text)));
-    }
-  }, [detectedTags, selectedTags.size]);
 
   const handleEnterEditMode = useCallback(() => {
     if (!ocrText) return;
@@ -584,15 +570,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
       setEditCurrentChapter(0);
     }
     setEditMode(true);
-    setShowTagDetector(false);
   }, [ocrText, currentOcrChapter, parseChapters, toEditChapters]);
-
-  const handleCloseOCRPanel = useCallback(async () => {
-    if (ocrText) {
-      await saveOCRText(ocrText);
-    }
-    setShowOCRPanel(false);
-  }, [ocrText, saveOCRText]);
 
   const handleRedoOCR = useCallback(async () => {
     if (!book.file_path) return;
@@ -601,7 +579,6 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
       await pdfOcrApi.deleteOcrText(book.file_path);
       console.log('OCR files deleted, reopening OCR modal');
       setOcrText(null);
-      setShowOCRPanel(false);
       setShowOCRModal(true);
     } catch (error) {
       console.error('Failed to delete OCR files:', error);
@@ -672,7 +649,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     autoSaveDebounceRef.current = setTimeout(() => {
       saveOCRText(newFullText);
       setOcrText(newFullText);
-    }, 2000);
+    }, 500);
   }, [reassembleFromEditChapters, parseChapters, toEditChapters, saveOCRText]);
 
   const handleOCRTextSelection = useCallback(async () => {
@@ -693,50 +670,126 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     const selection = window.getSelection();
     const selectedText = selection?.toString() || '';
     
-    setContextMenu({
+    let selectionLineNumber: number | undefined = undefined;
+    if (selection && selection.anchorNode && selectedText) {
+      const preElement = (e.target as HTMLElement).closest('pre');
+      if (preElement) {
+        const range = selection.getRangeAt(0);
+        const preRange = document.createRange();
+        preRange.selectNodeContents(preElement);
+        preRange.setEnd(range.startContainer, range.startOffset);
+        const localText = preRange.toString();
+        const localLineNumber = localText.split('\n').length;
+        
+        if (ocrChapters.length > 0 && currentOcrChapter > 0) {
+          let prevLines = 0;
+          for (let i = 0; i < currentOcrChapter; i++) {
+            prevLines += ocrChapters[i].split('\n').length;
+          }
+          selectionLineNumber = prevLines + localLineNumber;
+        } else {
+          selectionLineNumber = localLineNumber;
+        }
+      }
+    }
+    
+    updateContextMenu({
       show: true,
       x: e.clientX,
       y: e.clientY,
       selectedText: selectedText,
+      selectionStart: selectionLineNumber,
     });
+  }, [ocrText, ocrChapters, currentOcrChapter]);
+
+  const getTextPosition = useCallback((selectedText: string): number => {
+    if (!ocrText || !selectedText) return 0;
+    const index = ocrText.indexOf(selectedText.trim());
+    return index >= 0 ? index : 0;
   }, [ocrText]);
 
   const handleChapterize = useCallback(async () => {
+    console.log('[CHAPTERIZE] 开始章节化');
     if (!contextMenu?.selectedText || !ocrText) return;
     
     const CHAPTER_MARKER = '====';
-    const selectedText = contextMenu.selectedText;
+    const selectedText = contextMenu.selectedText.trim();
+    
+    // selectionStart 现在是完整OCR文本中的行号
+    const selectionLineNumber = contextMenu.selectionStart;
+    console.log('[CHAPTERIZE] 选中行号:', selectionLineNumber);
     
     const lines = ocrText.split('\n');
     let found = false;
     let newChapterIndex = 0;
     let chapterCount = 0;
+    let targetLineIndex = -1;
     
-    const newLines = lines.map((line) => {
-      if (line.trim().startsWith(CHAPTER_MARKER)) {
-        chapterCount++;
-      }
-      if (!found && line.includes(selectedText.trim())) {
-        found = true;
-        if (!line.trim().startsWith(CHAPTER_MARKER)) {
+    // 如果有行号，直接使用行号定位（行号从1开始，索引从0开始）
+    if (selectionLineNumber !== undefined && selectionLineNumber > 0) {
+      targetLineIndex = selectionLineNumber - 1;
+      console.log('[CHAPTERIZE] 目标行索引:', targetLineIndex);
+    }
+    
+    // 如果找到了目标行，进行章节化
+    if (targetLineIndex >= 0 && targetLineIndex < lines.length) {
+      console.log('[CHAPTERIZE] 目标行内容:', lines[targetLineIndex]?.slice(0, 50));
+      
+      const newLines = lines.map((line, index) => {
+        if (line.trim().startsWith(CHAPTER_MARKER)) {
+          chapterCount++;
+        }
+        
+        // 只在目标行添加章节标记
+        if (index === targetLineIndex && !line.trim().startsWith(CHAPTER_MARKER)) {
+          found = true;
           newChapterIndex = chapterCount;
           return CHAPTER_MARKER + line;
         }
+        return line;
+      });
+      
+      if (found) {
+        const newOcrText = newLines.join('\n');
+        setOcrText(newOcrText);
+        await saveOCRText(newOcrText);
+        setFixNotification(`已添加章节标记 - 第 ${newChapterIndex + 1} 章`);
+        setCurrentOcrChapter(newChapterIndex + 1);
       }
-      return line;
-    });
-    
-    if (found) {
-      const newOcrText = newLines.join('\n');
-      setOcrText(newOcrText);
-      await saveOCRText(newOcrText);
-      setFixNotification(`已添加章节标记 - 第 ${newChapterIndex + 1} 章`);
-      setCurrentOcrChapter(newChapterIndex + 1);
     } else {
+      // 回退到原来的逻辑（如果位置计算失败）
+      console.log('[CHAPTERIZE] 位置计算失败，使用回退逻辑');
+      const normalizedSelected = selectedText.replace(/\s+/g, ' ').trim();
+      
+      const newLines = lines.map((line) => {
+        if (line.trim().startsWith(CHAPTER_MARKER)) {
+          chapterCount++;
+        }
+        const normalizedLine = line.replace(/\s+/g, ' ').trim();
+        if (!found && (line.includes(selectedText) || normalizedLine.includes(normalizedSelected))) {
+          found = true;
+          if (!line.trim().startsWith(CHAPTER_MARKER)) {
+            newChapterIndex = chapterCount;
+            return CHAPTER_MARKER + line;
+          }
+        }
+        return line;
+      });
+      
+      if (found) {
+        const newOcrText = newLines.join('\n');
+        setOcrText(newOcrText);
+        await saveOCRText(newOcrText);
+        setFixNotification(`已添加章节标记 - 第 ${newChapterIndex + 1} 章`);
+        setCurrentOcrChapter(newChapterIndex + 1);
+      }
+    }
+    
+    if (!found) {
       setFixNotification('未找到选中的文本');
     }
     
-    setContextMenu(null);
+    updateContextMenu(null);
     setTimeout(() => setFixNotification(null), 2000);
   }, [contextMenu, ocrText, saveOCRText]);
 
@@ -747,7 +800,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     
     if (selectedText.length < 2) {
       setFixNotification('请选择至少2个字符');
-      setContextMenu(null);
+      updateContextMenu(null);
       setTimeout(() => setFixNotification(null), 2000);
       return;
     }
@@ -763,9 +816,134 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
       setFixNotification('未检测到需要修复的换行');
     }
     
-    setContextMenu(null);
+    updateContextMenu(null);
     setTimeout(() => setFixNotification(null), 2000);
   }, [contextMenu, ocrText, fixLineBreaksInText, saveOCRText]);
+
+  const handleAskQuestion = useCallback(() => {
+    if (!contextMenu?.selectedText) return;
+    setPendingQuestion(contextMenu.selectedText);
+    updateContextMenu(null);
+  }, [contextMenu]);
+
+  const handleKnowledgeNodeClick = useCallback((node: { name: string; source_chapter_index?: number } | null) => {
+    if (node) {
+      console.log('选中节点:', node.name, node);
+      const chapterIndex = node.source_chapter_index;
+      if (typeof chapterIndex === 'number' && chapterIndex >= 0) {
+        setCurrentOcrChapter(chapterIndex);
+      }
+    }
+  }, []);
+
+  const handleQuickSummary = useCallback(async () => {
+    if (!contextMenu?.selectedText || !book.id) return;
+    
+    const textPosition = contextMenu.selectionStart ?? getTextPosition(contextMenu.selectedText);
+    const chapterIndex = ocrChapters.length > 0 ? currentOcrChapter : undefined;
+    console.log('[QuickSummary] 发送参数:', { textPosition, chapterIndex, currentOcrChapter, ocrChaptersLength: ocrChapters.length });
+    
+    setIsChainLoading(true);
+    setExternalMessage({ role: 'user', content: contextMenu.selectedText.slice(0, 50) + '...', nodeType: 'QuickSummary' });
+    
+    try {
+      const { knowledgeGraphApi } = await import('../api/knowledgeGraph');
+      const res = await knowledgeGraphApi.createQuickSummary({
+        text: contextMenu.selectedText,
+        book_id: book.id,
+        book_title: book.title,
+        text_position: textPosition,
+        chapter_index: chapterIndex,
+      });
+      const node = res.data?.node;
+      setExternalMessage({ 
+        role: 'assistant', 
+        content: `${node?.name || '快速梳理'}\n\n${node?.description || ''}`,
+        nodeType: 'QuickSummary'
+      });
+      setGraphRefreshKey(k => k + 1);
+    } catch (error) {
+      console.error('快速梳理失败:', error);
+      setExternalMessage({ role: 'system', content: '快速梳理失败', nodeType: 'QuickSummary' });
+    } finally {
+      setIsChainLoading(false);
+      updateContextMenu(null);
+    }
+  }, [contextMenu, book.id, book.title, getTextPosition, ocrChapters.length, currentOcrChapter]);
+
+  const handleDetailedQuestion = useCallback(async () => {
+    if (!contextMenu?.selectedText || !book.id) return;
+    
+    const textPosition = contextMenu.selectionStart ?? getTextPosition(contextMenu.selectedText);
+    setIsChainLoading(true);
+    setExternalMessage({ role: 'user', content: contextMenu.selectedText.slice(0, 50) + '...', nodeType: 'DetailedQuestion' });
+    
+    try {
+      const { knowledgeGraphApi } = await import('../api/knowledgeGraph');
+      const res = await knowledgeGraphApi.createDetailedQuestion({
+        text: contextMenu.selectedText,
+        book_id: book.id,
+        book_title: book.title,
+        text_position: textPosition,
+      });
+      const node = res.data?.node;
+      setExternalMessage({ 
+        role: 'assistant', 
+        content: `${node?.name || '概念'}\n\n${node?.description || ''}`,
+        nodeType: 'DetailedQuestion'
+      });
+      setGraphRefreshKey(k => k + 1);
+    } catch (error) {
+      console.error('详细提问失败:', error);
+      setExternalMessage({ role: 'system', content: '详细提问失败', nodeType: 'DetailedQuestion' });
+    } finally {
+      setIsChainLoading(false);
+      updateContextMenu(null);
+    }
+  }, [contextMenu, book.id, book.title, getTextPosition]);
+
+
+  const handleFollowUpQuestion = useCallback(() => {
+    if (!contextMenu?.selectedText) return;
+    if (!hasActiveChain) {
+      setFixNotification('请先创建认知链后再追问');
+      updateContextMenu(null);
+      setTimeout(() => setFixNotification(null), 2000);
+      return;
+    }
+    setPendingQuestion(contextMenu.selectedText);
+    updateContextMenu(null);
+  }, [contextMenu, hasActiveChain]);
+
+  const handleAIExplain = useCallback(async () => {
+    if (!contextMenu?.selectedText) return;
+    const selectedText = contextMenu.selectedText;
+    setIsExplaining(true);
+    try {
+      const res = await cognitiveChainApi.explainConcept({
+        concept: selectedText,
+        context: ocrText ? ocrText.slice(0, 2000) : '',
+      });
+      setExplanationPopup({
+        text: selectedText,
+        explanation: res.data.definition || res.data.concept || '',
+        position: { x: contextMenu.x, y: contextMenu.y + 20 },
+      });
+    } catch (err) {
+      setFixNotification('AI解释失败');
+    } finally {
+      setIsExplaining(false);
+    }
+    updateContextMenu(null);
+  }, [contextMenu, ocrText]);
+
+  const handleOCRHighlight = useCallback(() => {
+    if (!contextMenu?.selectedText) return;
+    setOcrHighlights(prev => [...prev, contextMenu.selectedText]);
+    updateContextMenu(null);
+    setFixNotification('已标记高亮');
+    setTimeout(() => setFixNotification(null), 2000);
+  }, [contextMenu]);
 
   const MAX_NOTE_CHARS = 8000;
 
@@ -784,11 +962,9 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
       ? `${book.title} - 第${chapterIdx + 1}章`
       : book.title;
 
-    setChapterNotesMap(prev => {
-      const next = new Map(prev);
-      next.set(chapterIdx, { chapterTitle, chapterIndex: chapterIdx, markdownContent: null, isGenerating: true, noteId: null });
-      return next;
-    });
+    chapterNotesMapRef.current = new Map(chapterNotesMapRef.current);
+    chapterNotesMapRef.current.set(chapterIdx, { chapterTitle, chapterIndex: chapterIdx, markdownContent: null, isGenerating: true, noteId: null });
+    setChapterNotesKey(k => k + 1);
 
     if (targetChapter === undefined) {
       setIsGeneratingNote(true);
@@ -815,11 +991,9 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
 
       const mdContent = generateResponse.data.markdown_content;
 
-      setChapterNotesMap(prev => {
-        const next = new Map(prev);
-        next.set(chapterIdx, { chapterTitle, chapterIndex: chapterIdx, markdownContent: mdContent, isGenerating: false, noteId });
-        return next;
-      });
+      chapterNotesMapRef.current = new Map(chapterNotesMapRef.current);
+      chapterNotesMapRef.current.set(chapterIdx, { chapterTitle, chapterIndex: chapterIdx, markdownContent: mdContent, isGenerating: false, noteId });
+      setChapterNotesKey(k => k + 1);
 
       if (targetChapter === undefined) {
         setNoteMarkdown(mdContent);
@@ -831,11 +1005,9 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
       });
     } catch (error: any) {
       console.error('Failed to generate note:', error);
-      setChapterNotesMap(prev => {
-        const next = new Map(prev);
-        next.set(chapterIdx, { chapterTitle, chapterIndex: chapterIdx, markdownContent: null, isGenerating: false, noteId: null });
-        return next;
-      });
+      chapterNotesMapRef.current = new Map(chapterNotesMapRef.current);
+      chapterNotesMapRef.current.set(chapterIdx, { chapterTitle, chapterIndex: chapterIdx, markdownContent: null, isGenerating: false, noteId: null });
+      setChapterNotesKey(k => k + 1);
       if (targetChapter === undefined) {
         alert('生成笔记失败: ' + (error.response?.data?.detail || error.message));
         setNoteViewMode(false);
@@ -849,29 +1021,38 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
 
   useEffect(() => {
     const handleClickOutside = () => {
-      if (contextMenu?.show) {
-        setContextMenu(null);
+      if (contextMenuRef.current?.show) {
+        updateContextMenu(null);
       }
     };
     
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, [contextMenu?.show]);
+  }, []);
 
   useEffect(() => {
     const loadExistingOCRText = async () => {
+      console.log('[LOAD OCR TEXT] 开始加载');
+      console.log('[LOAD OCR TEXT] book.file_path:', book.file_path);
       if (!book.file_path) return;
       
       try {
+        console.log('[LOAD OCR TEXT] 检查是否有 OCR 文本...');
         const response = await pdfOcrApi.hasOcrText(book.file_path);
+        console.log('[LOAD OCR TEXT] hasOcrText 返回:', response.data);
         if (response.data.has_ocr_text) {
+          console.log('[LOAD OCR TEXT] 获取 OCR 文本...');
           const textResponse = await pdfOcrApi.getOcrText(book.file_path);
           const normalizedText = textResponse.data.replace(/\n{3,}/g, '\n\n');
-          console.log('Loaded existing OCR text, length:', normalizedText.length);
+          console.log('[LOAD OCR TEXT] 加载成功, 长度:', normalizedText.length);
+          console.log('[LOAD OCR TEXT] 文本预览:', normalizedText.substring(0, 100));
+          console.log('[LOAD OCR TEXT] 包含 ==== 标记:', normalizedText.includes('===='));
           setOcrText(normalizedText);
+        } else {
+          console.log('[LOAD OCR TEXT] 没有 OCR 文本');
         }
       } catch (error) {
-        console.log('No existing OCR text found');
+        console.log('[LOAD OCR TEXT] 加载失败:', error);
       }
     };
     
@@ -882,7 +1063,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     if (pageNumber < 1 || pageNumber > numPages) return;
     
     const pageElement = pageRefs.current.get(pageNumber);
-    const scrollContainer = showOCRPanel ? pdfScrollRef.current : readerContentRef.current;
+    const scrollContainer = scrollContainerRef.current;
     if (pageElement && scrollContainer) {
       isScrollingProgrammatically.current = true;
       scrollContainer.scrollTop = pageElement.offsetTop - 20;
@@ -892,7 +1073,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
         isScrollingProgrammatically.current = false;
       }, 100);
     }
-  }, [numPages, showOCRPanel]);
+  }, [numPages]);
 
   const handlePrevPage = useCallback(() => {
     const newPage = currentPageRef.current - 1;
@@ -942,12 +1123,13 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   }, [handleKeyDown]);
 
   useEffect(() => {
-    const scrollContainer = showOCRPanel ? pdfScrollRef.current : readerContentRef.current;
+    const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer || numPages === 0) return;
 
     const handleScroll = () => {
       if (isScrollingProgrammatically.current) return;
       
+      // 更新当前页码
       if (pageRefs.current.size === 0) return;
       
       const containerRect = scrollContainer.getBoundingClientRect();
@@ -967,6 +1149,20 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
         currentPageRef.current = currentPageNum;
         setCurrentPage(currentPageNum);
       }
+
+      // 根据当前页码更新可见页面集合
+      const newVisible = getVisiblePagesFromPage(currentPageNum, numPages, BUFFER_PAGES);
+      const prev = visiblePagesRef.current;
+      let changed = newVisible.size !== prev.size;
+      if (!changed) {
+        for (const page of newVisible) {
+          if (!prev.has(page)) { changed = true; break; }
+        }
+      }
+      if (changed) {
+        visiblePagesRef.current = newVisible;
+        setVisiblePagesKey(k => k + 1);
+      }
     };
 
     scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
@@ -974,70 +1170,16 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     return () => {
       scrollContainer.removeEventListener('scroll', handleScroll);
     };
-  }, [numPages, showOCRPanel]);
-
-  useEffect(() => {
-    const scrollContainer = showOCRPanel ? pdfScrollRef.current : readerContentRef.current;
-    if (numPages === 0 || !scrollContainer) return;
-
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-    }
-
-    const scaledBufferHeight = BUFFER_PAGES * PAGE_HEIGHT_ESTIMATE * scale;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const newVisiblePages = new Set<number>();
-        
-        entries.forEach((entry) => {
-          const pageNumber = parseInt(entry.target.getAttribute('data-page') || '0');
-          if (pageNumber > 0 && entry.isIntersecting) {
-            newVisiblePages.add(pageNumber);
-          }
-        });
-
-        if (newVisiblePages.size > 0) {
-          setVisiblePages(prev => {
-            const combined = new Set<number>();
-            newVisiblePages.forEach(page => {
-              for (let i = Math.max(1, page - UNLOAD_BUFFER_PAGES); i <= Math.min(numPages, page + UNLOAD_BUFFER_PAGES); i++) {
-                combined.add(i);
-              }
-            });
-            prev.forEach(page => {
-              const nearAnyVisible = Array.from(newVisiblePages).some(
-                vp => Math.abs(page - vp) <= UNLOAD_BUFFER_PAGES
-              );
-              if (nearAnyVisible) {
-                combined.add(page);
-              }
-            });
-            return combined;
-          });
-        }
-      },
-      {
-        root: scrollContainer,
-        rootMargin: `${scaledBufferHeight}px 0px`,
-        threshold: 0.01
-      }
-    );
-
-    observerRef.current = observer;
-
-    const currentPageRefs = pageRefs.current;
-    currentPageRefs.forEach((element) => {
-      observer.observe(element);
-    });
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [numPages, scale, showOCRPanel]);
+  }, [numPages]);
 
   const onPageRenderSuccess = (pageNumber: number) => (page: { height: number; width: number }) => {
-    pageHeightsRef.current.set(pageNumber, page.height);
+    // 存储实际渲染后的高度（用于占位符高度估算）
+    const wrapperEl = pageRefs.current.get(pageNumber);
+    if (wrapperEl) {
+      pageHeightsRef.current.set(pageNumber, wrapperEl.getBoundingClientRect().height);
+    } else {
+      pageHeightsRef.current.set(pageNumber, page.height * scale);
+    }
   };
 
   const onPageRenderError = (pageNumber: number) => (error: Error) => {
@@ -1049,12 +1191,13 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   }, [numPages]);
 
   const shouldRenderPage = useCallback((pageNumber: number) => {
-    return visiblePages.has(pageNumber);
-  }, [visiblePages]);
-
-  const getPageHeight = useCallback((pageNumber: number) => {
-    return pageHeightsRef.current.get(pageNumber) || PAGE_HEIGHT_ESTIMATE;
+    return visiblePagesRef.current.has(pageNumber);
   }, []);
+
+  // 返回已缩放的页面高度（用于占位符）
+  const getPageHeight = useCallback((pageNumber: number) => {
+    return pageHeightsRef.current.get(pageNumber) || (PAGE_HEIGHT_ESTIMATE * scale);
+  }, [scale]);
 
   const handleToolbarMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.toolbar-btn, .nav-btn, input, .zoom-controls')) {
@@ -1189,6 +1332,10 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
               <span className="page-separator">/</span>
               <span className="total-pages">{numPages || '...'}</span>
             </div>
+            {/* DEBUG: 可视页面检测指示器 */}
+            <span className="visible-pages-debug" style={{ fontSize: 9, color: 'var(--text-muted)', marginLeft: 4, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title="当前渲染的页面（调试）">
+              [{Array.from(visiblePagesRef.current).sort((a,b)=>a-b).join(',')}]
+            </span>
             <button 
               className="nav-btn" 
               onClick={handleNextPage} 
@@ -1220,15 +1367,13 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
           </button>
           
           <button 
-            className={`toolbar-btn ${showOCRPanel ? 'active' : ''}`} 
+            className={`toolbar-btn ${ocrText ? 'active' : ''}`} 
             onClick={() => {
-              if (ocrText) {
-                setShowOCRPanel(!showOCRPanel);
-              } else {
+              if (!ocrText) {
                 setShowOCRModal(true);
               }
             }} 
-            title={ocrText ? (showOCRPanel ? "隐藏 OCR 文本" : "显示 OCR 文本") : "OCR 文字识别"}
+            title={ocrText ? "OCR 文本已识别（在右侧面板查看）" : "OCR 文字识别"}
           >
             <ScanText size={14} />
           </button>
@@ -1243,7 +1388,17 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
         </div>
       </div>
 
-      <div className={`reader-content ${showOCRPanel ? 'with-ocr' : ''}`} ref={readerContentRef}>
+      <div className="reader-content" ref={readerContentRef}>
+        <ResizablePanels
+          panels={[
+            { id: 'pdf', title: 'PDF 原文', icon: <FileText size={14} />, defaultWidth: 25, minWidth: 15, maxWidth: 50, collapsible: true },
+            { id: 'qa', title: '问答', icon: <MessageCircle size={14} />, defaultWidth: 25, minWidth: 15, maxWidth: 45, collapsible: true },
+            { id: 'graph', title: '知识图谱', icon: <Network size={14} />, defaultWidth: 25, minWidth: 15, maxWidth: 45, collapsible: true },
+            { id: 'ocr', title: 'OCR 文本', icon: <ScanText size={14} />, defaultWidth: 25, minWidth: 15, maxWidth: 45, collapsible: true },
+          ]}
+          className="reader-four-panel"
+        >
+          <div className="panel-pdf-viewer" ref={pdfContainerRef}>
         {!fileUrl && (
           <div className="pdf-placeholder">
             <FileText size={80} strokeWidth={1} />
@@ -1253,9 +1408,8 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
         )}
 
         {fileUrl && (
-          <div 
-            className={`pdf-viewer-container ${showOCRPanel ? 'with-ocr-panel' : ''}`}
-            ref={pdfContainerRef}
+          <div
+            className="pdf-viewer-container four-panel-mode"
           >
             {isLoading && (
               <div className="reader-loading-overlay">
@@ -1273,10 +1427,8 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
             >
               {allPages.map((pageNumber) => {
                 const isVisible = shouldRenderPage(pageNumber);
-                const estimatedHeight = getPageHeight(pageNumber) * scale;
-                const pageWidth = showOCRPanel 
-                  ? Math.min(containerWidth, (window.innerWidth - 120) / 2)
-                  : Math.min(containerWidth, window.innerWidth - 80);
+                const estimatedHeight = getPageHeight(pageNumber);
+                const pageWidth = containerWidth;
                 
                 return (
                   <div 
@@ -1325,8 +1477,36 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
             </Document>
           </div>
         )}
-        
-        {showOCRPanel && ocrText && (
+          </div>
+
+          {/* 第2栏：问答/认知链 */}
+          <CognitiveChainPanel
+            bookTitle={book.title}
+            sourceDocId={book.id}
+            ocrText={ocrText || undefined}
+            currentChapterIndex={currentOcrChapter}
+            pendingQuestion={pendingQuestion}
+            onQuestionConsumed={() => setPendingQuestion(null)}
+            onChainStateChange={(hasActive, isLoading) => {
+              setHasActiveChain(hasActive);
+              setIsChainLoading(isLoading);
+            }}
+            onChainUpdated={() => setGraphRefreshKey(k => k + 1)}
+            externalMessage={externalMessage}
+            onExternalMessageConsumed={() => setExternalMessage(null)}
+          />
+
+          {/* 第3栏：知识图谱 */}
+          <KnowledgeGraphPanel
+            bookTitle={book.title}
+            refreshKey={graphRefreshKey}
+            onNodeClick={handleKnowledgeNodeClick}
+            onNodeChapterClick={setCurrentOcrChapter}
+          />
+
+          {/* 第4栏：OCR 文本 */}
+          <div className="panel-ocr-content">
+        {ocrText && (
           <div className="ocr-text-panel" ref={ocrPanelRef}>
             {/* 标签页始终可见 */}
             <div className="ocr-text-header">
@@ -1369,14 +1549,6 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
                       <RefreshCw size={16} />
                       <span>重来</span>
                     </button>
-                    <button 
-                      className="auto-fix-btn"
-                      onClick={handleDetectTags}
-                      title="检测并删除重复的章节标签"
-                    >
-                      <ScanText size={16} />
-                      <span>标签</span>
-                    </button>
                   </>
                 )}
                 {rightPanelMode === 'ocr' && editMode && (
@@ -1397,12 +1569,6 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
                     </button>
                   </>
                 )}
-                <button 
-                  className="close-ocr-btn"
-                  onClick={handleCloseOCRPanel}
-                >
-                  <X size={18} />
-                </button>
               </div>
             </div>
             
@@ -1422,7 +1588,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
                 <NoteCardPanel
                   chapters={ocrChapters.length > 0 ? ocrChapters : (ocrText ? [ocrText] : [])}
                   currentChapter={currentOcrChapter}
-                  notes={chapterNotesMap}
+                  notes={chapterNotesMapRef.current}
                   onGenerateNote={(idx) => handleGenerateNote(idx)}
                   onBack={() => setRightPanelMode('ocr')}
                   hideHeader={true}
@@ -1438,41 +1604,6 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
             {editMode && (
               <div className="auto-fix-hint edit-mode-hint">
                 编辑模式 - 可自由修改文字内容（使用 Ctrl+F 搜索）
-              </div>
-            )}
-            {showTagDetector && !editMode && (
-              <div className="tag-detector-panel">
-                <div className="tag-detector-header">
-                  <span>检测到 {detectedTags.length} 个重复标签</span>
-                  <div className="tag-detector-actions">
-                    <button className="tag-action-btn" onClick={handleSelectAllTags}>
-                      {selectedTags.size === detectedTags.length ? '取消全选' : '全选'}
-                    </button>
-                    <button 
-                      className="tag-action-btn delete"
-                      onClick={handleDeleteSelectedTags}
-                      disabled={selectedTags.size === 0}
-                    >
-                      删除选中 ({selectedTags.size})
-                    </button>
-                    <button className="tag-action-btn" onClick={() => setShowTagDetector(false)}>
-                      关闭
-                    </button>
-                  </div>
-                </div>
-                <div className="tag-list">
-                  {detectedTags.map((tag, index) => (
-                    <div 
-                      key={index}
-                      className={`tag-item ${selectedTags.has(tag.text) ? 'selected' : ''}`}
-                      onClick={() => handleToggleTag(tag.text)}
-                    >
-                      <span className="tag-checkbox">{selectedTags.has(tag.text) ? '☑' : '☐'}</span>
-                      <span className="tag-text">{tag.text}</span>
-                      <span className="tag-count">×{tag.count}</span>
-                    </div>
-                  ))}
-                </div>
               </div>
             )}
             {editMode ? (
@@ -1520,6 +1651,92 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
                   <span className="menu-icon">🔧</span>
                   修复换行
                 </button>
+                <div className="context-menu-divider" />
+                <button 
+                  className="context-menu-item"
+                  onClick={handleAskQuestion}
+                  disabled={!contextMenu.selectedText || isChainLoading}
+                >
+                  <span className="menu-icon">💡</span>
+                  {isChainLoading ? '处理中...' : '提问'}
+                </button>
+                <div className="context-menu-divider" />
+                <button 
+                  className="context-menu-item"
+                  onClick={handleQuickSummary}
+                  disabled={!contextMenu.selectedText || isChainLoading}
+                  style={{ background: 'rgba(245, 158, 11, 0.1)' }}
+                >
+                  <span className="menu-icon">📋</span>
+                  快速梳理
+                </button>
+                <button 
+                  className="context-menu-item"
+                  onClick={handleDetailedQuestion}
+                  disabled={!contextMenu.selectedText || isChainLoading}
+                >
+                  <span className="menu-icon">🔍</span>
+                  详细提问
+                </button>
+                <div className="context-menu-divider" />
+                <button 
+                  className="context-menu-item"
+                  onClick={handleFollowUpQuestion}
+                  disabled={!contextMenu.selectedText || !hasActiveChain || isChainLoading}
+                  title={!hasActiveChain ? '请先创建认知链' : '在当前认知链中追问'}
+                >
+                  <span className="menu-icon">🔗</span>
+                  追问
+                </button>
+                <button 
+                  className="context-menu-item"
+                  onClick={handleAIExplain}
+                  disabled={!contextMenu.selectedText || isExplaining}
+                >
+                  <span className="menu-icon">✨</span>
+                  {isExplaining ? '解释中...' : 'AI解释'}
+                </button>
+                <button 
+                  className="context-menu-item"
+                  onClick={handleOCRHighlight}
+                  disabled={!contextMenu.selectedText}
+                >
+                  <span className="menu-icon">🏷️</span>
+                  高亮标记
+                </button>
+              </div>
+            )}
+            {explanationPopup && (
+              <div
+                className="explanation-tooltip"
+                style={{
+                  position: 'fixed',
+                  left: Math.min(explanationPopup.position.x, window.innerWidth - 320),
+                  top: explanationPopup.position.y,
+                  transform: 'translateX(-50%)',
+                  background: 'var(--bg-elevated)',
+                  borderRadius: 12,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                  padding: 16,
+                  zIndex: 1001,
+                  minWidth: 280,
+                  maxWidth: 360,
+                  maxHeight: 400,
+                  overflow: 'auto',
+                  color: 'var(--text-primary)',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <strong style={{ color: 'var(--primary-500)', fontSize: 13 }}>{explanationPopup.text}</strong>
+                  <button
+                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16 }}
+                    onClick={() => setExplanationPopup(null)}
+                  >✕</button>
+                </div>
+                <div style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--text-primary)' }}>
+                  {explanationPopup.explanation}
+                </div>
               </div>
             )}
             {(editMode ? editChapters.length > 1 : showChapterNav) && (
@@ -1577,6 +1794,8 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
             )}
           </div>
         )}
+          </div>
+        </ResizablePanels>
       </div>
 
       {showPDFNotes && (

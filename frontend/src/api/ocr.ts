@@ -171,7 +171,9 @@ export const pdfOcrApi = {
     }>(`/pdf-ocr/paddle/has-ocr-text/${encodeURIComponent(filePath)}`),
 
   getOcrText: (filePath: string) =>
-    api.get<string>(`/pdf-ocr/paddle/ocr-text/${encodeURIComponent(filePath)}`),
+    api.get<string>(`/pdf-ocr/paddle/ocr-text/${encodeURIComponent(filePath)}`, {
+      params: { _t: Date.now() }
+    }),
 
   getGpuStatus: () =>
     api.get<{

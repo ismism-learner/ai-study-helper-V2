@@ -1,19 +1,22 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, lazy, Suspense } from 'react';
 import { CreateDocumentRequest, BookDocument } from './types';
 import { useDocuments, useQuarkUpload, usePhilosophyKeywords, useSidebarResize } from './hooks';
 import Sidebar from './components/Sidebar';
 import DocumentEditor from './components/DocumentEditor';
 import DocumentView from './components/DocumentView';
+import ResizablePanels from './components/ResizablePanels';
+import KnowledgeGraphPanel from './components/KnowledgeGraphPanel';
+import CognitiveChainPanel from './components/CognitiveChainPanel';
 import FrameworkView from './components/FrameworkView';
 import HighlightPanel from './components/HighlightPanel';
 import PhilosophyKeywordsPanel from './components/PhilosophyKeywordsPanel';
 import DocumentTimelineNotes from './components/DocumentTimelineNotes';
-import CreateDocumentModal from './components/CreateDocumentModal';
-import BatchUploadModal from './components/BatchUploadModal';
-import SettingsModal from './components/SettingsModal';
+const CreateDocumentModal = lazy(() => import('./components/CreateDocumentModal'));
+const BatchUploadModal = lazy(() => import('./components/BatchUploadModal'));
+const SettingsModal = lazy(() => import('./components/SettingsModal'));
 import LibraryView from './components/LibraryView';
-import { FileText, Edit3, BookOpen, Settings, Upload, ChevronDown, GripVertical, Library, FileQuestion, ChevronRight, Cloud } from 'lucide-react';
-import QuarkUploadModal from './components/QuarkUploadModal';
+import { FileText, Edit3, BookOpen, Settings, Upload, ChevronDown, GripVertical, Library, FileQuestion, ChevronRight, Cloud, MessageCircle, Network } from 'lucide-react';
+const QuarkUploadModal = lazy(() => import('./components/QuarkUploadModal'));
 
 type LibraryViewType = 'map' | 'tagLibrary' | 'documents' | 'timeline' | 'bookReader';
 type MainViewType = 'documents' | 'library';
@@ -26,6 +29,7 @@ function App() {
   const [libraryView, setLibraryView] = useState<LibraryViewType>('map');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedBook, setSelectedBook] = useState<BookDocument | null>(null);
+  const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
 
   const {
     documents,
@@ -314,69 +318,97 @@ function App() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 20 }}>
-              <div className="main-content-with-right-panel" style={{ flex: 1 }}>
-                {activeTab === 'framework' && (
-                  <FrameworkView
-                    document={activeDocument}
-                    onGenerate={() => handleGenerateFramework(activeDocument.id)}
-                    isGenerating={generatingDocIds.has(activeDocument.id)}
-                    streamingContent={streamingContents.get(activeDocument.id) || ''}
-                    generatingDocumentId={activeDocument.id}
-                    generatingDocIds={generatingDocIds}
-                    streamingContents={streamingContents}
-                    onHighlightCreated={handleHighlightCreated}
-                    onHighlightDeleted={handleHighlightDeleted}
-                    onFrameworkUpdate={handleFrameworkUpdate}
-                    isDeleteMode={isDeleteMode}
-                  />
-                )}
-                {activeTab === 'edit' && (
-                  <DocumentEditor
-                    documentId={activeDocument.id}
-                    content={activeDocument.original_content}
-                    highlights={activeDocument.highlights || []}
-                    onHighlightCreated={handleHighlightCreated}
-                  />
-                )}
-                {activeTab === 'view' && (
-                  <DocumentView
-                    document={activeDocument}
-                    highlightedKeyword={highlightedKeyword}
-                  />
-                )}
-              </div>
+            <div className="document-three-panel-layout">
+              <ResizablePanels
+                panels={[
+                  { id: 'doc', title: '文档', icon: <FileText size={14} />, defaultWidth: 40, minWidth: 25, maxWidth: 60, collapsible: true },
+                  { id: 'qa', title: '问答', icon: <MessageCircle size={14} />, defaultWidth: 30, minWidth: 15, maxWidth: 50, collapsible: true },
+                  { id: 'graph', title: '知识图谱', icon: <Network size={14} />, defaultWidth: 30, minWidth: 15, maxWidth: 50, collapsible: true },
+                ]}
+                className="doc-resizable-panels"
+              >
+                {/* 第1栏：文档内容 */}
+                <div className="doc-panel-content">
+                  {activeTab === 'framework' && (
+                    <FrameworkView
+                      document={activeDocument}
+                      onGenerate={() => handleGenerateFramework(activeDocument.id)}
+                      isGenerating={generatingDocIds.has(activeDocument.id)}
+                      streamingContent={streamingContents.get(activeDocument.id) || ''}
+                      generatingDocumentId={activeDocument.id}
+                      generatingDocIds={generatingDocIds}
+                      streamingContents={streamingContents}
+                      onHighlightCreated={handleHighlightCreated}
+                      onHighlightDeleted={handleHighlightDeleted}
+                      onFrameworkUpdate={handleFrameworkUpdate}
+                      isDeleteMode={isDeleteMode}
+                      onAskQuestion={(question: string) => setPendingQuestion(question)}
+                    />
+                  )}
+                  {activeTab === 'edit' && (
+                    <DocumentEditor
+                      documentId={activeDocument.id}
+                      content={activeDocument.original_content}
+                      highlights={activeDocument.highlights || []}
+                      onHighlightCreated={handleHighlightCreated}
+                      onAskQuestion={(question: string) => setPendingQuestion(question)}
+                    />
+                  )}
+                  {activeTab === 'view' && (
+                    <DocumentView
+                      document={activeDocument}
+                      highlightedKeyword={highlightedKeyword}
+                    />
+                  )}
+                  <div className="doc-panel-sidebar">
+                    {philosophyMatches.length > 0 && (
+                      <PhilosophyKeywordsPanel
+                        matches={philosophyMatches}
+                        onKeywordClick={handleKeywordClick}
+                        onCreateHighlight={onCreateHighlight}
+                      />
+                    )}
+                    <HighlightPanel
+                      highlights={activeDocument.highlights || []}
+                      onHighlightDeleted={handleHighlightDeleted}
+                      onExplanationGenerated={handleExplanationGenerated}
+                      isDeleteMode={isDeleteMode}
+                      setIsDeleteMode={setIsDeleteMode}
+                      showDeleteModeButton={activeTab === 'framework'}
+                      documentId={activeDocument.id}
+                      currentPage={currentPage}
+                      onTimelineEventAdded={() => {
+                      }}
+                      onTimelineEventUpdated={() => {
+                      }}
+                    />
+                    <DocumentTimelineNotes
+                      documentId={activeDocument.id}
+                      currentPage={currentPage}
+                      onNoteClick={(note) => {
+                        console.log('Note clicked:', note);
+                      }}
+                    />
+                  </div>
+                </div>
 
-              <div className="right-panel-fixed">
-                {philosophyMatches.length > 0 && (
-                  <PhilosophyKeywordsPanel
-                    matches={philosophyMatches}
-                    onKeywordClick={handleKeywordClick}
-                    onCreateHighlight={onCreateHighlight}
-                  />
-                )}
-                <HighlightPanel
-                  highlights={activeDocument.highlights || []}
-                  onHighlightDeleted={handleHighlightDeleted}
-                  onExplanationGenerated={handleExplanationGenerated}
-                  isDeleteMode={isDeleteMode}
-                  setIsDeleteMode={setIsDeleteMode}
-                  showDeleteModeButton={activeTab === 'framework'}
-                  documentId={activeDocument.id}
-                  currentPage={currentPage}
-                  onTimelineEventAdded={() => {
-                  }}
-                  onTimelineEventUpdated={() => {
+                {/* 第2栏：问答/认知链 */}
+                <CognitiveChainPanel
+                  sourceDocId={activeDocument.id}
+                  bookTitle={activeDocument.title}
+                  pendingQuestion={pendingQuestion}
+                  onQuestionConsumed={() => setPendingQuestion(null)}
+                />
+
+                {/* 第3栏：知识图谱 */}
+                <KnowledgeGraphPanel
+                  onNodeClick={(node) => {
+                    if (node) {
+                      console.log('选中节点:', node.name);
+                    }
                   }}
                 />
-                <DocumentTimelineNotes
-                  documentId={activeDocument.id}
-                  currentPage={currentPage}
-                  onNoteClick={(note) => {
-                    console.log('Note clicked:', note);
-                  }}
-                />
-              </div>
+              </ResizablePanels>
             </div>
           </>
         ) : (
@@ -404,39 +436,49 @@ function App() {
       </div>
 
       {showCreateModal && (
-        <CreateDocumentModal
-          onClose={() => setShowCreateModal(false)}
-          onCreate={onCreateDocument}
-          onUpload={onUploadDocument}
-          onBatchUploadComplete={() => loadDocuments(selectedFolderId)}
-          folderId={selectedFolderId}
-          isLoading={isLoading || uploadLoading}
-        />
+        <Suspense fallback={null}>
+          <CreateDocumentModal
+            onClose={() => setShowCreateModal(false)}
+            onCreate={onCreateDocument}
+            onUpload={onUploadDocument}
+            onBatchUploadComplete={() => loadDocuments(selectedFolderId)}
+            folderId={selectedFolderId}
+            isLoading={isLoading || uploadLoading}
+          />
+        </Suspense>
       )}
 
       {showBatchUploadModal && (
-        <BatchUploadModal
-          onClose={() => setShowBatchUploadModal(false)}
-          onSuccess={() => {
-            setShowBatchUploadModal(false);
-            loadDocuments();
-          }}
-          folderId={selectedFolderId}
-        />
+        <Suspense fallback={null}>
+          <BatchUploadModal
+            onClose={() => setShowBatchUploadModal(false)}
+            onSuccess={() => {
+              setShowBatchUploadModal(false);
+              loadDocuments();
+            }}
+            folderId={selectedFolderId}
+          />
+        </Suspense>
       )}
 
-      {showSettingsModal && <SettingsModal onClose={() => setShowSettingsModal(false)} />}
+      {showSettingsModal && (
+        <Suspense fallback={null}>
+          <SettingsModal onClose={() => setShowSettingsModal(false)} />
+        </Suspense>
+      )}
 
-      <QuarkUploadModal
-        show={showQuarkModal}
-        uploading={quarkUploading}
-        results={quarkUploadResults}
-        progress={quarkUploadProgress}
-        onClose={() => setShowQuarkModal(false)}
-        onUpload={handleUploadToQuark}
-        onCopyShareUrl={handleCopyShareUrl}
-        onCopyAllShareUrls={handleCopyAllShareUrls}
-      />
+      <Suspense fallback={null}>
+        <QuarkUploadModal
+          show={showQuarkModal}
+          uploading={quarkUploading}
+          results={quarkUploadResults}
+          progress={quarkUploadProgress}
+          onClose={() => setShowQuarkModal(false)}
+          onUpload={handleUploadToQuark}
+          onCopyShareUrl={handleCopyShareUrl}
+          onCopyAllShareUrls={handleCopyAllShareUrls}
+        />
+      </Suspense>
     </div>
   );
 }

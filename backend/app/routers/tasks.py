@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from pydantic import BaseModel
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Optional, List
 import json
 
@@ -49,16 +49,13 @@ class TaskResponse(BaseModel):
 
 
 @router.get("", response_model=List[TaskResponse])
-def get_tasks(
-    include_completed: bool = False,
-    db: Session = Depends(get_db)
-):
+def get_tasks(include_completed: bool = False, db: Session = Depends(get_db)):
     """获取任务列表"""
     query = db.query(Task)
-    
+
     if not include_completed:
         query = query.filter(Task.completed == 0)
-    
+
     tasks = query.order_by(Task.due_date.asc()).all()
     return tasks
 
@@ -74,7 +71,7 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
         target_value=task.target_value,
         priority=task.priority,
         completed=0,
-        current_value=0
+        current_value=0,
     )
     db.add(db_task)
     db.commit()
@@ -83,24 +80,20 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{task_id}", response_model=TaskResponse)
-def update_task(
-    task_id: str,
-    task_update: TaskUpdate,
-    db: Session = Depends(get_db)
-):
+def update_task(task_id: str, task_update: TaskUpdate, db: Session = Depends(get_db)):
     """更新任务"""
     db_task = db.query(Task).filter(Task.id == task_id).first()
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
-    
+
     update_data = task_update.dict(exclude_unset=True)
-    
+
     if "completed" in update_data and update_data["completed"] == 1:
-        update_data["completed_at"] = datetime.utcnow()
-    
+        update_data["completed_at"] = datetime.now(UTC)
+
     for key, value in update_data.items():
         setattr(db_task, key, value)
-    
+
     db.commit()
     db.refresh(db_task)
     return db_task
@@ -112,7 +105,7 @@ def delete_task(task_id: str, db: Session = Depends(get_db)):
     db_task = db.query(Task).filter(Task.id == task_id).first()
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
-    
+
     db.delete(db_task)
     db.commit()
     return {"success": True, "message": "Task deleted"}
@@ -124,9 +117,9 @@ def complete_task(task_id: str, db: Session = Depends(get_db)):
     db_task = db.query(Task).filter(Task.id == task_id).first()
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
-    
+
     db_task.completed = 1
-    db_task.completed_at = datetime.utcnow()
+    db_task.completed_at = datetime.now(UTC)
     db.commit()
     db.refresh(db_task)
     return db_task
@@ -138,7 +131,7 @@ def uncomplete_task(task_id: str, db: Session = Depends(get_db)):
     db_task = db.query(Task).filter(Task.id == task_id).first()
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
-    
+
     db_task.completed = 0
     db_task.completed_at = None
     db.commit()
@@ -147,31 +140,31 @@ def uncomplete_task(task_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/upcoming", response_model=List[TaskResponse])
-def get_upcoming_tasks(
-    days: int = 7,
-    db: Session = Depends(get_db)
-):
+def get_upcoming_tasks(days: int = 7, db: Session = Depends(get_db)):
     """获取即将到期的任务"""
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     end_date = now + timedelta(days=days)
-    
-    tasks = db.query(Task).filter(
-        Task.completed == 0,
-        Task.due_date >= now,
-        Task.due_date <= end_date
-    ).order_by(Task.due_date.asc()).all()
-    
+
+    tasks = (
+        db.query(Task)
+        .filter(Task.completed == 0, Task.due_date >= now, Task.due_date <= end_date)
+        .order_by(Task.due_date.asc())
+        .all()
+    )
+
     return tasks
 
 
 @router.get("/overdue", response_model=List[TaskResponse])
 def get_overdue_tasks(db: Session = Depends(get_db)):
     """获取已过期的任务"""
-    now = datetime.utcnow()
-    
-    tasks = db.query(Task).filter(
-        Task.completed == 0,
-        Task.due_date < now
-    ).order_by(Task.due_date.asc()).all()
-    
+    now = datetime.now(UTC)
+
+    tasks = (
+        db.query(Task)
+        .filter(Task.completed == 0, Task.due_date < now)
+        .order_by(Task.due_date.asc())
+        .all()
+    )
+
     return tasks

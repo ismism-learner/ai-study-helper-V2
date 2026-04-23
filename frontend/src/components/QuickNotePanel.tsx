@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { 
+import { useUndoRedo, createUndoRedoKeyHandler } from '../hooks/useUndoRedo';
+import {
   Zap, Send, Check, RefreshCw, FileText, Clock, CheckSquare, Square,
   Sparkles, Trash2, FolderOpen, X, Edit3, Tag, ChevronUp, ChevronDown
 } from 'lucide-react';
@@ -18,7 +19,7 @@ export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({
   onNoteCreated,
   onNotesChange,
 }) => {
-  const [content, setContent] = useState('');
+  const { state: content, push: pushContent, reset: resetContent, undo, redo } = useUndoRedo('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -34,7 +35,7 @@ export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({
         source_type: sourceDocumentId ? 'pdf' : 'quick',
       });
       
-      setContent('');
+      resetContent('');
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2000);
       
@@ -52,7 +53,9 @@ export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       handleSubmit();
+      return;
     }
+    createUndoRedoKeyHandler(undo, redo)(e);
   };
 
   return (
@@ -65,7 +68,7 @@ export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({
       <div className="input-body">
         <textarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(e) => pushContent(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="输入笔记内容，无需标题即可保存..."
           rows={3}

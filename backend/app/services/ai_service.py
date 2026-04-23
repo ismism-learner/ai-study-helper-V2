@@ -1,5 +1,5 @@
 from openai import AsyncOpenAI
-from app.config import settings_manager
+from app.config import settings_manager, api_config_manager
 from app.services.document_processor import DocumentProcessor
 from typing import Optional, AsyncGenerator
 import asyncio
@@ -11,11 +11,11 @@ def normalize_base_url(url: str) -> str:
     if not url:
         return url
     url = url.rstrip("/")
-    if url.endswith("/v1"):
+    # 已经包含版本后缀则不再添加
+    if url.endswith("/v1") or url.endswith("/v2"):
         return url
-    if not url.endswith("/v1"):
-        url = url + "/v1"
-    return url
+    # 默认添加 /v1
+    return url + "/v1"
 
 
 async def retry_async(func, max_retries=5, base_delay=3, timeout=300):
@@ -119,16 +119,32 @@ class AIService:
             self._last_error = str(e)
 
     def update_client(self):
-        base_url = normalize_base_url(settings_manager.openai_api_base)
-        api_key = settings_manager.openai_api_key
-        current_config = (base_url, api_key, settings_manager.model_name)
+        """更新API客户端，优先使用API配置管理器中的激活配置"""
+        # 优先使用API配置管理器中的激活配置
+        active_config = api_config_manager.get_active()
+
+        if active_config:
+            api_key = active_config.api_key
+            base_url = normalize_base_url(active_config.api_base)
+            model_name = active_config.model_name
+            print(f"[AIService] 使用API配置: {active_config.name}")
+        else:
+            # 回退到settings_manager
+            api_key = settings_manager.openai_api_key
+            base_url = normalize_base_url(settings_manager.openai_api_base)
+            model_name = settings_manager.model_name
+            print(f"[AIService] 使用默认设置")
+
+        current_config = (base_url, api_key, model_name)
 
         if self._last_config == current_config and self.client:
             return
 
         if not api_key or not api_key.strip():
             self._api_key_valid = False
-            self._last_error = "API Key 未设置！请在设置中配置有效的 API Key"
+            self._last_error = (
+                "API Key 未设置！请在设置中配置有效的 API Key 或添加API配置"
+            )
             raise ValueError(self._last_error)
 
         self.client = AsyncOpenAI(
@@ -136,7 +152,7 @@ class AIService:
             base_url=base_url,
             timeout=httpx.Timeout(300.0, connect=60.0),
         )
-        self.model = settings_manager.model_name
+        self.model = model_name
         self._last_config = current_config
         self._last_error = None
         self._api_key_valid = True
@@ -179,7 +195,11 @@ class AIService:
         try:
             response = await retry_async(_call_api, max_retries=3, base_delay=2)
             if response and hasattr(response, "choices") and response.choices:
-                return response.choices[0].message.content
+                message = response.choices[0].message
+                content = message.content
+                if not content and hasattr(message, "reasoning_content"):
+                    content = message.reasoning_content
+                return content
             else:
                 raise ValueError(f"API响应格式异常: {type(response)}")
         except Exception as e:
@@ -228,7 +248,11 @@ class AIService:
         try:
             response = await retry_async(_call_api, max_retries=3, base_delay=2)
             if response and hasattr(response, "choices") and response.choices:
-                return response.choices[0].message.content
+                message = response.choices[0].message
+                content = message.content
+                if not content and hasattr(message, "reasoning_content"):
+                    content = message.reasoning_content
+                return content
             else:
                 raise ValueError(f"API响应格式异常: {type(response)}")
         except Exception as e:
@@ -338,41 +362,52 @@ class AIService:
 
             raise
 
-    async def generate_text(self, prompt: str, system_prompt: str = None) -> str:
+    async def generate_text(
+        self, prompt: str, system_prompt: str = None, max_tokens: int = 131072
+    ) -> str:
         self._check_client()
         self.update_client()
-
-        print(f"[generate_text] API Base URL: {self.client.base_url}")
-        print(f"[generate_text] Model: {self.model}")
-        print(f"[generate_text] Prompt length: {len(prompt)}")
+        print(f"[generate_text] Prompt length: {len(prompt)}, max_tokens: {max_tokens}")
 
         MAX_PROMPT_LENGTH = 30000
         if len(prompt) > MAX_PROMPT_LENGTH:
             print(
                 f"[generate_text] WARNING: Prompt length ({len(prompt)}) exceeds recommended limit ({MAX_PROMPT_LENGTH})"
             )
-            print(f"[generate_text] This may cause timeout or context length errors")
+
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
 
         async def _call_api():
             response = await self.client.chat.completions.create(
                 model=self.model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": system_prompt
-                        or "你是一个专业的写作助手，擅长生成结构清晰、逻辑连贯的文章。",
-                    },
-                    {"role": "user", "content": prompt},
-                ],
+                messages=messages,
                 temperature=0.7,
+                max_tokens=max_tokens,
             )
             return response
 
         try:
             response = await retry_async(_call_api, max_retries=3, base_delay=2)
-
             if response and hasattr(response, "choices") and response.choices:
-                return response.choices[0].message.content
+                message = response.choices[0].message
+                content = message.content
+                if not content and hasattr(message, "reasoning_content"):
+                    reasoning = message.reasoning_content
+                    # 从reasoning中提取JSON
+                    import re
+                    json_match = re.search(r'```json\s*(\{.*?\})\s*```', reasoning, re.DOTALL)
+                    if json_match:
+                        content = json_match.group(1)
+                    else:
+                        json_match = re.search(r'\{[^{}]*"label"[^{}]*\}', reasoning, re.DOTALL)
+                        if json_match:
+                            content = json_match.group()
+                        else:
+                            content = reasoning
+                return content
             else:
                 raise ValueError(f"API响应格式异常: {type(response)}")
         except Exception as e:
@@ -385,9 +420,6 @@ class AIService:
     ) -> AsyncGenerator[str, None]:
         self._check_client()
         self.update_client()
-
-        print(f"[generate_text_stream] API Base URL: {self.client.base_url}")
-        print(f"[generate_text_stream] Model: {self.model}")
         print(f"[generate_text_stream] Prompt length: {len(prompt)}")
 
         MAX_PROMPT_LENGTH = 30000
@@ -396,17 +428,15 @@ class AIService:
                 f"[generate_text_stream] WARNING: Prompt length ({len(prompt)}) exceeds recommended limit ({MAX_PROMPT_LENGTH})"
             )
 
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
         try:
             stream = await self.client.chat.completions.create(
                 model=self.model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": system_prompt
-                        or "你是一个专业的写作助手，擅长生成结构清晰、逻辑连贯的文章。",
-                    },
-                    {"role": "user", "content": prompt},
-                ],
+                messages=messages,
                 temperature=0.7,
                 stream=True,
             )
@@ -434,12 +464,10 @@ class AIService:
                 "not found" in error_str or "does not exist" in error_str
             ):
                 raise ValueError(
-                    f"模型不存在：请检查模型名称 '{settings_manager.model_name}' 是否正确。错误详情：{str(e)}"
+                    f"模型不存在：请检查模型名称是否正确。错误详情：{str(e)}"
                 )
             elif "context" in error_str and "length" in error_str:
-                raise ValueError(
-                    f"内容过长：输入内容超出模型上下文限制。请尝试缩短内容或使用支持更长上下文的模型。"
-                )
+                raise ValueError(f"内容过长：输入内容超出模型上下文限制。")
 
             raise
 

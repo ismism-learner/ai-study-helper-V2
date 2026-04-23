@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Document } from '../types';
-import { Search, X, ChevronUp, ChevronDown, Plus, Edit3, Trash2, BookOpen, Tag, Clock, FileText, Sparkles, Zap, Send, Check, RefreshCw, CheckSquare, Square, Calendar } from 'lucide-react';
+import { Search, X, ChevronUp, ChevronDown, Plus, Edit3, Trash2, BookOpen, Tag, Clock, FileText, Sparkles, Zap, Send, Check, RefreshCw, CheckSquare, Square, Calendar, RotateCcw, RotateCw } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 import { optimizeApi, worldTimelineApi, quickNoteApi, QuickNote } from '../api';
+import { useUndoRedo, createUndoRedoKeyHandler } from '../hooks/useUndoRedo';
 
 interface PDFNote {
   id: string;
@@ -44,7 +45,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
   onNoteClick,
   onClose,
 }) => {
-  const [notes, setNotes] = useState<PDFNote[]>([]);
+  const { state: notes, push: pushNotes, undo: undoNotes, redo: redoNotes, canUndo: canUndoNotes, canRedo: canRedoNotes, reset: resetNotes } = useUndoRedo<PDFNote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'current' | 'nearby'>('all');
@@ -321,7 +322,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
         localStorage.setItem(`pdf_notes_${documentId}`, JSON.stringify(mockNotes));
       }
       
-      setNotes(localNotes);
+      resetNotes(localNotes);
     } catch (error) {
       console.error('Failed to load notes:', error);
     } finally {
@@ -330,9 +331,11 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
   };
 
   const saveNotes = (updatedNotes: PDFNote[]) => {
-    setNotes(updatedNotes);
+    pushNotes(updatedNotes);
     localStorage.setItem(`pdf_notes_${documentId}`, JSON.stringify(updatedNotes));
   };
+
+  const handleUndoRedoKeyDown = createUndoRedoKeyHandler(undoNotes, redoNotes);
 
   const filteredNotes = useMemo(() => {
     let filtered = [...notes];
@@ -868,6 +871,20 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    const handleBlur = () => {
+      isDraggingRef.current = false;
+      setIsDragging(false);
+    };
+
+    // blur listener is lightweight, always register
+    window.addEventListener('blur', handleBlur);
+
+    if (!isDragging) {
+      return () => {
+        window.removeEventListener('blur', handleBlur);
+      };
+    }
+
     const handlePointerMove = (e: PointerEvent) => {
       if (!isDraggingRef.current) return;
       
@@ -915,16 +932,10 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
       setIsDragging(false);
     };
 
-    const handleBlur = () => {
-      isDraggingRef.current = false;
-      setIsDragging(false);
-    };
-
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('blur', handleBlur);
 
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
@@ -933,7 +944,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
       window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, []);
+  }, [isDragging]);
 
   const getSectionTitle = (section: string): string => {
     switch (section) {
@@ -997,6 +1008,8 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
         onMouseMove={handlePanelMouseMove}
         onMouseUp={handlePanelMouseUp}
         onMouseLeave={handlePanelMouseUp}
+        onKeyDown={handleUndoRedoKeyDown}
+        tabIndex={-1}
       >
       <div 
         className="pdf-notes-header"
@@ -1009,6 +1022,24 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
             <span className="current-page-badge">第 {currentPage} 页</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              onClick={undoNotes}
+              disabled={!canUndoNotes}
+              className="close-btn"
+              title="撤销 (Ctrl+Z)"
+              style={{ opacity: canUndoNotes ? 1 : 0.3, cursor: canUndoNotes ? 'pointer' : 'not-allowed' }}
+            >
+              <RotateCcw size={14} />
+            </button>
+            <button
+              onClick={redoNotes}
+              disabled={!canRedoNotes}
+              className="close-btn"
+              title="重做 (Ctrl+Y)"
+              style={{ opacity: canRedoNotes ? 1 : 0.3, cursor: canRedoNotes ? 'pointer' : 'not-allowed' }}
+            >
+              <RotateCw size={14} />
+            </button>
             <button
               onClick={() => setIsQuickMode(!isQuickMode)}
               className={`mode-toggle-btn ${isQuickMode ? 'active' : ''}`}

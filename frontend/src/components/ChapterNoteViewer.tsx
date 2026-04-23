@@ -11,7 +11,6 @@ import ExecutableCodeBlock from './ExecutableCodeBlock';
 
 const FinancialChartBlock = lazy(() => import('./FinancialChartBlock'));
 const JSXGraphBlock = lazy(() => import('./JSXGraphBlock'));
-const ThreeJSBlock = lazy(() => import('./ThreeJSBlock'));
 import 'katex/dist/katex.min.css';
 import 'highlight.js/styles/github-dark.css';
 
@@ -247,10 +246,6 @@ const ChapterNoteViewer: React.FC<ChapterNoteViewerProps> = ({
             if (language === 'jsxgraph') {
               return <Suspense fallback={<div>加载图形...</div>}><JSXGraphBlock config={codeContent} /></Suspense>;
             }
-            if (language === 'threejs') {
-              return <Suspense fallback={<div>加载3D场景...</div>}><ThreeJSBlock config={codeContent} /></Suspense>;
-            }
-
             // Default: render as normal code block
             return (
               <pre style={{

@@ -61,7 +61,24 @@ if not exist "node_modules" (
 cd ..
 
 echo.
-echo [4/4] Starting services...
+echo [4/5] Checking Neo4j (Docker)...
+docker ps --filter "name=ai-study-neo4j" --format "{{.Names}}" 2>nul | findstr "ai-study-neo4j" >nul 2>&1
+if errorlevel 1 (
+    echo      Neo4j not running, starting via Docker...
+    docker compose up -d neo4j 2>nul
+    if errorlevel 1 (
+        echo      [Warning] Docker not available or docker compose failed
+        echo      [Info] Knowledge graph features will be disabled
+        echo      [Info] To enable: install Docker and run 'docker compose up -d neo4j'
+    ) else (
+        echo      Neo4j starting on port 7687 (browser: http://localhost:7474)
+    )
+) else (
+    echo      Neo4j already running
+)
+
+echo.
+echo [5/5] Starting services...
 echo.
 
 echo      Starting backend (port 8000)...
@@ -84,6 +101,7 @@ echo.
 echo   Frontend: http://localhost:3001
 echo   Backend:  http://localhost:8000
 echo   API Docs: http://localhost:8000/docs
+echo   Neo4j:   http://localhost:7474
 echo.
 echo ========================================
 echo.

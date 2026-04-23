@@ -18,6 +18,10 @@ from app.routers.chapter_notes import router as chapter_notes_router
 from app.routers.tasks import router as tasks_router
 from app.routers.activity import router as activity_router
 from app.routers.visualization_nodes import router as visualization_nodes_router
+from app.routers.api_configs import router as api_configs_router
+from app.routers.rewrite import router as rewrite_router
+from app.routers.knowledge_graph import router as knowledge_graph_router
+from app.routers.cognitive_chain import router as cognitive_chain_router
 from app.services.document_sync_service import (
     document_source_config,
     DocumentSyncService,
@@ -66,6 +70,10 @@ app.include_router(activity_router, prefix="/api/activity", tags=["activity"])
 app.include_router(
     visualization_nodes_router, prefix="/api", tags=["visualization-nodes"]
 )
+app.include_router(api_configs_router, prefix="/api", tags=["api-configs"])
+app.include_router(rewrite_router, prefix="/api", tags=["rewrite"])
+app.include_router(knowledge_graph_router, prefix="/api", tags=["knowledge-graph"])
+app.include_router(cognitive_chain_router, prefix="/api", tags=["cognitive-chains"])
 
 
 def preload_paddleocr():

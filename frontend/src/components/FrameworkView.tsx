@@ -7,7 +7,9 @@ import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { Document, Highlight, CreateHighlightRequest } from '../types';
 import { highlightApi, documentApi, optimizeApi } from '../api';
-import { Save, X, RefreshCw, Sparkles, Check, Bookmark } from 'lucide-react';
+import { cognitiveChainApi } from '../api/knowledgeGraph';
+import { Save, X, RefreshCw, Sparkles, Check, Bookmark, Undo2, Redo2 } from 'lucide-react';
+import { useUndoRedo, createUndoRedoKeyHandler } from '../hooks/useUndoRedo';
 
 interface FrameworkViewProps {
   document: Document;
@@ -21,6 +23,7 @@ interface FrameworkViewProps {
   onHighlightDeleted?: (id: string) => void;
   onFrameworkUpdate?: (doc: Document) => void;
   isDeleteMode?: boolean;
+  onAskQuestion?: (question: string) => void;
 }
 
 interface Selection {
@@ -99,9 +102,10 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
   onHighlightDeleted,
   onFrameworkUpdate,
   isDeleteMode: externalIsDeleteMode = false,
+  onAskQuestion,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedContent, setEditedContent] = useState(document.framework_content || '');
+  const { state: editedContent, push: pushEditedContent, undo: undoEdit, redo: redoEdit, canUndo: canUndoEdit, canRedo: canRedoEdit, reset: resetEditedContent } = useUndoRedo(document.framework_content || '');
   const [isSaving, setIsSaving] = useState(false);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [highlightType, setHighlightType] = useState<'explanation' | 'keyword' | 'tag'>('keyword');
@@ -122,7 +126,13 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
   const [editingParagraphId, setEditingParagraphId] = useState<string | null>(null);
   const [editingParagraphText, setEditingParagraphText] = useState<string>('');
 
+  const [currentChainId, setCurrentChainId] = useState<string | null>(null);
+  const [currentParentNodeId, setCurrentParentNodeId] = useState<string | null>(null);
+  const [isAskingQuestion, setIsAskingQuestion] = useState(false);
+
   const isDeleteMode = externalIsDeleteMode;
+
+  const handleUndoRedoKey = createUndoRedoKeyHandler(undoEdit, redoEdit);
 
   const handleMarkParagraph = useCallback((paragraphId: string) => {
     setMarkedParagraphId(prev => prev === paragraphId ? null : paragraphId);
@@ -163,10 +173,12 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
     };
   }, []);
 
+  const highlightsKey = document.highlights?.map(h => h.id).join(',') || '';
+
   useEffect(() => {
-    setEditedContent(document.framework_content || '');
+    resetEditedContent(document.framework_content || '');
     setCurrentHighlights(document.highlights || []);
-  }, [document.id, document.framework_content, JSON.stringify(document.highlights)]);
+  }, [document.id, document.framework_content, highlightsKey]);
 
   const handleMouseUp = useCallback((_e: React.MouseEvent) => {
     if (isEditing) return;
@@ -253,6 +265,59 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
       alert('创建标记失败');
     } finally {
       setSavingHighlight(false);
+    }
+  };
+
+  const handleAskQuestion = async () => {
+    if (!selection) return;
+    setIsAskingQuestion(true);
+    try {
+      if (onAskQuestion) {
+        onAskQuestion(selection.text);
+      } else {
+        const res = await cognitiveChainApi.createChain({
+          root_concept: selection.text,
+          context: selection.text,
+          source_doc_id: document.id,
+        });
+        const chain = res.data;
+        setCurrentChainId(chain.id);
+        const rootNode = chain.nodes?.[0];
+        if (rootNode) {
+          setCurrentParentNodeId(rootNode.id);
+        }
+      }
+    } catch (error) {
+      console.error('提问失败:', error);
+    } finally {
+      setIsAskingQuestion(false);
+      setSelection(null);
+    }
+  };
+
+  const handleFollowUp = async () => {
+    if (!selection) return;
+    setIsAskingQuestion(true);
+    try {
+      if (onAskQuestion) {
+        onAskQuestion(selection.text);
+      } else {
+        if (!currentChainId || !currentParentNodeId) return;
+        const res = await cognitiveChainApi.expandChain({
+          chain_id: currentChainId,
+          parent_node_id: currentParentNodeId,
+          concept_to_explain: selection.text,
+          context: selection.text,
+          source_doc_id: document.id,
+        });
+        const node = res.data;
+        setCurrentParentNodeId(node.id);
+      }
+    } catch (error) {
+      console.error('追问失败:', error);
+    } finally {
+      setIsAskingQuestion(false);
+      setSelection(null);
     }
   };
 
@@ -423,7 +488,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
 
     try {
       await documentApi.update(document.id, { framework_content: newContent });
-      setEditedContent(newContent);
+      pushEditedContent(newContent);
       if (onFrameworkUpdate) {
         onFrameworkUpdate({ ...document, framework_content: newContent });
       }
@@ -463,7 +528,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
 
     try {
       await documentApi.update(document.id, { framework_content: newContent });
-      setEditedContent(newContent);
+      pushEditedContent(newContent);
       if (onFrameworkUpdate) {
         onFrameworkUpdate({ ...document, framework_content: newContent });
       }
@@ -511,7 +576,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
           className="input textarea"
           style={{ minHeight: 400, fontFamily: 'inherit' }}
           value={editedContent}
-          onChange={(e) => setEditedContent(e.target.value)}
+          onChange={(e) => pushEditedContent(e.target.value)}
         />
       );
     }
@@ -950,12 +1015,30 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
   }
 
   return (
-    <div className="card">
+    <div className="card" onKeyDown={isEditing ? handleUndoRedoKey : undefined} tabIndex={isEditing ? 0 : undefined}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h2 style={{ margin: 0 }}>文章正文 ({currentHighlights.length}个标记)</h2>
         <div style={{ display: 'flex', gap: 8 }}>
           {isEditing ? (
             <>
+              <button
+                className="btn btn-secondary"
+                onClick={undoEdit}
+                disabled={!canUndoEdit}
+                title="撤销 (Ctrl+Z)"
+              >
+                <Undo2 size={16} style={{ marginRight: 4 }} />
+                撤销
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={redoEdit}
+                disabled={!canRedoEdit}
+                title="重做 (Ctrl+Y)"
+              >
+                <Redo2 size={16} style={{ marginRight: 4 }} />
+                重做
+              </button>
               <button
                 className="btn btn-primary"
                 onClick={handleSaveEdit}
@@ -968,7 +1051,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
                 className="btn btn-secondary"
                 onClick={() => {
                   setIsEditing(false);
-                  setEditedContent(framework || '');
+                  resetEditedContent(framework || '');
                 }}
               >
                 取消
@@ -1065,6 +1148,26 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
               onClick={() => setSelection(null)}
             >
               取消
+            </button>
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 8, display: 'flex', gap: 6 }}>
+            <button
+              className="btn btn-secondary"
+              style={{ flex: 1, fontSize: 12 }}
+              onClick={handleAskQuestion}
+              disabled={isAskingQuestion}
+            >
+              {isAskingQuestion ? '提问中...' : '💡 提问'}
+            </button>
+            <button
+              className="btn btn-secondary"
+              style={{ flex: 1, fontSize: 12 }}
+              onClick={handleFollowUp}
+              disabled={isAskingQuestion || !currentChainId}
+              title={currentChainId ? '在当前认知链中追问' : '请先提问创建认知链'}
+            >
+              🔗 追问
             </button>
           </div>
         </div>

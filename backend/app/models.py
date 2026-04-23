@@ -419,3 +419,102 @@ class VisualizationNode(Base):
 
     book = relationship("BookDocument", foreign_keys=[book_id])
     chapter_note = relationship("ChapterNote", foreign_keys=[chapter_note_id])
+
+
+class KnowledgeNode(Base):
+    """知识图谱节点"""
+    __tablename__ = "knowledge_nodes"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    name = Column(String, nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    entity_type = Column(String, default="Concept", index=True)
+    domain = Column(String, nullable=True)
+    confidence = Column(Float, default=0.8)
+    
+    book_id = Column(String, ForeignKey("book_documents.id"), nullable=True, index=True)
+    book_title = Column(String, nullable=True, index=True)
+    chapter_index = Column(Integer, nullable=True)
+    
+    node_type = Column(String, default="DetailedQuestion", index=True)
+    text_position = Column(Integer, nullable=True)
+    parent_summary_id = Column(String, ForeignKey("knowledge_nodes.id"), nullable=True, index=True)
+    
+    extra_data = Column(JSON, nullable=True)
+    
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    book = relationship("BookDocument", foreign_keys=[book_id])
+    parent_summary = relationship("KnowledgeNode", remote_side=[id], foreign_keys=[parent_summary_id])
+
+
+class KnowledgeEdge(Base):
+    """知识图谱边（关系）"""
+    __tablename__ = "knowledge_edges"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    source_id = Column(String, ForeignKey("knowledge_nodes.id"), nullable=False, index=True)
+    target_id = Column(String, ForeignKey("knowledge_nodes.id"), nullable=False, index=True)
+    relation_type = Column(String, default="RELATES_TO", index=True)
+    edge_type = Column(String, default="BRANCH_EXTEND", index=True)
+    description = Column(Text, nullable=True)
+    weight = Column(Float, default=1.0)
+    
+    book_id = Column(String, ForeignKey("book_documents.id"), nullable=True, index=True)
+    
+    created_at = Column(DateTime, default=_utcnow)
+
+    source = relationship("KnowledgeNode", foreign_keys=[source_id])
+    target = relationship("KnowledgeNode", foreign_keys=[target_id])
+    book = relationship("BookDocument", foreign_keys=[book_id])
+
+
+class CognitiveChain(Base):
+    """认知链"""
+    __tablename__ = "cognitive_chains"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    title = Column(String, nullable=False)
+    root_concept = Column(Text, nullable=False)
+    
+    book_id = Column(String, ForeignKey("book_documents.id"), nullable=True, index=True)
+    book_title = Column(String, nullable=True, index=True)
+    
+    total_nodes = Column(Integer, default=0)
+    total_edges = Column(Integer, default=0)
+    domains = Column(JSON, nullable=True)
+    
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    book = relationship("BookDocument", foreign_keys=[book_id])
+    nodes = relationship("CognitiveNode", back_populates="chain", cascade="all, delete-orphan")
+
+
+class CognitiveNode(Base):
+    """认知链节点"""
+    __tablename__ = "cognitive_nodes"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    chain_id = Column(String, ForeignKey("cognitive_chains.id"), nullable=False, index=True)
+    
+    concept = Column(String, nullable=False)
+    definition = Column(Text, nullable=True)
+    node_type = Column(String, default="DerivedConcept")
+    domain = Column(String, nullable=True)
+    confidence = Column(Float, default=0.8)
+    understanding_level = Column(String, default="unknown")
+    
+    parent_node_id = Column(String, ForeignKey("cognitive_nodes.id"), nullable=True, index=True)
+    
+    book_id = Column(String, ForeignKey("book_documents.id"), nullable=True, index=True)
+    book_title = Column(String, nullable=True)
+    chapter_index = Column(Integer, nullable=True)
+    
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    chain = relationship("CognitiveChain", back_populates="nodes")
+    parent = relationship("CognitiveNode", remote_side=[id], foreign_keys=[parent_node_id])
+    book = relationship("BookDocument", foreign_keys=[book_id])

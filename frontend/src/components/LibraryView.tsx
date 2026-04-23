@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { BookDocument, Document } from '../types';
 import { bookApi } from '../api';
-import TagLibraryView from './TagLibraryView';
-import BookUploadModal from './BookUploadModal';
-import DocumentManager from './DocumentManager';
-import TimelinePanel from './TimelinePanel';
-import DashboardPanel from './DashboardPanel';
-import BookReaderView from './BookReaderView';
+const TagLibraryView = lazy(() => import('./TagLibraryView'));
+const BookUploadModal = lazy(() => import('./BookUploadModal'));
+const DocumentManager = lazy(() => import('./DocumentManager'));
+const TimelinePanel = lazy(() => import('./TimelinePanel'));
+const DashboardPanel = lazy(() => import('./DashboardPanel'));
+const BookReaderView = lazy(() => import('./BookReaderView'));
 import { Library, Clock, Tag } from 'lucide-react';
 
 type ViewType = 'map' | 'tagLibrary' | 'documents' | 'timeline' | 'bookReader';
@@ -118,57 +118,69 @@ const LibraryView: React.FC<LibraryViewProps> = ({
             </div>
 
             <div className="map-main" style={{ overflow: 'auto' }}>
-              <DashboardPanel onBookSelect={handleBookSelect} />
+              <Suspense fallback={<div>加载中...</div>}>
+                <DashboardPanel onBookSelect={handleBookSelect} />
+              </Suspense>
             </div>
           </div>
         )}
 
         {currentView === 'tagLibrary' && (
-          <TagLibraryView
-            selectedTag={selectedTag}
-            onBookSelect={handleBookSelect}
-          />
+          <Suspense fallback={<div>加载中...</div>}>
+            <TagLibraryView
+              selectedTag={selectedTag}
+              onBookSelect={handleBookSelect}
+            />
+          </Suspense>
         )}
 
         {currentView === 'documents' && (
-          <DocumentManager
-            onBack={() => setCurrentView('map')}
-            onDocumentClick={(doc) => {
-              console.log('Document clicked:', doc);
-            }}
-          />
+          <Suspense fallback={<div>加载中...</div>}>
+            <DocumentManager
+              onBack={() => setCurrentView('map')}
+              onDocumentClick={(doc) => {
+                console.log('Document clicked:', doc);
+              }}
+            />
+          </Suspense>
         )}
 
         {currentView === 'timeline' && (
-          <TimelinePanel
-            onBookSelect={handleBookSelect}
-            onDocumentSelect={handleDocumentSelect}
-            refresh={timelineRefresh}
-          />
+          <Suspense fallback={<div>加载中...</div>}>
+            <TimelinePanel
+              onBookSelect={handleBookSelect}
+              onDocumentSelect={handleDocumentSelect}
+              refresh={timelineRefresh}
+            />
+          </Suspense>
         )}
 
         {currentView === 'bookReader' && selectedBook && (
-          <BookReaderView
-            book={selectedBook}
-            initialPage={initialPage}
-            onBack={() => {
-              setSelectedBook(null);
-              setInitialPage(undefined);
-              setCurrentView(previousView);
-              if (previousView !== 'map') setSelectedTag(null);
-            }}
-          />
+          <Suspense fallback={<div>加载中...</div>}>
+            <BookReaderView
+              book={selectedBook}
+              initialPage={initialPage}
+              onBack={() => {
+                setSelectedBook(null);
+                setInitialPage(undefined);
+                setCurrentView(previousView);
+                if (previousView !== 'map') setSelectedTag(null);
+              }}
+            />
+          </Suspense>
         )}
       </div>
 
       {showUploadModal && (
-        <BookUploadModal
-          onClose={() => setShowUploadModal(false)}
-          onSuccess={() => {
-            loadStats();
-            setShowUploadModal(false);
-          }}
-        />
+        <Suspense fallback={<div>加载中...</div>}>
+          <BookUploadModal
+            onClose={() => setShowUploadModal(false)}
+            onSuccess={() => {
+              loadStats();
+              setShowUploadModal(false);
+            }}
+          />
+        </Suspense>
       )}
     </div>
   );

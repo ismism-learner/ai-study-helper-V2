@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from app.config import settings_manager
 from app.schemas import SettingsResponse, ModelsResponse, SettingsUpdate
 import httpx
+import threading
 
 router = APIRouter()
 
@@ -18,6 +19,8 @@ def get_settings():
         api_key=masked_key,
         api_base=all_settings["api_base"],
         model_name=all_settings["model_name"],
+        ai_backend_type=all_settings.get("ai_backend_type", "api"),
+        opencode_cli_path=all_settings.get("opencode_cli_path", "opencode"),
         framework_prompt=all_settings["framework_prompt"],
         explain_prompt=all_settings["explain_prompt"],
         optimize_prompt=all_settings["optimize_prompt"],
@@ -25,7 +28,17 @@ def get_settings():
         chapter_note_system_prompt=all_settings.get("chapter_note_system_prompt", ""),
         chapter_note_prompt=all_settings.get("chapter_note_prompt", ""),
         timeline_prompt=all_settings.get("timeline_prompt", ""),
+        long_text_rewrite_system_prompt=all_settings.get(
+            "long_text_rewrite_system_prompt", ""
+        ),
+        long_text_rewrite_prompt=all_settings.get("long_text_rewrite_prompt", ""),
         batch_upload_size=all_settings.get("batch_upload_size", 5),
+        neo4j_enabled=all_settings.get("neo4j_enabled", False),
+        neo4j_uri=all_settings.get("neo4j_uri", "bolt://localhost:7687"),
+        neo4j_user=all_settings.get("neo4j_user", "neo4j"),
+        neo4j_password=all_settings.get("neo4j_password", ""),
+        kg_concept_prompt=all_settings.get("kg_concept_prompt", ""),
+        quick_summary_prompt=all_settings.get("quick_summary_prompt", ""),
     )
 
 
@@ -71,6 +84,8 @@ def update_settings(settings_update: SettingsUpdate):
         api_key=settings_update.api_key,
         api_base=settings_update.api_base,
         model_name=settings_update.model_name,
+        ai_backend_type=settings_update.ai_backend_type,
+        opencode_cli_path=settings_update.opencode_cli_path,
         framework_prompt=settings_update.framework_prompt,
         explain_prompt=settings_update.explain_prompt,
         optimize_prompt=settings_update.optimize_prompt,
@@ -79,5 +94,31 @@ def update_settings(settings_update: SettingsUpdate):
         chapter_note_prompt=settings_update.chapter_note_prompt,
         timeline_prompt=settings_update.timeline_prompt,
         batch_upload_size=settings_update.batch_upload_size,
+        neo4j_enabled=settings_update.neo4j_enabled,
+        neo4j_uri=settings_update.neo4j_uri,
+        neo4j_user=settings_update.neo4j_user,
+        neo4j_password=settings_update.neo4j_password,
+        kg_concept_prompt=settings_update.kg_concept_prompt,
+        quick_summary_prompt=settings_update.quick_summary_prompt,
     )
+
+    # Re-initialize Neo4j services if config changed
+    if any(
+        v is not None
+        for v in [
+            settings_update.neo4j_enabled,
+            settings_update.neo4j_uri,
+            settings_update.neo4j_user,
+            settings_update.neo4j_password,
+        ]
+    ):
+
+        def _reinit_neo4j():
+            from app.services.neo4j import cleanup_neo4j_services, init_neo4j_services
+
+            cleanup_neo4j_services()
+            init_neo4j_services()
+
+        threading.Thread(target=_reinit_neo4j, daemon=True).start()
+
     return get_settings()

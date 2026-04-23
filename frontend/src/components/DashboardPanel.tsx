@@ -760,4 +760,4 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ onBookSelect }) => {
   );
 };
 
-export default DashboardPanel;
+export default React.memo(DashboardPanel);

@@ -3,12 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@react-three/drei": "^9.122.0",
-    "@react-three/fiber": "^8.18.0",
+    "@antv/g6": "^5.1.0",
     "axios": "^1.6.0",
-    "d3-geo": "^3.1.1",
     "epubjs": "^0.3.93",
-    "globe.gl": "^2.45.1",
     "highlight.js": "^11.11.1",
     "html2pdf.js": "^0.14.0",
     "jsxgraph": "^1.12.2",
@@ -19,16 +16,13 @@
     "react-dom": "^18.2.0",
     "react-markdown": "^9.0.1",
     "react-pdf": "^10.4.1",
-    "react-simple-maps": "^3.0.0",
     "reactflow": "^11.11.4",
     "recharts": "^3.8.1",
     "rehype-highlight": "^7.0.2",
     "rehype-katex": "^7.0.1",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.0",
-    "remark-math": "^6.0.0",
-    "svgmap": "^2.19.3",
-    "three": "^0.183.2"
+    "remark-math": "^6.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Document, Folder, CreateDocumentRequest, Highlight } from '../types';
 import { documentApi, folderApi, highlightApi } from '../api';
 
@@ -14,6 +14,38 @@ export function useDocuments() {
   const [uploadLoading, setUploadLoading] = useState(false);
   const [generatingDocIds, setGeneratingDocIds] = useState<Set<string>>(new Set());
   const [streamingContents, setStreamingContents] = useState<Map<string, string>>(new Map());
+  // Ref holds the real-time streaming data (updated on every SSE chunk)
+  const streamingContentsRef = useRef<Map<string, string>>(new Map());
+  // rAF handle for throttled state sync
+  const streamingRafRef = useRef<number | null>(null);
+
+  // Flush ref → state immediately (used on stream end/error for final content)
+  const flushStreamingState = useCallback(() => {
+    if (streamingRafRef.current !== null) {
+      cancelAnimationFrame(streamingRafRef.current);
+      streamingRafRef.current = null;
+    }
+    setStreamingContents(new Map(streamingContentsRef.current));
+  }, []);
+
+  // Schedule a throttled ref → state sync via requestAnimationFrame
+  const scheduleStreamingSync = useCallback(() => {
+    if (streamingRafRef.current === null) {
+      streamingRafRef.current = requestAnimationFrame(() => {
+        streamingRafRef.current = null;
+        setStreamingContents(new Map(streamingContentsRef.current));
+      });
+    }
+  }, []);
+
+  // Cleanup rAF on unmount
+  useEffect(() => {
+    return () => {
+      if (streamingRafRef.current !== null) {
+        cancelAnimationFrame(streamingRafRef.current);
+      }
+    };
+  }, []);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
@@ -130,21 +162,15 @@ export function useDocuments() {
     if (!targetDoc) return;
 
     setGeneratingDocIds(prev => new Set(prev).add(targetDocId));
-    setStreamingContents(prev => {
-      const newMap = new Map(prev);
-      newMap.set(targetDocId, '');
-      return newMap;
-    });
+    streamingContentsRef.current.set(targetDocId, '');
+    flushStreamingState();
     
     await documentApi.generateFrameworkStream(
       targetDocId,
       (chunk: string) => {
-        setStreamingContents(prev => {
-          const newMap = new Map(prev);
-          const current = newMap.get(targetDocId) || '';
-          newMap.set(targetDocId, current + chunk);
-          return newMap;
-        });
+        const current = streamingContentsRef.current.get(targetDocId) || '';
+        streamingContentsRef.current.set(targetDocId, current + chunk);
+        scheduleStreamingSync();
       },
       (fullContent: string) => {
         const updatedDoc = {
@@ -165,11 +191,8 @@ export function useDocuments() {
           newSet.delete(targetDocId);
           return newSet;
         });
-        setStreamingContents(prev => {
-          const newMap = new Map(prev);
-          newMap.delete(targetDocId);
-          return newMap;
-        });
+        streamingContentsRef.current.delete(targetDocId);
+        flushStreamingState();
       },
       (error: string) => {
         console.error('Failed to generate framework:', error);
@@ -180,11 +203,8 @@ export function useDocuments() {
           newSet.delete(targetDocId);
           return newSet;
         });
-        setStreamingContents(prev => {
-          const newMap = new Map(prev);
-          newMap.delete(targetDocId);
-          return newMap;
-        });
+        streamingContentsRef.current.delete(targetDocId);
+        flushStreamingState();
       }
     );
   }, [activeDocument, documents]);

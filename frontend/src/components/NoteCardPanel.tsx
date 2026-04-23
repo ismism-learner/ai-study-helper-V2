@@ -1,14 +1,15 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import rehypeHighlight from 'rehype-highlight';
-import { ChevronRight, ChevronDown, Sparkles, X, Box, Code, FunctionSquare, Type, LayoutGrid } from 'lucide-react';
+import { ChevronRight, ChevronDown, Sparkles, X, Box, Code, FunctionSquare, Type, LayoutGrid, RefreshCw, Eye } from 'lucide-react';
 import 'katex/dist/katex.min.css';
 import 'highlight.js/styles/github-dark.css';
-import NodeCanvas, { createNode, VisualizationNode as VizNode } from './NodeCanvas';
+import { createNode, VisualizationNode as VizNode } from './NodeCanvas';
+const NodeCanvas = lazy(() => import('./NodeCanvas'));
 import '../styles/node-canvas.css';
 
 interface ChapterNoteData {
@@ -24,8 +25,17 @@ interface NoteCardPanelProps {
   currentChapter: number;
   notes: Map<number, ChapterNoteData>;
   onGenerateNote: (chapterIndex: number) => void;
-  onBack?: () => void;  // 可选，标签页模式下不需要
-  hideHeader?: boolean;  // 隐藏头部（标签页模式）
+  onRegenerateNote?: (chapterIndex: number) => void;
+  onGenerateAll?: () => void;
+  isGeneratingStructure?: boolean;
+  generateProgress?: string | null;
+  bookStructure?: {
+    book_title?: string;
+    total_chapters?: number;
+    chapters: { index: number; title: string; summary?: string; sections?: { title: string; summary: string; key_points?: string[] }[] }[];
+  } | null;
+  onBack?: () => void;
+  hideHeader?: boolean;
 }
 
 interface SubSection {
@@ -185,6 +195,11 @@ const NoteCardPanel: React.FC<NoteCardPanelProps> = ({
   currentChapter,
   notes,
   onGenerateNote,
+  onRegenerateNote,
+  onGenerateAll,
+  isGeneratingStructure,
+  generateProgress,
+  bookStructure,
   onBack,
   hideHeader = false,
 }) => {
@@ -193,23 +208,28 @@ const NoteCardPanel: React.FC<NoteCardPanelProps> = ({
   const [activeApps, setActiveApps] = useState<Map<string, VisualizableItem>>(new Map());
   const [showNodeCanvas, setShowNodeCanvas] = useState(false);
   const [canvasNodes, setCanvasNodes] = useState<VizNode[]>([]);
+  // 每个章节的视图模式：'original' = 原文，'rewritten' = 改写
+  const [viewModes, setViewModes] = useState<Map<number, 'original' | 'rewritten'>>(new Map());
 
   const chapterNotesList = useMemo(() => {
-    const list: { index: number; title: string; hasNote: boolean; note: ChapterNoteData | undefined }[] = [];
+    const list: { index: number; title: string; hasNote: boolean; note: ChapterNoteData | undefined; structureTitle?: string; structureSummary?: string }[] = [];
     for (let i = 0; i < chapters.length; i++) {
       const chapterText = chapters[i];
       const titleLine = chapterText.split('\n')[0] || `第${i + 1}章`;
       const title = titleLine.startsWith('====') ? titleLine.substring(4).trim() : titleLine.trim();
       const note = notes.get(i);
+      const structChapter = bookStructure?.chapters?.[i];
       list.push({
         index: i,
-        title: title || `第${i + 1}章`,
+        title: structChapter?.title || title || `第${i + 1}章`,
         hasNote: !!note?.markdownContent,
         note,
+        structureTitle: structChapter?.title,
+        structureSummary: structChapter?.summary,
       });
     }
     return list;
-  }, [chapters, notes]);
+  }, [chapters, notes, bookStructure]);
 
   const getChapterSections = useCallback((chapterIndex: number): SubSection[] => {
     const note = notes.get(chapterIndex);
@@ -225,6 +245,16 @@ const NoteCardPanel: React.FC<NoteCardPanelProps> = ({
 
   const toggleChapter = useCallback((index: number) => {
     setExpandedChapter(prev => prev === index ? null : index);
+  }, []);
+
+  // 切换视图模式（原文/改写）
+  const toggleViewMode = useCallback((chapterIndex: number) => {
+    setViewModes(prev => {
+      const next = new Map(prev);
+      const current = next.get(chapterIndex) || 'rewritten';
+      next.set(chapterIndex, current === 'original' ? 'rewritten' : 'original');
+      return next;
+    });
   }, []);
 
   const toggleSection = useCallback((sectionKey: string) => {
@@ -278,6 +308,17 @@ const NoteCardPanel: React.FC<NoteCardPanelProps> = ({
         <div className="note-card-header">
           <h3>章节笔记</h3>
           <div className="note-card-header-actions">
+            {onGenerateAll && (
+              <button
+                className="generate-all-btn"
+                onClick={onGenerateAll}
+                disabled={isGeneratingStructure}
+                title="两阶段整理：先分析全文结构，再逐章填充内容"
+              >
+                <Sparkles size={14} />
+                <span>{isGeneratingStructure ? '整理中...' : '一键整理全部'}</span>
+              </button>
+            )}
             {canvasNodes.length > 0 && (
               <button 
                 className="note-card-canvas-btn" 
@@ -297,6 +338,15 @@ const NoteCardPanel: React.FC<NoteCardPanelProps> = ({
         </div>
       )}
 
+      {generateProgress && (
+        <div className="generate-progress-bar">
+          <div className="generate-progress-text">{generateProgress}</div>
+          <div className="generate-progress-track">
+            <div className="generate-progress-fill" />
+          </div>
+        </div>
+      )}
+
       <div className="note-card-list">
         {chapterNotesList.map((chapter) => {
           const isExpanded = expandedChapter === chapter.index;
@@ -307,7 +357,7 @@ const NoteCardPanel: React.FC<NoteCardPanelProps> = ({
             <div key={chapter.index} className={`chapter-card ${isExpanded ? 'expanded' : ''} ${chapter.index === currentChapter ? 'current' : ''}`}>
               <div
                 className="chapter-card-header"
-                onDoubleClick={() => toggleChapter(chapter.index)}
+                onClick={() => toggleChapter(chapter.index)}  // 改为单击展开
               >
                 <div className="chapter-card-title-row">
                   <span className="chapter-expand-icon">
@@ -323,7 +373,20 @@ const NoteCardPanel: React.FC<NoteCardPanelProps> = ({
                       ))}
                     </div>
                   )}
-                  {!chapter.hasNote && (
+                  {/* 已生成笔记时显示"切换原文/改写"按钮，未生成时显示"AI改写"按钮 */}
+                  {chapter.hasNote ? (
+                    <button
+                      className="toggle-view-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleViewMode(chapter.index);
+                      }}
+                      title={viewModes.get(chapter.index) === 'original' ? '点击查看改写内容' : '点击查看原文'}
+                    >
+                      <Eye size={12} />
+                      <span>{viewModes.get(chapter.index) === 'original' ? '改写' : '原文'}</span>
+                    </button>
+                  ) : (
                     <button
                       className="generate-note-btn"
                       onClick={(e) => {
@@ -341,7 +404,30 @@ const NoteCardPanel: React.FC<NoteCardPanelProps> = ({
 
               {isExpanded && chapter.hasNote && (
                 <div className="chapter-card-body">
-                  <div className="sections-flow">
+                  {/* 重新润色按钮 - 在已生成笔记的顶部 */}
+                  {onRegenerateNote && viewModes.get(chapter.index) !== 'original' && (
+                    <div className="regenerate-note-bar">
+                      <button
+                        className="regenerate-note-btn"
+                        onClick={() => onRegenerateNote(chapter.index)}
+                        disabled={chapter.note?.isGenerating}
+                        title="重新润色此章节的笔记"
+                      >
+                        <RefreshCw size={12} className={chapter.note?.isGenerating ? 'spinning' : ''} />
+                        <span>{chapter.note?.isGenerating ? '润色中...' : '重新润色'}</span>
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* 根据视图模式显示原文或改写内容 */}
+                  {viewModes.get(chapter.index) === 'original' ? (
+                    <div className="original-text-view">
+                      <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 13, lineHeight: 1.8, color: '#cbd5e1', fontFamily: 'inherit', margin: 0 }}>
+                        {chapters[chapter.index]}
+                      </pre>
+                    </div>
+                  ) : (
+                    <div className="sections-flow">
                     {sections.map((section, sIdx) => {
                       const sectionKey = `${chapter.index}-${sIdx}`;
                       const isSectionExpanded = expandedSections.has(sectionKey);
@@ -402,27 +488,28 @@ const NoteCardPanel: React.FC<NoteCardPanelProps> = ({
                                       </div>
                                     ))}
                                   </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                                 )}
+                               </div>
+                             )}
+                           </div>
+                         </div>
+                       );
+                     })}
+                    </div>
+                  )}
                 </div>
               )}
 
               {isExpanded && !chapter.hasNote && (
                 <div className="chapter-card-empty">
-                  <p>尚未生成笔记</p>
+                  <p>尚未生成改写内容</p>
                   <button
                     className="generate-note-btn-full"
                     onClick={() => onGenerateNote(chapter.index)}
                     disabled={chapter.note?.isGenerating}
                   >
                     <Sparkles size={14} />
-                    <span>{chapter.note?.isGenerating ? '整理中...' : '一键AI整理'}</span>
+                    <span>{chapter.note?.isGenerating ? 'AI改写中...' : 'AI改写'}</span>
                   </button>
                 </div>
               )}
@@ -463,10 +550,12 @@ const NoteCardPanel: React.FC<NoteCardPanelProps> = ({
       {/* 节点画布 */}
       {showNodeCanvas && (
         <div className="node-canvas-overlay">
-          <NodeCanvas
-            initialNodes={canvasNodes}
-            onClose={() => setShowNodeCanvas(false)}
-          />
+          <Suspense fallback={<div>加载节点图...</div>}>
+            <NodeCanvas
+              initialNodes={canvasNodes}
+              onClose={() => setShowNodeCanvas(false)}
+            />
+          </Suspense>
         </div>
       )}
     </div>

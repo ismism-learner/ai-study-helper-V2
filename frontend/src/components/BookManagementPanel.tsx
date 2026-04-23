@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { BookDocument, Country, TimePeriod } from '../types';
 import { bookApi, countryApi, timePeriodApi } from '../api';
 import {
@@ -24,7 +24,8 @@ import {
   Image,
   Cloud,
   FolderOpen,
-  Loader
+  Loader,
+  ChevronDown
 } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 import EditBookBody, { EditBookFormData } from './EditBookBody';
@@ -43,6 +44,16 @@ const BookManagementPanel: React.FC<BookManagementPanelProps> = ({ onBack, onBoo
   const [selectedBooks, setSelectedBooks] = useState<Set<string>>(new Set());
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
   const [archivingBooks, setArchivingBooks] = useState<Set<string>>(new Set());
+  
+  // 分页状态
+  const [paginationSkip, setPaginationSkip] = useState(0);
+  const paginationLimit = 50;
+  const [hasMoreBooks, setHasMoreBooks] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  
+  // 懒加载封面缓存
+  const [coverCache, setCoverCache] = useState<Record<string, { cover_image: string | null; thumbnail: string | null }>>({});
+  const [loadingCovers, setLoadingCovers] = useState<Set<string>>(new Set());
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCountry, setFilterCountry] = useState<string>('');
@@ -175,11 +186,13 @@ const BookManagementPanel: React.FC<BookManagementPanelProps> = ({ onBack, onBoo
     
     try {
       const [booksRes, countriesRes, periodsRes] = await Promise.all([
-        bookApi.list({}),
+        bookApi.list({ skip: 0, limit: paginationLimit }),
         countryApi.list(),
         timePeriodApi.list(),
       ]);
       setBooks(booksRes.data);
+      setPaginationSkip(0);
+      setHasMoreBooks(booksRes.data.length >= paginationLimit);
       setCountries(countriesRes.data);
       setTimePeriods(periodsRes.data);
     } catch (error) {
@@ -189,6 +202,66 @@ const BookManagementPanel: React.FC<BookManagementPanelProps> = ({ onBack, onBoo
       setIsBackgroundUpdating(false);
     }
   };
+
+  const loadMoreBooks = async () => {
+    if (isLoadingMore || !hasMoreBooks) return;
+    setIsLoadingMore(true);
+    
+    try {
+      const nextSkip = paginationSkip + paginationLimit;
+      const booksRes = await bookApi.list({ skip: nextSkip, limit: paginationLimit });
+      setBooks(prev => [...prev, ...booksRes.data]);
+      setPaginationSkip(nextSkip);
+      setHasMoreBooks(booksRes.data.length >= paginationLimit);
+    } catch (error) {
+      console.error('Failed to load more books:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  // 懒加载封面
+  const loadCover = useCallback(async (bookId: string) => {
+    if (coverCache[bookId] || loadingCovers.has(bookId)) return;
+    
+    setLoadingCovers(prev => new Set(prev).add(bookId));
+    try {
+      const res = await bookApi.getCover(bookId);
+      setCoverCache(prev => ({ ...prev, [bookId]: res.data }));
+    } catch (error) {
+      console.error('Failed to load cover:', error);
+    } finally {
+      setLoadingCovers(prev => {
+        const next = new Set(prev);
+        next.delete(bookId);
+        return next;
+      });
+    }
+  }, [coverCache, loadingCovers]);
+
+  // IntersectionObserver 懒加载封面
+  const coverObserverRef = useRef<IntersectionObserver | null>(null);
+  const coverElementRef = useCallback((bookId: string) => (element: HTMLDivElement | null) => {
+    if (!element) return;
+    
+    if (!coverObserverRef.current) {
+      coverObserverRef.current = new IntersectionObserver(
+        (entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              const id = entry.target.getAttribute('data-book-id');
+              if (id) loadCover(id);
+              coverObserverRef.current?.unobserve(entry.target);
+            }
+          });
+        },
+        { rootMargin: '200px' }
+      );
+    }
+    
+    element.setAttribute('data-book-id', bookId);
+    coverObserverRef.current.observe(element);
+  }, [loadCover]);
 
   const unarchivedBooks = useMemo(() => {
     return books.filter(b => b.notes_count === 0);
@@ -741,6 +814,7 @@ const BookManagementPanel: React.FC<BookManagementPanelProps> = ({ onBack, onBoo
                   key={book.id}
                   className={`table-row ${selectedBooks.has(book.id) ? 'selected' : ''} ${book.notes_count === 0 ? 'unarchived' : ''}`}
                 >
+                  <div ref={coverElementRef(book.id)} style={{ display: 'none' }} />
                   <div className="col-checkbox">
                     <button
                       className={`select-btn ${selectedBooks.has(book.id) ? 'selected' : ''}`}
@@ -851,6 +925,22 @@ const BookManagementPanel: React.FC<BookManagementPanelProps> = ({ onBack, onBoo
                   </div>
                 </div>
               ))}
+              {hasMoreBooks && (
+                <div className="load-more-row">
+                  <button
+                    className="btn btn-secondary load-more-btn"
+                    onClick={loadMoreBooks}
+                    disabled={isLoadingMore}
+                  >
+                    {isLoadingMore ? (
+                      <Loader size={14} className="spinning" />
+                    ) : (
+                      <ChevronDown size={14} />
+                    )}
+                    {isLoadingMore ? '加载中...' : '加载更多'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -4,8 +4,15 @@ from sqlalchemy import func
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
+from itertools import groupby
 from app.database import get_db
-from app.models import WorldTimelineEvent, BookDocument, Document, DocumentTimelineEvent, ActivityLog
+from app.models import (
+    WorldTimelineEvent,
+    BookDocument,
+    Document,
+    DocumentTimelineEvent,
+    ActivityLog,
+)
 
 router = APIRouter()
 
@@ -66,16 +73,18 @@ def _build_event_response(event: WorldTimelineEvent) -> TimelineEventResponse:
         importance=event.importance,
         tags=event.tags,
         created_at=event.created_at,
-        updated_at=event.updated_at
+        updated_at=event.updated_at,
     )
 
 
-@router.get("/books/{book_id}/timeline-events", response_model=List[TimelineEventResponse])
+@router.get(
+    "/books/{book_id}/timeline-events", response_model=List[TimelineEventResponse]
+)
 def get_book_timeline_events(
     book_id: str,
     sort_by: Optional[str] = "date",  # date, page, created
     order: Optional[str] = "asc",
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """获取指定书籍的所有时间节点记录"""
     book = db.query(BookDocument).filter(BookDocument.id == book_id).first()
@@ -87,15 +96,21 @@ def get_book_timeline_events(
     # 排序
     if sort_by == "date":
         query = query.order_by(
-            WorldTimelineEvent.event_date.asc() if order == "asc" else WorldTimelineEvent.event_date.desc()
+            WorldTimelineEvent.event_date.asc()
+            if order == "asc"
+            else WorldTimelineEvent.event_date.desc()
         )
     elif sort_by == "page":
         query = query.order_by(
-            WorldTimelineEvent.page_number.asc() if order == "asc" else WorldTimelineEvent.page_number.desc()
+            WorldTimelineEvent.page_number.asc()
+            if order == "asc"
+            else WorldTimelineEvent.page_number.desc()
         )
     elif sort_by == "created":
         query = query.order_by(
-            WorldTimelineEvent.created_at.asc() if order == "asc" else WorldTimelineEvent.created_at.desc()
+            WorldTimelineEvent.created_at.asc()
+            if order == "asc"
+            else WorldTimelineEvent.created_at.desc()
         )
     else:
         query = query.order_by(WorldTimelineEvent.event_date.asc())
@@ -106,9 +121,7 @@ def get_book_timeline_events(
 
 @router.post("/books/{book_id}/timeline-events", response_model=TimelineEventResponse)
 def create_timeline_event(
-    book_id: str,
-    data: TimelineEventCreate,
-    db: Session = Depends(get_db)
+    book_id: str, data: TimelineEventCreate, db: Session = Depends(get_db)
 ):
     """为指定书籍创建新的时间节点记录"""
     try:
@@ -124,17 +137,17 @@ def create_timeline_event(
             event_title=data.event_title,
             event_description=data.event_description,
             importance=data.importance or "normal",
-            tags=data.tags
+            tags=data.tags,
         )
         db.add(event)
         db.commit()
         db.refresh(event)
-        
+
         book_title = book.title if book else "未知书籍"
         activity = ActivityLog(
-            action_type='note',
-            description=f'在《{book_title}》第{data.page_number}页添加了笔记',
-            book_id=book_id
+            action_type="note",
+            description=f"在《{book_title}》第{data.page_number}页添加了笔记",
+            book_id=book_id,
         )
         db.add(activity)
         db.commit()
@@ -145,18 +158,22 @@ def create_timeline_event(
     except Exception as e:
         db.rollback()
         print(f"Error creating timeline event: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to create timeline event: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to create timeline event: {str(e)}"
+        )
 
 
 @router.put("/timeline-events/{event_id}", response_model=TimelineEventResponse)
 def update_timeline_event(
-    event_id: str,
-    data: TimelineEventUpdate,
-    db: Session = Depends(get_db)
+    event_id: str, data: TimelineEventUpdate, db: Session = Depends(get_db)
 ):
     """更新时间节点记录"""
     try:
-        event = db.query(WorldTimelineEvent).filter(WorldTimelineEvent.id == event_id).first()
+        event = (
+            db.query(WorldTimelineEvent)
+            .filter(WorldTimelineEvent.id == event_id)
+            .first()
+        )
         if not event:
             raise HTTPException(status_code=404, detail="Timeline event not found")
 
@@ -184,13 +201,17 @@ def update_timeline_event(
     except Exception as e:
         db.rollback()
         print(f"Error updating timeline event: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to update timeline event: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to update timeline event: {str(e)}"
+        )
 
 
 @router.delete("/timeline-events/{event_id}")
 def delete_timeline_event(event_id: str, db: Session = Depends(get_db)):
     """删除时间节点记录"""
-    event = db.query(WorldTimelineEvent).filter(WorldTimelineEvent.id == event_id).first()
+    event = (
+        db.query(WorldTimelineEvent).filter(WorldTimelineEvent.id == event_id).first()
+    )
     if not event:
         raise HTTPException(status_code=404, detail="Timeline event not found")
 
@@ -203,7 +224,9 @@ def delete_timeline_event(event_id: str, db: Session = Depends(get_db)):
 @router.get("/timeline-events/{event_id}", response_model=TimelineEventResponse)
 def get_timeline_event(event_id: str, db: Session = Depends(get_db)):
     """获取单个时间节点记录详情"""
-    event = db.query(WorldTimelineEvent).filter(WorldTimelineEvent.id == event_id).first()
+    event = (
+        db.query(WorldTimelineEvent).filter(WorldTimelineEvent.id == event_id).first()
+    )
     if not event:
         raise HTTPException(status_code=404, detail="Timeline event not found")
 
@@ -213,32 +236,75 @@ def get_timeline_event(event_id: str, db: Session = Depends(get_db)):
 @router.get("/library/timeline-summary", response_model=List[BookTimelineSummary])
 def get_library_timeline_summary(db: Session = Depends(get_db)):
     """获取书库中所有书籍的时间节点汇总信息"""
-    books = db.query(BookDocument).all()
+    # 单次查询获取每本书的事件统计，避免N+1问题
+    event_stats = (
+        db.query(
+            WorldTimelineEvent.book_id,
+            func.count(WorldTimelineEvent.id).label("total_events"),
+            func.min(WorldTimelineEvent.event_date).label("first_date"),
+            func.max(WorldTimelineEvent.event_date).label("last_date"),
+        )
+        .group_by(WorldTimelineEvent.book_id)
+        .all()
+    )
+
+    if not event_stats:
+        return []
+
+    book_ids_with_events = [stat.book_id for stat in event_stats]
+
+    # 批量查询书籍信息
+    books = (
+        db.query(BookDocument).filter(BookDocument.id.in_(book_ids_with_events)).all()
+    )
+    book_map = {book.id: book for book in books}
+
+    # 批量查询所有相关事件的首尾显示日期
+    # 一次查询获取所有相关事件的 book_id + event_date + event_date_display
+    all_events = (
+        db.query(
+            WorldTimelineEvent.book_id,
+            WorldTimelineEvent.event_date,
+            WorldTimelineEvent.event_date_display,
+        )
+        .filter(WorldTimelineEvent.book_id.in_(book_ids_with_events))
+        .order_by(WorldTimelineEvent.book_id, WorldTimelineEvent.event_date)
+        .all()
+    )
+
+    # 按book_id分组，取首尾事件的显示日期
+    first_display_map = {}
+    last_display_map = {}
+    for book_id, group in groupby(all_events, key=lambda e: e.book_id):
+        events_list = list(group)
+        if events_list:
+            first_display_map[book_id] = events_list[0].event_date_display
+            last_display_map[book_id] = events_list[-1].event_date_display
+
     result = []
+    for stat in event_stats:
+        book = book_map.get(stat.book_id)
+        if not book:
+            continue
 
-    for book in books:
-        events = db.query(WorldTimelineEvent).filter(
-            WorldTimelineEvent.book_id == book.id
-        ).order_by(WorldTimelineEvent.event_date).all()
+        first_display = first_display_map.get(stat.book_id)
+        last_display = last_display_map.get(stat.book_id)
 
-        if events:
-            total_events = len(events)
-            first_event = events[0]
-            last_event = events[-1]
+        date_range = None
+        if first_display and last_display:
+            if first_display == last_display:
+                date_range = first_display
+            else:
+                date_range = f"{first_display} - {last_display}"
 
-            date_range = None
-            if first_event.event_date_display and last_event.event_date_display:
-                if first_event.event_date_display == last_event.event_date_display:
-                    date_range = first_event.event_date_display
-                else:
-                    date_range = f"{first_event.event_date_display} - {last_event.event_date_display}"
-
-            result.append(BookTimelineSummary(
+        result.append(
+            BookTimelineSummary(
                 book_id=book.id,
                 book_title=book.title,
-                total_events=total_events,
-                date_range=date_range
-            ))
+                total_events=stat.total_events,
+                date_range=date_range,
+            )
+        )
 
     return sorted(result, key=lambda x: x.total_events, reverse=True)
 
@@ -250,7 +316,7 @@ def search_timeline_events(
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     importance: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """搜索时间节点记录"""
     db_query = db.query(WorldTimelineEvent)
@@ -260,8 +326,8 @@ def search_timeline_events(
 
     if query:
         db_query = db_query.filter(
-            (WorldTimelineEvent.event_title.ilike(f"%{query}%")) |
-            (WorldTimelineEvent.event_description.ilike(f"%{query}%"))
+            (WorldTimelineEvent.event_title.ilike(f"%{query}%"))
+            | (WorldTimelineEvent.event_description.ilike(f"%{query}%"))
         )
 
     if date_from:
@@ -278,15 +344,21 @@ def search_timeline_events(
 
 @router.get("/library/timeline-events/all")
 def get_all_timeline_events(db: Session = Depends(get_db)):
-    world_events = db.query(WorldTimelineEvent).options(
-        joinedload(WorldTimelineEvent.book)
-    ).order_by(WorldTimelineEvent.event_date).all()
-    document_events = db.query(DocumentTimelineEvent).options(
-        joinedload(DocumentTimelineEvent.document)
-    ).order_by(DocumentTimelineEvent.event_date).all()
-    
+    world_events = (
+        db.query(WorldTimelineEvent)
+        .options(joinedload(WorldTimelineEvent.book))
+        .order_by(WorldTimelineEvent.event_date)
+        .all()
+    )
+    document_events = (
+        db.query(DocumentTimelineEvent)
+        .options(joinedload(DocumentTimelineEvent.document))
+        .order_by(DocumentTimelineEvent.event_date)
+        .all()
+    )
+
     result = []
-    
+
     for event in world_events:
         book = event.book
         event_data = {
@@ -304,10 +376,10 @@ def get_all_timeline_events(db: Session = Depends(get_db)):
             "book_title": book.title if book else None,
             "document_title": None,
             "created_at": event.created_at,
-            "updated_at": event.updated_at
+            "updated_at": event.updated_at,
         }
         result.append(event_data)
-    
+
     for event in document_events:
         doc = event.document
         event_data = {
@@ -325,12 +397,12 @@ def get_all_timeline_events(db: Session = Depends(get_db)):
             "book_title": None,
             "document_title": doc.title if doc else None,
             "created_at": event.created_at,
-            "updated_at": event.updated_at
+            "updated_at": event.updated_at,
         }
         result.append(event_data)
-    
-    result.sort(key=lambda x: x['event_date'])
-    
+
+    result.sort(key=lambda x: x["event_date"])
+
     return result
 
 
