@@ -38,7 +38,6 @@ class DetailedQuestionRequest(BaseModel):
 async def kg_health_check():
     return {
         "status": "healthy",
-        "neo4j_enabled": False,
         "storage": "sqlite",
         "stats": {
             "total_nodes": [{"count": 0}],

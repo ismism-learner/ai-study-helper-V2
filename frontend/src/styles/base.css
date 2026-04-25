@@ -286,7 +286,7 @@
   --border-strong: hsl(var(--hue-neutral), 20%, 80%);
 }
 
-/* 三相笔记主题（紫色系 - 源自 Neo4j 知识图谱项目风格） */
+/* 三相笔记主题（紫色系） */
 [data-theme="sanxiang"] {
   --hue-primary: 258;
   --hue-accent: 270;

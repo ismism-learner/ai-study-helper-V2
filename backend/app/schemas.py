@@ -189,10 +189,6 @@ class SettingsResponse(BaseModel):
     structure_user_prompt: str = ""
     section_fill_prompt: str = ""
     kg_concept_user_prompt: str = ""
-    neo4j_enabled: bool = False
-    neo4j_uri: str = "bolt://localhost:7687"
-    neo4j_user: str = "neo4j"
-    neo4j_password: str = ""
     kg_concept_prompt: str = ""
     quick_summary_prompt: str = ""
 

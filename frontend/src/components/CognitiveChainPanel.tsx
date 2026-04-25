@@ -6,7 +6,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import 'katex/dist/katex.min.css';
-import { cognitiveChainApi, knowledgeGraphApi } from '../api/knowledgeGraph';
+import { cognitiveChainApi } from '../api/knowledgeGraph';
 import '../styles/cognitive-chain-panel.css';
 
 interface Message {
@@ -65,7 +65,6 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [currentChainId, setCurrentChainId] = useState<string | null>(null);
   const [currentParentNodeId, setCurrentParentNodeId] = useState<string | null>(null);
-  const [neo4jEnabled, setNeo4jEnabled] = useState(true);
   const [chainHistory, setChainHistory] = useState<ChainHistory[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -87,16 +86,6 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
       setHistoryLoading(false);
     }
   }, [sourceDocId]);
-
-  useEffect(() => {
-    knowledgeGraphApi.healthCheck().then((res) => {
-      const storage = res.data?.storage;
-      const enabled = storage === 'sqlite' || res.data?.neo4j_enabled === true;
-      setNeo4jEnabled(enabled);
-    }).catch(() => {
-      setNeo4jEnabled(false);
-    });
-  }, []);
 
   useEffect(() => {
     if (sourceDocId) {
@@ -526,22 +515,6 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
       return '';
     }
   };
-
-  if (!neo4jEnabled) {
-    return (
-      <div className="cc-panel-disabled">
-        <div className="cc-disabled-content">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          <h3>认知链未启用</h3>
-          <p>请在设置中启用 Neo4j 连接以使用认知链功能</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="cognitive-chain-panel">

@@ -108,7 +108,7 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
     try {
       const res = await knowledgeGraphApi.healthCheck();
       const storage = res.data?.storage;
-      const enabled = storage === 'sqlite' || res.data?.neo4j_enabled === true;
+      const enabled = storage === 'sqlite';
       setStorageEnabled(enabled);
       return enabled;
     } catch {
