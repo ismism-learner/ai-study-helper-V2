@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { BookDocument } from '../types';
-import { bookApi, pdfOcrApi, chapterNoteApi, highlightApi } from '../api';
-import { cognitiveChainApi, knowledgeGraphApi } from '../api/knowledgeGraph';
+import { bookApi, pdfOcrApi, chapterNoteApi } from '../api';
+import { cognitiveChainApi } from '../api/knowledgeGraph';
 import { ArrowLeft, ZoomIn, ZoomOut, Maximize2, Minimize2, FileText, Download, RefreshCw, BookOpen, ChevronLeft, ChevronRight, GripVertical, ScanText, Sparkles, MessageCircle, Network } from 'lucide-react';
 import PDFNotesPanel from './PDFNotesPanel';
 import ResizablePanels from './ResizablePanels';
@@ -26,7 +26,6 @@ interface BookReaderViewProps {
 }
 
 const BUFFER_PAGES = 3;
-const UNLOAD_BUFFER_PAGES = 5;
 const PAGE_HEIGHT_ESTIMATE = 800;
 
 /**
@@ -122,10 +121,8 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   const [hasActiveChain, setHasActiveChain] = useState(false);
   const [isChainLoading, setIsChainLoading] = useState(false);
   const [graphRefreshKey, setGraphRefreshKey] = useState(0);
-  const [explanationPopup, setExplanationPopup] = useState<{text: string; explanation: string; position: {x: number; y: number}} | null>(null);
-  const [isExplaining, setIsExplaining] = useState(false);
-  const [externalMessage, setExternalMessage] = useState<{ role: 'user' | 'assistant' | 'system'; content: string; nodeType?: string } | null>(null);
-  const [ocrHighlights, setOcrHighlights] = useState<string[]>([]);
+  const [activeChainId, setActiveChainId] = useState<string | null>(null);
+  const [externalMessage, setExternalMessage] = useState<{ role: 'user' | 'assistant' | 'system'; content: string; nodeType?: string; chapterIndex?: number; knowledgeNodeId?: string } | null>(null);
   const contextMenuRef = useRef<typeof contextMenu>(null);
   const updateContextMenu = useCallback((val: typeof contextMenu) => {
     contextMenuRef.current = val;
@@ -140,7 +137,6 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const currentPageRef = useRef<number>(1);
   const toolbarRef = useRef<HTMLDivElement>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
   const readingStartTimeRef = useRef<number>(Date.now());
   const lastSaveTimeRef = useRef<number>(Date.now());
   const accumulatedSecondsRef = useRef<number>(0);
@@ -174,16 +170,6 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
       textarea.scrollTop = Math.max(0, scrollTop);
     }
   }, [editCurrentChapter]);
-
-  useEffect(() => {
-    const handleClickOutside = () => {
-      if (explanationPopup) setExplanationPopup(null);
-    };
-    if (explanationPopup) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [explanationPopup]);
 
   useEffect(() => {
     editChaptersRef.current = editChapters;
@@ -356,6 +342,20 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
 
   const handleZoomIn = () => setScale(prev => Math.min(prev + 0.2, 3));
   const handleZoomOut = () => setScale(prev => Math.max(prev - 0.2, 0.5));
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      const timer = setTimeout(() => {
+        const scrollWidth = container.scrollWidth;
+        const clientWidth = container.clientWidth;
+        if (scrollWidth > clientWidth) {
+          container.scrollLeft = (scrollWidth - clientWidth) / 2;
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [scale]);
 
   const handleFullscreen = () => {
     if (!containerRef.current) return;
@@ -826,12 +826,22 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     updateContextMenu(null);
   }, [contextMenu]);
 
-  const handleKnowledgeNodeClick = useCallback((node: { name: string; source_chapter_index?: number } | null) => {
+  const handleKnowledgeNodeClick = useCallback(async (node: { name: string; source_chapter_index?: number } | null) => {
     if (node) {
       console.log('选中节点:', node.name, node);
       const chapterIndex = node.source_chapter_index;
       if (typeof chapterIndex === 'number' && chapterIndex >= 0) {
         setCurrentOcrChapter(chapterIndex);
+      }
+      // 查找包含该概念的认知链，跳转到历史对话
+      try {
+        const res = await cognitiveChainApi.findChainsByConcept(node.name);
+        const chains = res.data?.chains || [];
+        if (chains.length > 0) {
+          setActiveChainId(chains[0].id);
+        }
+      } catch (err) {
+        console.error('查找概念关联认知链失败:', err);
       }
     }
   }, []);
@@ -871,38 +881,6 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     }
   }, [contextMenu, book.id, book.title, getTextPosition, ocrChapters.length, currentOcrChapter]);
 
-  const handleDetailedQuestion = useCallback(async () => {
-    if (!contextMenu?.selectedText || !book.id) return;
-    
-    const textPosition = contextMenu.selectionStart ?? getTextPosition(contextMenu.selectedText);
-    setIsChainLoading(true);
-    setExternalMessage({ role: 'user', content: contextMenu.selectedText.slice(0, 50) + '...', nodeType: 'DetailedQuestion' });
-    
-    try {
-      const { knowledgeGraphApi } = await import('../api/knowledgeGraph');
-      const res = await knowledgeGraphApi.createDetailedQuestion({
-        text: contextMenu.selectedText,
-        book_id: book.id,
-        book_title: book.title,
-        text_position: textPosition,
-      });
-      const node = res.data?.node;
-      setExternalMessage({ 
-        role: 'assistant', 
-        content: `${node?.name || '概念'}\n\n${node?.description || ''}`,
-        nodeType: 'DetailedQuestion'
-      });
-      setGraphRefreshKey(k => k + 1);
-    } catch (error) {
-      console.error('详细提问失败:', error);
-      setExternalMessage({ role: 'system', content: '详细提问失败', nodeType: 'DetailedQuestion' });
-    } finally {
-      setIsChainLoading(false);
-      updateContextMenu(null);
-    }
-  }, [contextMenu, book.id, book.title, getTextPosition]);
-
-
   const handleFollowUpQuestion = useCallback(() => {
     if (!contextMenu?.selectedText) return;
     if (!hasActiveChain) {
@@ -914,36 +892,6 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     setPendingQuestion(contextMenu.selectedText);
     updateContextMenu(null);
   }, [contextMenu, hasActiveChain]);
-
-  const handleAIExplain = useCallback(async () => {
-    if (!contextMenu?.selectedText) return;
-    const selectedText = contextMenu.selectedText;
-    setIsExplaining(true);
-    try {
-      const res = await cognitiveChainApi.explainConcept({
-        concept: selectedText,
-        context: ocrText ? ocrText.slice(0, 2000) : '',
-      });
-      setExplanationPopup({
-        text: selectedText,
-        explanation: res.data.definition || res.data.concept || '',
-        position: { x: contextMenu.x, y: contextMenu.y + 20 },
-      });
-    } catch (err) {
-      setFixNotification('AI解释失败');
-    } finally {
-      setIsExplaining(false);
-    }
-    updateContextMenu(null);
-  }, [contextMenu, ocrText]);
-
-  const handleOCRHighlight = useCallback(() => {
-    if (!contextMenu?.selectedText) return;
-    setOcrHighlights(prev => [...prev, contextMenu.selectedText]);
-    updateContextMenu(null);
-    setFixNotification('已标记高亮');
-    setTimeout(() => setFixNotification(null), 2000);
-  }, [contextMenu]);
 
   const MAX_NOTE_CHARS = 8000;
 
@@ -1494,14 +1442,21 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
             onChainUpdated={() => setGraphRefreshKey(k => k + 1)}
             externalMessage={externalMessage}
             onExternalMessageConsumed={() => setExternalMessage(null)}
+            activeChainId={activeChainId}
+            onActiveChainConsumed={() => setActiveChainId(null)}
           />
 
           {/* 第3栏：知识图谱 */}
           <KnowledgeGraphPanel
             bookTitle={book.title}
+            bookId={book.id}
             refreshKey={graphRefreshKey}
             onNodeClick={handleKnowledgeNodeClick}
             onNodeChapterClick={setCurrentOcrChapter}
+            onTextSelect={(text, action, chapterIndex, knowledgeNodeId) => {
+              const prefix = action === 'refine' ? `细化概念：${text}` : `追问：${text}`;
+              setExternalMessage({ role: 'user', content: prefix, chapterIndex, knowledgeNodeId: knowledgeNodeId ? String(knowledgeNodeId) : undefined });
+            }}
           />
 
           {/* 第4栏：OCR 文本 */}
@@ -1654,89 +1609,33 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
                 <div className="context-menu-divider" />
                 <button 
                   className="context-menu-item"
-                  onClick={handleAskQuestion}
-                  disabled={!contextMenu.selectedText || isChainLoading}
-                >
-                  <span className="menu-icon">💡</span>
-                  {isChainLoading ? '处理中...' : '提问'}
-                </button>
-                <div className="context-menu-divider" />
-                <button 
-                  className="context-menu-item"
                   onClick={handleQuickSummary}
                   disabled={!contextMenu.selectedText || isChainLoading}
                   style={{ background: 'rgba(245, 158, 11, 0.1)' }}
+                  title="总结选中内容，建立章节层级结构"
                 >
                   <span className="menu-icon">📋</span>
-                  快速梳理
-                </button>
-                <button 
-                  className="context-menu-item"
-                  onClick={handleDetailedQuestion}
-                  disabled={!contextMenu.selectedText || isChainLoading}
-                >
-                  <span className="menu-icon">🔍</span>
-                  详细提问
+                  {isChainLoading ? '处理中...' : '快速梳理'}
                 </button>
                 <div className="context-menu-divider" />
+                <button 
+                  className="context-menu-item"
+                  onClick={handleAskQuestion}
+                  disabled={!contextMenu.selectedText || isChainLoading}
+                  title="创建新认知链，探索概念"
+                >
+                  <span className="menu-icon">💡</span>
+                  {isChainLoading ? '处理中...' : '概念提问'}
+                </button>
                 <button 
                   className="context-menu-item"
                   onClick={handleFollowUpQuestion}
                   disabled={!contextMenu.selectedText || !hasActiveChain || isChainLoading}
-                  title={!hasActiveChain ? '请先创建认知链' : '在当前认知链中追问'}
+                  title={!hasActiveChain ? '请先提问创建认知链' : '在当前认知链中深入追问'}
                 >
                   <span className="menu-icon">🔗</span>
-                  追问
+                  {isChainLoading ? '处理中...' : '深入追问'}
                 </button>
-                <button 
-                  className="context-menu-item"
-                  onClick={handleAIExplain}
-                  disabled={!contextMenu.selectedText || isExplaining}
-                >
-                  <span className="menu-icon">✨</span>
-                  {isExplaining ? '解释中...' : 'AI解释'}
-                </button>
-                <button 
-                  className="context-menu-item"
-                  onClick={handleOCRHighlight}
-                  disabled={!contextMenu.selectedText}
-                >
-                  <span className="menu-icon">🏷️</span>
-                  高亮标记
-                </button>
-              </div>
-            )}
-            {explanationPopup && (
-              <div
-                className="explanation-tooltip"
-                style={{
-                  position: 'fixed',
-                  left: Math.min(explanationPopup.position.x, window.innerWidth - 320),
-                  top: explanationPopup.position.y,
-                  transform: 'translateX(-50%)',
-                  background: 'var(--bg-elevated)',
-                  borderRadius: 12,
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-                  padding: 16,
-                  zIndex: 1001,
-                  minWidth: 280,
-                  maxWidth: 360,
-                  maxHeight: 400,
-                  overflow: 'auto',
-                  color: 'var(--text-primary)',
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <strong style={{ color: 'var(--primary-500)', fontSize: 13 }}>{explanationPopup.text}</strong>
-                  <button
-                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16 }}
-                    onClick={() => setExplanationPopup(null)}
-                  >✕</button>
-                </div>
-                <div style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--text-primary)' }}>
-                  {explanationPopup.explanation}
-                </div>
               </div>
             )}
             {(editMode ? editChapters.length > 1 : showChapterNav) && (

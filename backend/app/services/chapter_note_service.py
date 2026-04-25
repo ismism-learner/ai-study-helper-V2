@@ -158,61 +158,6 @@ async def generate_chapter_note_stream(
             yield "\n\n--- 继续处理下一部分 ---\n\n"
 
 
-STRUCTURE_SYSTEM_PROMPT = """你是一个专业的文档结构分析助手。你的任务是分析OCR识别的原始文本，提取出文档的章节结构，并标注每个章节在原文中的行号范围。
-
-【输出格式】
-你必须输出一个严格的JSON对象，格式如下：
-{
-  "book_title": "书籍/文档标题",
-  "total_chapters": 章节总数,
-  "chapters": [
-    {
-      "index": 0,
-      "title": "第一章标题",
-      "summary": "该章节内容的简短概述（50字以内）",
-      "start_line": 1,
-      "end_line": 50,
-      "sections": [
-        {
-          "title": "1.1 小节标题",
-          "summary": "该小节内容的简短概述（30字以内）",
-          "key_points": ["要点1", "要点2"],
-          "start_line": 5,
-          "end_line": 25
-        }
-      ]
-    }
-  ]
-}
-
-【行号规则 - 极其重要！】
-1. 原文的第一行是第1行（不是第0行）
-2. start_line：该章节/小节内容在原文中开始的行号
-3. end_line：该章节/小节内容在原文中结束的行号（包含该行）
-4. 行号必须准确，因为系统会根据行号从原文中切分出对应内容
-5. 章节之间不应有行号重叠，上一章的end_line+1应等于下一章的start_line
-6. 如果无法精确判断行号，给出估算值即可
-
-【重要规则】
-1. 只输出JSON，不要输出任何其他内容
-2. JSON必须是合法的，可以被json.loads()解析
-3. chapters数组的顺序必须与原文中章节出现的顺序一致
-4. summary要简短精炼，不要长篇大论
-5. key_points只提取3-5个最重要的要点
-6. 如果原文没有明显的小节划分，sections可以为空数组
-7. 禁止使用任何emoji表情符号
-8. start_line和end_line是必填字段，不能省略"""
-
-STRUCTURE_USER_PROMPT = """请分析以下OCR识别的原始文本，提取出文档的章节结构，并标注每个章节在原文中的行号范围。
-
-文档标题：{chapter_title}
-
-原始文本（带行号前缀）：
-{numbered_text}
-
-请直接输出JSON格式的章节结构表，不要输出任何其他内容。确保每个章节都有准确的start_line和end_line。"""
-
-
 async def generate_structure(
     original_text: str, chapter_title: str = "未命名文档"
 ) -> dict:
@@ -223,17 +168,20 @@ async def generate_structure(
     text_len = len(original_text)
     print(f"[generate_structure] 文本: {text_len}字符")
 
-    lines = original_text.split('\n')
-    numbered_lines = [f"{i+1}| {line}" for i, line in enumerate(lines)]
-    numbered_text = '\n'.join(numbered_lines)
+    lines = original_text.split("\n")
+    numbered_lines = [f"{i + 1}| {line}" for i, line in enumerate(lines)]
+    numbered_text = "\n".join(numbered_lines)
 
-    prompt = STRUCTURE_USER_PROMPT.format(
+    structure_system_prompt = settings_manager.structure_system_prompt
+    structure_user_prompt_template = settings_manager.structure_user_prompt
+
+    prompt = structure_user_prompt_template.format(
         chapter_title=chapter_title, numbered_text=numbered_text
     )
 
     raw_result = await ai_service.generate_text(
         prompt=prompt,
-        system_prompt=STRUCTURE_SYSTEM_PROMPT,
+        system_prompt=structure_system_prompt,
         max_tokens=16384,
     )
 
@@ -255,7 +203,7 @@ async def generate_structure(
         brace_end = json_str.rfind("}")
         if brace_start >= 0 and brace_end > brace_start:
             try:
-                structure = json.loads(json_str[brace_start:brace_end + 1])
+                structure = json.loads(json_str[brace_start : brace_end + 1])
             except json.JSONDecodeError:
                 raise ValueError(f"AI返回的结构表JSON格式错误，无法解析: {e}")
         else:
@@ -277,25 +225,6 @@ async def generate_structure(
 
     print(f"[generate_structure] 成功提取结构: {structure.get('total_chapters', 0)}章")
     return structure
-
-
-SECTION_FILL_PROMPT = """请将以下OCR识别的原始文本整理成结构清晰、通俗易懂的Markdown格式笔记。
-
-【全书结构表】（供参考，了解当前章节在全书中的位置）
-{structure}
-
-【当前章节信息】
-章节标题：{section_title}
-章节概述：{section_summary}
-
-【当前章节的原始文本】
-{section_text}
-
-【重要提醒】
-- 禁止使用任何emoji表情符号
-- 只使用纯文本和Markdown格式
-- 只输出当前章节的整理内容，不要输出其他章节的内容
-- 直接输出整理后的Markdown内容，不要添加任何解释说明"""
 
 
 async def generate_section_note(
@@ -321,16 +250,20 @@ async def generate_section_note(
 但只需要填充当前章节的内容，不要输出其他章节的内容。"""
     system_prompt = base_system_prompt + context_addition
 
+    section_fill_prompt_template = settings_manager.section_fill_prompt
+
     structure_str = json.dumps(structure, ensure_ascii=False, indent=2)
 
-    prompt = SECTION_FILL_PROMPT.format(
+    prompt = section_fill_prompt_template.format(
         structure=structure_str,
         section_title=section_title,
         section_summary=section_summary,
         section_text=section_text,
     )
 
-    print(f"[generate_section_note] 填充章节: {section_title}, 原文: {len(section_text)}字符")
+    print(
+        f"[generate_section_note] 填充章节: {section_title}, 原文: {len(section_text)}字符"
+    )
 
     result = await ai_service.generate_text(
         prompt=prompt,
@@ -346,7 +279,7 @@ def split_text_by_structure(original_text: str, structure: dict) -> list[dict]:
     根据结构表中的行号信息，将原文切分为各章节的文本
     如果没有行号，则通过章节标题匹配来定位
     """
-    lines = original_text.split('\n')
+    lines = original_text.split("\n")
     total_lines = len(lines)
     chapters = structure.get("chapters", [])
     result = []
@@ -366,14 +299,16 @@ def split_text_by_structure(original_text: str, structure: dict) -> list[dict]:
             start = max(0, start_line - 1)
             end = min(total_lines, end_line)
 
-            ch_text = '\n'.join(lines[start:end]) if start < end else ""
+            ch_text = "\n".join(lines[start:end]) if start < end else ""
 
-            result.append({
-                "index": ch_index,
-                "title": ch_title,
-                "text": ch_text,
-                "section_info": ch,
-            })
+            result.append(
+                {
+                    "index": ch_index,
+                    "title": ch_title,
+                    "text": ch_text,
+                    "section_info": ch,
+                }
+            )
     else:
         chapter_positions = []
         for ch in chapters:
@@ -393,7 +328,11 @@ def split_text_by_structure(original_text: str, structure: dict) -> list[dict]:
             start_line = chapter_positions[idx]
 
             if start_line < 0:
-                start_line = chapter_positions[idx - 1] if idx > 0 and chapter_positions[idx - 1] >= 0 else 0
+                start_line = (
+                    chapter_positions[idx - 1]
+                    if idx > 0 and chapter_positions[idx - 1] >= 0
+                    else 0
+                )
 
             if idx < len(chapters) - 1:
                 next_start = chapter_positions[idx + 1]
@@ -404,21 +343,30 @@ def split_text_by_structure(original_text: str, structure: dict) -> list[dict]:
             else:
                 end_line = total_lines
 
-            ch_text = '\n'.join(lines[start_line:end_line]) if start_line < end_line else ""
+            ch_text = (
+                "\n".join(lines[start_line:end_line]) if start_line < end_line else ""
+            )
 
-            result.append({
-                "index": ch_index,
-                "title": ch_title,
-                "text": ch_text,
-                "section_info": ch,
-            })
+            result.append(
+                {
+                    "index": ch_index,
+                    "title": ch_title,
+                    "text": ch_text,
+                    "section_info": ch,
+                }
+            )
 
     if not result:
-        result.append({
-            "index": 0,
-            "title": structure.get("book_title", "全文"),
-            "text": original_text,
-            "section_info": {"title": structure.get("book_title", "全文"), "summary": ""},
-        })
+        result.append(
+            {
+                "index": 0,
+                "title": structure.get("book_title", "全文"),
+                "text": original_text,
+                "section_info": {
+                    "title": structure.get("book_title", "全文"),
+                    "summary": "",
+                },
+            }
+        )
 
     return result

@@ -32,7 +32,9 @@ class CognitiveChainService:
         if context:
             full_context = root_concept + "\n\n参考内容：\n" + context
 
-        explanation = await self._generate_concept_explanation(root_concept, full_context)
+        explanation = await self._generate_concept_explanation(
+            root_concept, full_context
+        )
         label = explanation.get("label", root_concept[:15])
 
         root_node = {
@@ -85,7 +87,9 @@ class CognitiveChainService:
         if not chain:
             raise ValueError(f"认知链不存在: {chain_id}")
 
-        explanation = await self._generate_concept_explanation(concept_to_explain, context)
+        explanation = await self._generate_concept_explanation(
+            concept_to_explain, context
+        )
         label = explanation.get("label", concept_to_explain[:15])
 
         new_node = {
@@ -188,7 +192,9 @@ class CognitiveChainService:
             logger.error(f"获取用户认知链失败: {e}")
             return []
 
-    def get_chains_by_source_doc(self, source_doc_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_chains_by_source_doc(
+        self, source_doc_id: str, limit: int = 50
+    ) -> List[Dict[str, Any]]:
         query = """
         MATCH (chain:CognitiveChain)
         WHERE chain.source_doc_id = $source_doc_id
@@ -203,11 +209,18 @@ class CognitiveChainService:
             )
             chains = []
             for r in results:
-                chain_data = self._reconstruct_chain({"chain": r["chain"], "nodes": [], "edges": []})
+                chain_data = self._reconstruct_chain(
+                    {"chain": r["chain"], "nodes": [], "edges": []}
+                )
                 root_node = r.get("rootNode")
                 if root_node:
                     chain_data["root_concept_label"] = root_node.get("concept", "")
-                    chain_data["root_definition"] = root_node.get("definition", "")[:100] + "..." if root_node.get("definition") and len(root_node.get("definition", "")) > 100 else root_node.get("definition", "")
+                    chain_data["root_definition"] = (
+                        root_node.get("definition", "")[:100] + "..."
+                        if root_node.get("definition")
+                        and len(root_node.get("definition", "")) > 100
+                        else root_node.get("definition", "")
+                    )
                 chains.append(chain_data)
             return chains
         except Exception as e:
@@ -235,13 +248,14 @@ class CognitiveChainService:
     async def _generate_concept_explanation(
         self, concept: str, context: str = ""
     ) -> Dict[str, Any]:
+        concept_user_prompt_template = settings_manager.kg_concept_user_prompt
         context_section = ""
         if context:
             context_section = f"\n上下文：{context}"
 
-        prompt = f"""请解释以下概念：
-概念：{concept}
-{context_section}"""
+        prompt = concept_user_prompt_template.format(
+            concept=concept, context_section=context_section
+        )
 
         try:
             content = await ai_service.generate_text(
@@ -304,7 +318,8 @@ class CognitiveChainService:
                 return {
                     "id": entity.get("id"),
                     "name": entity.get("name") or entity.get("n_concept"),
-                    "description": entity.get("description") or entity.get("definition", ""),
+                    "description": entity.get("description")
+                    or entity.get("definition", ""),
                     "type": entity.get("labels", [])[0]
                     if entity.get("labels")
                     else None,

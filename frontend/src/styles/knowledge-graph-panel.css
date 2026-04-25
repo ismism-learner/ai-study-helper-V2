@@ -492,3 +492,132 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* 卡片右键菜单 */
+.kg-card-context-menu {
+  position: fixed;
+  z-index: 1000;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  min-width: 160px;
+}
+
+.kg-card-context-item {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.kg-card-context-item:hover {
+  background: var(--bg-hover);
+}
+
+.kg-card-context-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 4px 0;
+}
+
+.kg-book-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.kg-book-legend-item {
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 2px 8px;
+  border-left: 3px solid var(--primary-500);
+  background: var(--bg-surface);
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.kg-book-legend-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.kg-detail-action-jump {
+  background: var(--gradient-primary);
+  color: white;
+  border: 1px solid transparent;
+}
+
+.kg-detail-action-jump:hover {
+  opacity: 0.9;
+}
+
+.kg-tag-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.kg-tag-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.kg-tag-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.kg-tag-btn.active {
+  background: var(--primary-500);
+  border-color: var(--primary-500);
+  color: white;
+}
+
+.kg-tag-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--border-subtle);
+}
+
+.kg-tag-select {
+  padding: 4px 8px;
+  font-size: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  color: var(--text-primary);
+  cursor: pointer;
+  min-width: 120px;
+}
+
+.kg-tag-select:focus {
+  outline: none;
+  border-color: var(--primary-500);
+}
+
+.kg-tag-current {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 2px 8px;
+  background: var(--bg-surface);
+  border-radius: 4px;
+}

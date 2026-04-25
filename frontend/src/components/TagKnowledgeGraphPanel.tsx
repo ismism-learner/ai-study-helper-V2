@@ -1,16 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Graph } from '@antv/g6';
 import { knowledgeGraphApi } from '../api/knowledgeGraph';
-import { bookApi } from '../api';
+import { BookDocument } from '../types';
 import ConfirmDialog from './ConfirmDialog';
 import '../styles/knowledge-graph-panel.css';
 
-interface KnowledgeGraphPanelProps {
-  bookTitle?: string;
-  bookId?: string;
-  onNodeClick?: (node: GraphNodeData | null) => void;
-  onNodeChapterClick?: (chapterIndex: number) => void;
-  onTextSelect?: (text: string, action: 'ask' | 'refine', chapterIndex?: number, knowledgeNodeId?: string | number) => void;
+interface TagKnowledgeGraphPanelProps {
+  tag: string;
+  onBookSelect: (book: BookDocument) => void;
+  onBack?: () => void;
   refreshKey?: number;
 }
 
@@ -20,6 +18,7 @@ interface GraphNodeData {
   labels?: string[];
   description?: string;
   entity_type?: string;
+  book_id?: string;
   book_title?: string;
   concept?: string;
   definition?: string;
@@ -38,27 +37,22 @@ interface GraphEdgeData {
   description?: string;
 }
 
-const ENTITY_COLORS_HEX: Record<string, string> = {
-  Philosopher: '#8b5cf6',
-  Concept: '#06b6d4',
-  Theory: '#22c55e',
-  Work: '#f59e0b',
-  Argument: '#e879f9',
-  School: '#38bdf8',
-  Era: '#a78bfa',
-  CognitiveNode: '#f472b6',
-  RootConcept: '#ec4899',
-  DerivedConcept: '#fb7185',
-};
+interface BookInfo {
+  id: string;
+  title: string;
+  cover?: string;
+}
 
-const BRANCH_COLORS = [
+const BOOK_COLORS = [
   '#8B7EC8', '#6CB2EB', '#68D391', '#F6AD55', '#FC8181',
   '#B794F4', '#4FD1C5', '#F687B3', '#63B3ED', '#FAF089',
+  '#E879F9', '#22c55e', '#f59e0b', '#ec4899', '#06b6d4',
 ];
 
-const BRANCH_STROKES = [
+const BOOK_STROKES = [
   '#6B5B95', '#4299E1', '#48BB78', '#ED8936', '#E53E3E',
   '#9F7AEA', '#38B2AC', '#D53F8C', '#3182CE', '#D69E2E',
+  '#C026D3', '#16a34a', '#d97706', '#db2777', '#0891b2',
 ];
 
 function truncate(str: string, maxLen: number = 10): string {
@@ -67,12 +61,10 @@ function truncate(str: string, maxLen: number = 10): string {
   return str.substring(0, maxLen) + '...';
 }
 
-const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
-  bookTitle,
-  bookId: _bookId,
-  onNodeClick,
-  onNodeChapterClick,
-  onTextSelect,
+const TagKnowledgeGraphPanel: React.FC<TagKnowledgeGraphPanelProps> = ({
+  tag,
+  onBookSelect,
+  onBack,
   refreshKey,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -81,41 +73,14 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNodeData | null>(null);
   const [cardPosition, setCardPosition] = useState({ x: 0, y: 0 });
-  const [stats, setStats] = useState<{ total_nodes: number; total_relations: number } | null>(null);
-  const [storageEnabled, setStorageEnabled] = useState(true);
+  const [stats, setStats] = useState<{ total_nodes: number; total_relations: number; book_count: number } | null>(null);
+  const [books, setBooks] = useState<BookInfo[]>([]);
+  const [bookColorMap, setBookColorMap] = useState<Map<string, number>>(new Map());
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [cardContextMenu, setCardContextMenu] = useState<{x: number, y: number, text: string} | null>(null);
-  
-  const [allTags, setAllTags] = useState<string[]>([]);
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'book' | 'tag'>('book');
-
-  const handleCardContextMenu = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const selection = window.getSelection();
-    const selectedText = selection?.toString().trim();
-    if (selectedText && selectedText.length > 0) {
-      setCardContextMenu({ x: e.clientX, y: e.clientY, text: selectedText });
-    }
-  }, []);
-
-  const checkHealth = useCallback(async () => {
-    try {
-      const res = await knowledgeGraphApi.healthCheck();
-      const storage = res.data?.storage;
-      const enabled = storage === 'sqlite' || res.data?.neo4j_enabled === true;
-      setStorageEnabled(enabled);
-      return enabled;
-    } catch {
-      setStorageEnabled(false);
-      return false;
-    }
-  }, []);
 
   const initGraph = useCallback(() => {
     if (!containerRef.current) return;
@@ -151,23 +116,21 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
             const data = d.data as Record<string, unknown>;
             const nodeType = data?.node_type as string;
             if (nodeType === 'QuickSummary') return '#f59e0b';
-            if (data?.entity_type === 'ParentRoot') return '#F0EDF7';
-            const branch = (data?.branch as number) || 0;
-            return BRANCH_COLORS[branch % BRANCH_COLORS.length];
+            const bookIndex = (data?.bookIndex as number) || 0;
+            return BOOK_COLORS[bookIndex % BOOK_COLORS.length];
           },
           stroke: (d: Record<string, unknown>) => {
             const data = d.data as Record<string, unknown>;
             const nodeType = data?.node_type as string;
             if (nodeType === 'QuickSummary') return '#d97706';
-            if (data?.entity_type === 'ParentRoot') return '#8B7EC8';
-            const branch = (data?.branch as number) || 0;
-            return BRANCH_STROKES[branch % BRANCH_STROKES.length];
+            const bookIndex = (data?.bookIndex as number) || 0;
+            return BOOK_STROKES[bookIndex % BOOK_STROKES.length];
           },
           lineWidth: (d: Record<string, unknown>) => {
             const data = d.data as Record<string, unknown>;
             const nodeType = data?.node_type as string;
             if (nodeType === 'QuickSummary') return 3;
-            return data?.entity_type === 'ParentRoot' ? 2 : 1.5;
+            return 1.5;
           },
           cursor: 'grab',
           labelText: (d: Record<string, unknown>) => {
@@ -207,38 +170,28 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
             const edgeType = data?.edge_type as string;
             if (edgeType === 'CHAPTER_SEQUENCE') return '#9ca3af';
             if (edgeType === 'SECTION_SEQUENCE') return '#a78bfa';
-            if (edgeType === 'EXPLAINS' || edgeType === 'BRANCH_EXTEND' || edgeType === 'HAS_QUESTION') {
-              const targetBranch = (data?.targetBranch as number) || 0;
-              return BRANCH_STROKES[targetBranch % BRANCH_STROKES.length];
-            }
-            if (data?.isCrossDoc) return '#999999';
-            if (data?.isDashed) return '#8B7EC8';
-            const branch = (data?.branch as number) || 0;
-            return BRANCH_STROKES[branch % BRANCH_STROKES.length];
+            const bookIndex = (data?.bookIndex as number) || 0;
+            return BOOK_STROKES[bookIndex % BOOK_STROKES.length];
           },
           lineWidth: (d: Record<string, unknown>) => {
             const data = d.data as Record<string, unknown>;
             const edgeType = data?.edge_type as string;
             if (edgeType === 'CHAPTER_SEQUENCE') return 3;
             if (edgeType === 'SECTION_SEQUENCE') return 1.5;
-            if (edgeType === 'EXPLAINS' || edgeType === 'BRANCH_EXTEND' || edgeType === 'HAS_QUESTION') return 2;
-            if (data?.isCrossDoc) return 2.5;
-            return data?.isDashed ? 2 : 1.5;
+            return 1.5;
           },
           lineDash: (d: Record<string, unknown>) => {
             const data = d.data as Record<string, unknown>;
             const edgeType = data?.edge_type as string;
             if (edgeType === 'CHAPTER_SEQUENCE') return [8, 4];
             if (edgeType === 'SECTION_SEQUENCE') return [4, 4];
-            if (edgeType === 'EXPLAINS' || edgeType === 'BRANCH_EXTEND' || edgeType === 'HAS_QUESTION') return undefined;
-            if (data?.isCrossDoc) return [10, 6];
-            return data?.isDashed ? [6, 4] : undefined;
+            return undefined;
           },
           endArrow: (d: Record<string, unknown>) => {
             const data = d.data as Record<string, unknown>;
             const edgeType = data?.edge_type as string;
             if (edgeType === 'CHAPTER_SEQUENCE' || edgeType === 'SECTION_SEQUENCE') return false;
-            return !(data?.isCrossDoc);
+            return true;
           },
         },
       },
@@ -268,7 +221,6 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
       ],
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     graph.on('node:click', (evt: any) => {
       const nodeId = evt?.target?.id || evt?.itemId;
       if (nodeId) {
@@ -280,6 +232,7 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
             name: (data?.name as string) || '',
             description: (data?.description as string) || '',
             entity_type: (data?.entity_type as string) || '',
+            book_id: (data?.book_id as string) || '',
             book_title: (data?.book_title as string) || '',
             domain: (data?.domain as string) || '',
             confidence: (data?.confidence as number) || 0.8,
@@ -304,54 +257,42 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
 
           setCardPosition({ x: cardX, y: cardY });
           setSelectedNode(nodeInfo);
-          onNodeClick?.(nodeInfo);
         }
       }
     });
 
     graph.on('canvas:click', () => {
       setSelectedNode(null);
-      onNodeClick?.(null);
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     graph.on('node:dragstart', () => {
       setSelectedNode(null);
     });
 
     graphRef.current = graph;
-  }, [onNodeClick]);
-
-  const loadAllTags = useCallback(async () => {
-    try {
-      const res = await bookApi.list();
-      const tagSet = new Set<string>();
-      res.data.forEach((book) => {
-        book.tags?.forEach(tag => tagSet.add(tag));
-      });
-      setAllTags(Array.from(tagSet).sort());
-    } catch (err) {
-      console.error('加载标签失败:', err);
-    }
   }, []);
 
   const loadGraphData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      let res;
-      if (viewMode === 'tag' && selectedTag) {
-        res = await knowledgeGraphApi.getGraphDataByTag(selectedTag);
-      } else {
-        res = await knowledgeGraphApi.getGraphData(bookTitle);
-      }
-      const { nodes = [], edges = [] } = res.data;
+      const res = await knowledgeGraphApi.getGraphDataByTag(tag);
+      const { nodes = [], edges = [], books: bookList = [] } = res.data;
+
+      setBooks(bookList);
+
+      const colorMap = new Map<string, number>();
+      bookList.forEach((book: BookInfo, index: number) => {
+        colorMap.set(book.id, index);
+      });
+      setBookColorMap(colorMap);
 
       const g6Nodes = nodes
         .filter((n: GraphNodeData) => n.id != null && (n.name || n.concept))
-        .map((n: GraphNodeData, index: number) => {
+        .map((n: GraphNodeData) => {
           const isCognitiveNode = n.labels?.includes('CognitiveNode') || n.node_type;
           const entityType = n.node_type || n.entity_type || (n.labels && n.labels[0]) || 'Concept';
+          const bookIndex = colorMap.get(n.book_id || '') || 0;
           return {
             id: String(n.id),
             data: {
@@ -359,22 +300,19 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
               description: n.description || n.definition || '',
               entity_type: entityType,
               node_type: n.node_type || '',
+              book_id: n.book_id || '',
               book_title: n.book_title || '',
               labels: n.labels || [],
               isCognitiveNode,
               source_chapter_index: n.chapter_index,
               domain: n.domain || '通用',
               confidence: n.confidence || 0.8,
-              branch: index % BRANCH_COLORS.length,
+              bookIndex,
             },
           };
         });
 
       const nodeIds = new Set(g6Nodes.map((n: { id: string }) => n.id));
-      const nodeBranchMap = new Map<string, number>();
-      g6Nodes.forEach((n: { id: string; data?: { branch?: number } }) => {
-        nodeBranchMap.set(n.id, (n.data?.branch as number) || 0);
-      });
 
       const g6Edges = edges
         .filter((e: GraphEdgeData) => {
@@ -383,18 +321,13 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
           return e.source != null && e.target != null && nodeIds.has(sourceId) && nodeIds.has(targetId);
         })
         .map((e: GraphEdgeData, i: number) => {
-          const targetId = String(e.target);
-          const edgeType = e.edge_type || '';
-          const isSolidLine = edgeType === 'EXPLAINS' || edgeType === 'BRANCH_EXTEND' || edgeType === 'HAS_QUESTION';
           return {
             id: `edge-${i}`,
             source: String(e.source),
-            target: targetId,
+            target: String(e.target),
             data: {
               relationType: e.type || '',
-              edge_type: edgeType,
-              isDashed: !isSolidLine && edgeType !== 'CHAPTER_SEQUENCE',
-              targetBranch: isSolidLine ? (nodeBranchMap.get(targetId) ?? 0) : 0,
+              edge_type: e.edge_type || '',
             },
           };
         });
@@ -412,6 +345,7 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
       setStats({
         total_nodes: g6Nodes.length,
         total_relations: g6Edges.length,
+        book_count: bookList.length,
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '加载图谱数据失败';
@@ -419,16 +353,11 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [bookTitle, viewMode, selectedTag]);
+  }, [tag]);
 
   useEffect(() => {
-    checkHealth().then((enabled) => {
-      if (enabled) {
-        initGraph();
-        loadAllTags();
-        setTimeout(() => loadGraphData(), 0);
-      }
-    });
+    initGraph();
+    setTimeout(() => loadGraphData(), 0);
 
     const handleResize = () => {
       if (graphRef.current && containerRef.current) {
@@ -458,7 +387,7 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
         graphRef.current = null;
       }
     };
-  }, [initGraph, loadGraphData, loadAllTags, checkHealth]);
+  }, [initGraph, loadGraphData]);
 
   useEffect(() => {
     if (refreshKey && refreshKey > 0) {
@@ -478,7 +407,6 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
 
   const handleCloseCard = () => {
     setSelectedNode(null);
-    onNodeClick?.(null);
     setIsEditing(false);
   };
 
@@ -530,7 +458,6 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
     try {
       await knowledgeGraphApi.deleteNode(String(selectedNode.id));
       setSelectedNode(null);
-      onNodeClick?.(null);
       loadGraphData();
     } catch (err) {
       console.error('删除节点失败:', err);
@@ -539,21 +466,13 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
     }
   };
 
-  if (!storageEnabled) {
-    return (
-      <div className="kg-panel-disabled">
-        <div className="kg-disabled-content">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          <h3>知识图谱未启用</h3>
-          <p>数据库服务未连接</p>
-        </div>
-      </div>
-    );
-  }
+  const handleJumpToBook = () => {
+    if (!selectedNode?.book_id) return;
+    const book = books.find(b => b.id === selectedNode.book_id);
+    if (book) {
+      onBookSelect(book as BookDocument);
+    }
+  };
 
   return (
     <div className="knowledge-graph-panel">
@@ -561,11 +480,16 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
         <div className="kg-toolbar-left">
           {stats && (
             <span className="kg-stats">
-              {stats.total_nodes} 节点 · {stats.total_relations} 关系
+              {stats.book_count} 本书 · {stats.total_nodes} 节点 · {stats.total_relations} 关系
             </span>
           )}
         </div>
         <div className="kg-toolbar-right">
+          {onBack && (
+            <button className="kg-btn" onClick={onBack} title="返回">
+              ←
+            </button>
+          )}
           <button className="kg-btn" onClick={handleResetView} title="重置视图">
             ⊡
           </button>
@@ -575,34 +499,20 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
         </div>
       </div>
 
-      {allTags.length > 0 && (
-        <div className="kg-tag-selector">
-          <button
-            className={`kg-tag-btn ${viewMode === 'book' ? 'active' : ''}`}
-            onClick={() => { setViewMode('book'); setSelectedTag(null); }}
-            title="当前书籍图谱"
-          >
-            本书
-          </button>
-          <div className="kg-tag-divider" />
-          <select
-            className="kg-tag-select"
-            value={selectedTag || ''}
-            onChange={(e) => {
-              if (e.target.value) {
-                setSelectedTag(e.target.value);
-                setViewMode('tag');
-              }
-            }}
-          >
-            <option value="">选择标签...</option>
-            {allTags.map(tag => (
-              <option key={tag} value={tag}>{tag}</option>
-            ))}
-          </select>
-          {viewMode === 'tag' && selectedTag && (
-            <span className="kg-tag-current">标签: {selectedTag}</span>
-          )}
+      {books.length > 0 && (
+        <div className="kg-book-legend">
+          {books.map((book, index) => (
+            <div
+              key={book.id}
+              className="kg-book-legend-item"
+              style={{
+                borderLeftColor: BOOK_COLORS[index % BOOK_COLORS.length],
+              }}
+              title={book.title}
+            >
+              {truncate(book.title, 8)}
+            </div>
+          ))}
         </div>
       )}
 
@@ -628,7 +538,6 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
               top: cardPosition.y,
             }}
             onWheel={(e) => e.stopPropagation()}
-            onContextMenu={handleCardContextMenu}
           >
             <button className="kg-detail-close" onClick={handleCloseCard}>
               ✕
@@ -680,7 +589,7 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
                   <span
                     className="kg-detail-domain"
                     style={{
-                      backgroundColor: ENTITY_COLORS_HEX[selectedNode.entity_type || 'Concept'] || '#8b5cf6',
+                      backgroundColor: BOOK_COLORS[bookColorMap.get(selectedNode.book_id || '') || 0],
                       color: '#fff',
                     }}
                   >
@@ -702,22 +611,24 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
                 {selectedNode.source_chapter_index !== undefined && selectedNode.source_chapter_index !== null && (
                   <div className="kg-detail-chapter">
                     <span className="kg-detail-chapter-label">章节：</span>
-                    <button
-                      className="kg-detail-chapter-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        console.log('点击章节按钮, chapterIndex:', selectedNode.source_chapter_index);
-                        if (selectedNode.source_chapter_index !== undefined) {
-                          onNodeChapterClick?.(selectedNode.source_chapter_index);
-                        }
-                      }}
-                      title={`跳转到第 ${selectedNode.source_chapter_index} 章`}
-                    >
-                      第 {selectedNode.source_chapter_index} 章 →
-                    </button>
+                    <span>第 {selectedNode.source_chapter_index} 章</span>
                   </div>
                 )}
                 <div className="kg-detail-actions">
+                  {selectedNode.book_id && (
+                    <button 
+                      className="kg-detail-action-btn kg-detail-action-jump"
+                      onClick={handleJumpToBook}
+                      title="跳转到书籍"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                        <polyline points="15 3 21 3 21 9"/>
+                        <line x1="10" y1="14" x2="21" y2="3"/>
+                      </svg>
+                      跳转
+                    </button>
+                  )}
                   <button 
                     className="kg-detail-action-btn kg-detail-action-edit"
                     onClick={handleStartEdit}
@@ -759,35 +670,8 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
         onConfirm={confirmDeleteNode}
         onCancel={() => setDeleteConfirm(false)}
       />
-
-      {cardContextMenu && (
-        <div
-          className="kg-card-context-menu"
-          style={{ left: cardContextMenu.x, top: cardContextMenu.y }}
-          onMouseLeave={() => setCardContextMenu(null)}
-        >
-          <div className="kg-card-context-item" onClick={() => {
-            onTextSelect?.(cardContextMenu.text, 'ask', selectedNode?.source_chapter_index, selectedNode?.id);
-            setCardContextMenu(null);
-            window.getSelection()?.removeAllRanges();
-          }}>
-            <span>追问选中内容</span>
-          </div>
-          <div className="kg-card-context-item" onClick={() => {
-            onTextSelect?.(cardContextMenu.text, 'refine', selectedNode?.source_chapter_index, selectedNode?.id);
-            setCardContextMenu(null);
-            window.getSelection()?.removeAllRanges();
-          }}>
-            <span>细化概念</span>
-          </div>
-          <div className="kg-card-context-divider" />
-          <div className="kg-card-context-item" onClick={() => setCardContextMenu(null)}>
-            <span>取消</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default React.memo(KnowledgeGraphPanel);
+export default React.memo(TagKnowledgeGraphPanel);

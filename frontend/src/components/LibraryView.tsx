@@ -130,6 +130,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({
             <TagLibraryView
               selectedTag={selectedTag}
               onBookSelect={handleBookSelect}
+              onTagSelect={(tag) => setSelectedTag(tag)}
             />
           </Suspense>
         )}

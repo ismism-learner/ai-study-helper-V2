@@ -1,4 +1,11 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { Lightbulb, Link2, X, HelpCircle, Plus, ArrowRight, History, MessageSquarePlus, ZoomIn } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import rehypeRaw from 'rehype-raw';
+import 'katex/dist/katex.min.css';
 import { cognitiveChainApi, knowledgeGraphApi } from '../api/knowledgeGraph';
 import '../styles/cognitive-chain-panel.css';
 
@@ -33,8 +40,10 @@ interface CognitiveChainPanelProps {
   onQuestionConsumed?: () => void;
   onChainStateChange?: (hasActiveChain: boolean, isLoading: boolean) => void;
   onChainUpdated?: () => void;
-  externalMessage?: { role: 'user' | 'assistant' | 'system'; content: string; nodeType?: string } | null;
+  externalMessage?: { role: 'user' | 'assistant' | 'system'; content: string; nodeType?: string; chapterIndex?: number; knowledgeNodeId?: string } | null;
   onExternalMessageConsumed?: () => void;
+  activeChainId?: string | null;
+  onActiveChainConsumed?: () => void;
 }
 
 const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
@@ -48,6 +57,8 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
   onChainUpdated,
   externalMessage,
   onExternalMessageConsumed,
+  activeChainId,
+  onActiveChainConsumed,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -56,8 +67,9 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
   const [currentParentNodeId, setCurrentParentNodeId] = useState<string | null>(null);
   const [neo4jEnabled, setNeo4jEnabled] = useState(true);
   const [chainHistory, setChainHistory] = useState<ChainHistory[]>([]);
-  const [historyExpanded, setHistoryExpanded] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<{x: number, y: number, text: string, nodeId?: string} | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -100,35 +112,32 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
     onChainStateChange?.(!!currentChainId, isLoading);
   }, [currentChainId, isLoading, onChainStateChange]);
 
-  const addMessage = useCallback((msg: Omit<Message, 'id' | 'timestamp'>) => {
+  // 当从知识图谱跳转过来时，加载对应的认知链
+  const handleLoadChainRef = useRef<(chainId: string) => void>(() => {});
+  useEffect(() => {
+    if (activeChainId) {
+      handleLoadChainRef.current(activeChainId);
+      onActiveChainConsumed?.();
+    }
+  }, [activeChainId]);
+
+  const addMessage = useCallback((msg: Omit<Message, 'id' | 'timestamp'> & { id?: string }) => {
     setMessages((prev) => [
       ...prev,
-      { ...msg, id: Date.now().toString() + Math.random(), timestamp: new Date() },
+      { ...msg, id: msg.id || Date.now().toString() + Math.random(), timestamp: new Date() },
     ]);
   }, []);
 
-  useEffect(() => {
-    if (externalMessage) {
-      const prefix = externalMessage.nodeType === 'QuickSummary' ? '📋 快速梳理：' : 
-                     externalMessage.nodeType === 'DetailedQuestion' ? '🔍 详细提问：' : '';
-      addMessage({
-        role: externalMessage.role,
-        content: prefix + externalMessage.content,
-      });
-      onExternalMessageConsumed?.();
-    }
-  }, [externalMessage, addMessage, onExternalMessageConsumed]);
-
-  const questionQueueRef = useRef<string[]>([]);
+  const questionQueueRef = useRef<{ question: string; knowledgeNodeId?: string }[]>([]);
   const isProcessingRef = useRef(false);
   const onQuestionConsumedRef = useRef(onQuestionConsumed);
   onQuestionConsumedRef.current = onQuestionConsumed;
   const onChainUpdatedRef = useRef(onChainUpdated);
   onChainUpdatedRef.current = onChainUpdated;
 
-  const processExternalQuestion = useCallback(async (question: string) => {
+  const processExternalQuestion = useCallback(async (question: string, knowledgeNodeId?: string) => {
     if (isProcessingRef.current) {
-      questionQueueRef.current.push(question);
+      questionQueueRef.current.push({ question, knowledgeNodeId });
       return;
     }
 
@@ -154,6 +163,7 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
           source_doc_id: sourceDocId,
           source_doc_title: bookTitle,
           source_chapter_index: currentChapterIndex,
+          source_knowledge_node_id: knowledgeNodeId,
         });
         const node = res.data;
         setCurrentParentNodeId(node.id);
@@ -174,6 +184,7 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
           source_doc_id: sourceDocId,
           source_doc_title: bookTitle,
           source_chapter_index: currentChapterIndex,
+          source_knowledge_node_id: knowledgeNodeId,
         });
         const chain = res.data;
         setCurrentChainId(chain.id);
@@ -196,14 +207,14 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
       onChainUpdatedRef.current?.();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '提问失败';
-      addMessage({ role: 'system', content: `❌ 错误: ${msg}` });
+      addMessage({ role: 'system', content: `[错误] ${msg}` });
     } finally {
       setIsLoading(false);
       isProcessingRef.current = false;
 
       const next = questionQueueRef.current.shift();
       if (next) {
-        setTimeout(() => processExternalQuestion(next), 0);
+        setTimeout(() => processExternalQuestion(next.question, next.knowledgeNodeId), 0);
       }
     }
   }, [currentChainId, currentParentNodeId, ocrText, sourceDocId, bookTitle, addMessage, loadChainHistory]);
@@ -212,6 +223,16 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
     if (!pendingQuestion) return;
     processExternalQuestion(pendingQuestion);
   }, [pendingQuestion, processExternalQuestion]);
+
+  useEffect(() => {
+    if (externalMessage) {
+      const prefix = externalMessage.nodeType === 'QuickSummary' ? '[梳理] ' : 
+                     externalMessage.nodeType === 'DetailedQuestion' ? '[提问] ' : '';
+      const content = prefix + externalMessage.content;
+      onExternalMessageConsumed?.();
+      processExternalQuestion(content, externalMessage.knowledgeNodeId);
+    }
+  }, [externalMessage, processExternalQuestion, onExternalMessageConsumed]);
 
   const handleSend = useCallback(async () => {
     const trimmed = input.trim();
@@ -296,7 +317,7 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
       const msg = err instanceof Error ? err.message : '请求失败';
       addMessage({
         role: 'system',
-        content: `❌ 错误: ${msg}`,
+        content: `[错误] ${msg}`,
       });
     } finally {
       setIsLoading(false);
@@ -312,57 +333,54 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     const selection = window.getSelection();
     const selectedText = selection?.toString().trim();
-    
+
     if (selectedText && selectedText.length > 0) {
+      const msgEl = (e.target as HTMLElement).closest('[data-node-id]');
+      const nodeId = msgEl?.getAttribute('data-node-id') || undefined;
       setContextMenu({
         x: e.clientX,
         y: e.clientY,
         text: selectedText,
+        nodeId,
       });
     }
   }, []);
 
   const handleAskSelected = useCallback(async () => {
     if (!contextMenu?.text) return;
-    
+
     const question = contextMenu.text;
+    const parentNodeId = contextMenu.nodeId || currentParentNodeId;
     setContextMenu(null);
-    
-    // 清除选中文本
     window.getSelection()?.removeAllRanges();
-    
-    // 发送追问
+
     addMessage({ role: 'user', content: `追问：${question}` });
     setIsLoading(true);
-    
+
     try {
-      if (currentChainId && currentParentNodeId) {
+      if (currentChainId && parentNodeId) {
         const loadingId = Date.now().toString();
-        addMessage({
-          id: loadingId,
-          role: 'system',
-          content: '正在扩展认知链...',
-        });
-        
+        addMessage({ id: loadingId, role: 'system', content: '正在扩展认知链...' });
+
         const context = ocrText ? question + '\n\n参考内容：\n' + ocrText.slice(0, 1000) : question;
-        
+
         const res = await cognitiveChainApi.expandChain({
           chain_id: currentChainId,
-          parent_node_id: currentParentNodeId,
+          parent_node_id: parentNodeId,
           concept_to_explain: question,
           context,
           source_doc_id: sourceDocId,
           source_doc_title: bookTitle,
           source_chapter_index: currentChapterIndex,
         });
-        
+
         const node = res.data;
         setCurrentParentNodeId(node.id);
-        
         setMessages(prev => prev.filter(m => m.id !== loadingId));
-        
+
         addMessage({
           role: 'assistant',
           content: node.definition || `关于「${node.concept}」的解释已生成`,
@@ -372,12 +390,65 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
           confidence: node.confidence,
           source: 'ai_generated',
         });
-        
+
         onChainUpdatedRef.current?.();
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '追问失败';
-      addMessage({ role: 'system', content: `❌ 错误: ${msg}` });
+      addMessage({ role: 'system', content: `[错误] ${msg}` });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [contextMenu, currentChainId, currentParentNodeId, ocrText, sourceDocId, bookTitle, addMessage, currentChapterIndex]);
+
+  const handleRefineConcept = useCallback(async () => {
+    if (!contextMenu?.text) return;
+
+    const concept = contextMenu.text;
+    const parentNodeId = contextMenu.nodeId || currentParentNodeId;
+    setContextMenu(null);
+    window.getSelection()?.removeAllRanges();
+
+    addMessage({ role: 'user', content: `细化概念：${concept}` });
+    setIsLoading(true);
+
+    try {
+      if (currentChainId && parentNodeId) {
+        const loadingId = Date.now().toString();
+        addMessage({ id: loadingId, role: 'system', content: '正在细化概念...' });
+
+        const refineQuestion = `请详细解释「${concept}」的含义，包括其定义、内涵、外延以及与其他概念的区别`;
+        const context = ocrText ? refineQuestion + '\n\n参考内容：\n' + ocrText.slice(0, 1000) : refineQuestion;
+
+        const res = await cognitiveChainApi.expandChain({
+          chain_id: currentChainId,
+          parent_node_id: parentNodeId,
+          concept_to_explain: concept,
+          context,
+          source_doc_id: sourceDocId,
+          source_doc_title: bookTitle,
+          source_chapter_index: currentChapterIndex,
+        });
+
+        const node = res.data;
+        setCurrentParentNodeId(node.id);
+        setMessages(prev => prev.filter(m => m.id !== loadingId));
+
+        addMessage({
+          role: 'assistant',
+          content: node.definition || `关于「${node.concept}」的细化解释已生成`,
+          nodeId: node.id,
+          concept: node.concept,
+          domain: node.domain,
+          confidence: node.confidence,
+          source: 'ai_generated',
+        });
+
+        onChainUpdatedRef.current?.();
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '细化失败';
+      addMessage({ role: 'system', content: `[错误] ${msg}` });
     } finally {
       setIsLoading(false);
     }
@@ -424,6 +495,7 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
       setIsLoading(false);
     }
   };
+  handleLoadChainRef.current = handleLoadChain;
 
   const handleDeleteChain = async (e: React.MouseEvent, chainId: string) => {
     e.stopPropagation();
@@ -438,33 +510,6 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
       onChainUpdatedRef.current?.();
     } catch (err) {
       console.error('删除认知链失败:', err);
-    }
-  };
-
-  const handleBuildKnowledgeGraph = async () => {
-    if (!ocrText || !bookTitle) return;
-    setIsLoading(true);
-    addMessage({
-      role: 'system',
-      content: `正在从「${bookTitle}」的文本构建知识图谱，这可能需要几分钟...`,
-    });
-    try {
-      const res = await knowledgeGraphApi.processBook({
-        text: ocrText,
-        title: bookTitle,
-      });
-      addMessage({
-        role: 'system',
-        content: `✅ 知识图谱构建完成！提取了 ${res.data.entity_count} 个实体，${res.data.relation_count} 个关系。`,
-      });
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '构建失败';
-      addMessage({
-        role: 'system',
-        content: `❌ 知识图谱构建失败: ${msg}`,
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -503,92 +548,88 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
       <div className="cc-toolbar">
         <div className="cc-toolbar-left">
           {currentChainId && (
-            <span className="cc-chain-indicator">🔗 认知链活跃</span>
+            <span className="cc-chain-indicator"><Link2 size={14} /> 认知链活跃</span>
           )}
         </div>
-        <div className="cc-toolbar-right">
-          {ocrText && bookTitle && (
-            <button
-              className="cc-btn cc-btn-build"
-              onClick={handleBuildKnowledgeGraph}
-              disabled={isLoading}
-              title="从当前文本构建知识图谱"
-            >
-              构建图谱
-            </button>
-          )}
-          {currentChainId && (
-            <button className="cc-btn" onClick={handleNewChain} title="新建认知链">
-              ＋
-            </button>
+        <div className="cc-toolbar-right" style={{ position: 'relative' }}>
+          <button className="cc-btn" onClick={() => setMenuOpen(!menuOpen)} title="菜单">
+            <Plus size={14} />
+          </button>
+          {menuOpen && (
+            <>
+              <div className="cc-menu-overlay" onClick={() => setMenuOpen(false)} />
+              <div className="cc-dropdown-menu">
+                <div className="cc-menu-item" onClick={() => { handleNewChain(); setMenuOpen(false); }}>
+                  <MessageSquarePlus size={14} />
+                  <span>新建对话</span>
+                </div>
+                <div className="cc-menu-item" onClick={() => { setDrawerOpen(true); setMenuOpen(false); }}>
+                  <History size={14} />
+                  <span>历史记录</span>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
 
-      {sourceDocId && (
-        <div className="cc-history-section">
-          <div 
-            className="cc-history-header"
-            onClick={() => setHistoryExpanded(!historyExpanded)}
-          >
-            <div className="cc-history-title">
-              <span>📚 历史记录</span>
-              {chainHistory.length > 0 && (
-                <span className="cc-history-count">{chainHistory.length}</span>
-              )}
-            </div>
-            <span className={`cc-history-toggle ${historyExpanded ? 'expanded' : ''}`}>▼</span>
-          </div>
-          
-          {historyExpanded && (
-            <div className="cc-history-list">
-              {historyLoading ? (
-                <div className="cc-history-loading">加载中...</div>
-              ) : chainHistory.length === 0 ? (
-                <div className="cc-history-empty">暂无历史记录</div>
-              ) : (
-                chainHistory.map((chain) => (
-                  <div
-                    key={chain.id}
-                    className={`cc-history-item ${currentChainId === chain.id ? 'active' : ''}`}
-                    onClick={() => handleLoadChain(chain.id)}
-                  >
-                    <div className="cc-history-item-left">
-                      <div className="cc-history-item-label">
-                        {chain.root_concept_label || chain.root_concept?.slice(0, 20) || '未命名'}
-                      </div>
-                      <div className="cc-history-item-time">
-                        {formatTime(chain.created_at)} · {chain.total_nodes} 节点
-                      </div>
-                    </div>
-                    <div className="cc-history-item-right">
-                      <button
-                        className="cc-history-delete"
-                        onClick={(e) => handleDeleteChain(e, chain.id)}
-                        title="删除"
-                      >
-                        ✕
-                      </button>
-                    </div>
+      {/* 左侧抽屉 - 历史记录 */}
+      {drawerOpen && (
+        <div className="cc-drawer-overlay" onClick={() => setDrawerOpen(false)} />
+      )}
+      <div className={`cc-drawer ${drawerOpen ? 'open' : ''}`}>
+        <div className="cc-drawer-header">
+          <span className="cc-drawer-title"><History size={14} /> 历史记录</span>
+          <button className="cc-drawer-close" onClick={() => setDrawerOpen(false)}>
+            <X size={16} />
+          </button>
+        </div>
+        <div className="cc-drawer-list">
+          {historyLoading ? (
+            <div className="cc-history-loading">加载中...</div>
+          ) : chainHistory.length === 0 ? (
+            <div className="cc-history-empty">暂无历史记录</div>
+          ) : (
+            chainHistory.map((chain) => (
+              <div
+                key={chain.id}
+                className={`cc-history-item ${currentChainId === chain.id ? 'active' : ''}`}
+                onClick={() => { handleLoadChain(chain.id); setDrawerOpen(false); }}
+              >
+                <div className="cc-history-item-left">
+                  <div className="cc-history-item-label">
+                    {chain.root_concept_label || chain.root_concept?.slice(0, 20) || '未命名'}
                   </div>
-                ))
-              )}
-            </div>
+                  <div className="cc-history-item-time">
+                    {formatTime(chain.created_at)} · {chain.total_nodes} 节点
+                  </div>
+                </div>
+                <div className="cc-history-item-right">
+                  <button
+                    className="cc-history-delete"
+                    onClick={(e) => handleDeleteChain(e, chain.id)}
+                    title="删除"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              </div>
+            ))
           )}
         </div>
-      )}
+      </div>
 
       <div className="cc-messages" ref={messagesContainerRef} onContextMenu={handleContextMenu}>
         {messages.length === 0 && (
           <div className="cc-empty">
-            <div className="cc-empty-icon">💡</div>
+            <div className="cc-empty-icon"><Lightbulb size={32} /></div>
             <h3>开始认知探索</h3>
             <p>输入一个概念或问题，AI 将为你构建认知链</p>
             <p className="cc-empty-hint">支持层层追问，形成完整的学习路径</p>
           </div>
         )}
         {messages.map((msg) => (
-          <div key={msg.id} className={`cc-message cc-message-${msg.role}`}>
+          <div key={msg.id} className={`cc-message cc-message-${msg.role}`} data-node-id={msg.nodeId || undefined}>
             <div className="cc-message-header">
               {msg.role === 'user' && <span className="cc-role-badge cc-role-user">你</span>}
               {msg.role === 'assistant' && <span className="cc-role-badge cc-role-assistant">AI</span>}
@@ -596,7 +637,11 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
               {msg.concept && <span className="cc-concept-tag">{msg.concept}</span>}
               {msg.domain && <span className="cc-domain-tag">{msg.domain}</span>}
             </div>
-            <div className="cc-message-content">{msg.content}</div>
+            <div className="cc-message-content">
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeRaw, rehypeKatex]}>
+                {msg.content}
+              </ReactMarkdown>
+            </div>
             {msg.role === 'assistant' && msg.nodeId && (
               <div className="cc-message-actions">
                 <button
@@ -629,12 +674,16 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
             onMouseLeave={() => setContextMenu(null)}
           >
             <div className="cc-context-menu-item" onClick={handleAskSelected}>
-              <span className="cc-context-menu-icon">❓</span>
+              <span className="cc-context-menu-icon"><HelpCircle size={14} /></span>
               <span>追问选中内容</span>
+            </div>
+            <div className="cc-context-menu-item" onClick={handleRefineConcept}>
+              <span className="cc-context-menu-icon"><ZoomIn size={14} /></span>
+              <span>细化概念</span>
             </div>
             <div className="cc-context-menu-divider" />
             <div className="cc-context-menu-item" onClick={() => setContextMenu(null)}>
-              <span className="cc-context-menu-icon">✕</span>
+              <span className="cc-context-menu-icon"><X size={14} /></span>
               <span>取消</span>
             </div>
           </div>
@@ -658,7 +707,7 @@ const CognitiveChainPanel: React.FC<CognitiveChainPanelProps> = ({
           disabled={!input.trim() || isLoading}
           title="发送"
         >
-          ➤
+          <ArrowRight size={16} />
         </button>
       </div>
     </div>

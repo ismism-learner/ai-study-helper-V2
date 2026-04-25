@@ -3,7 +3,7 @@ import {
   Upload, Tag, Layers, Settings,
   Edit3, ZoomOut, ZoomIn,
   RotateCcw, Cloud, X, Eye, EyeOff,
-  MousePointer, Tag as TagIcon
+  MousePointer, Tag as TagIcon, Network
 } from 'lucide-react';
 
 interface TagLibraryHeaderProps {
@@ -24,6 +24,7 @@ interface TagLibraryHeaderProps {
   onShowManageView: () => void;
   onShowQuarkModal: () => void;
   onShowQuickTagModal: (initialTag?: string) => void;
+  onShowGraphView?: () => void;
   onToggleEditMode: () => void;
   onZoomOut: () => void;
   onZoomIn: () => void;
@@ -49,6 +50,7 @@ const TagLibraryHeader: React.FC<TagLibraryHeaderProps> = ({
   onShowManageView,
   onShowQuarkModal,
   onShowQuickTagModal,
+  onShowGraphView,
   onToggleEditMode,
   onZoomOut,
   onZoomIn,
@@ -200,6 +202,21 @@ const TagLibraryHeader: React.FC<TagLibraryHeaderProps> = ({
               display: 'flex', alignItems: 'center', gap: '6px',
               paddingLeft: '8px', borderLeft: '1px solid var(--border-color)'
             }}>
+              {onShowGraphView && (
+                <button className="btn btn-secondary btn-sm"
+                  onClick={onShowGraphView}
+                  title="查看知识图谱"
+                  style={{
+                    padding: '4px 8px', fontSize: '12px',
+                    display: 'flex', alignItems: 'center', gap: '3px',
+                    background: 'var(--gradient-primary)',
+                    border: 'none', borderRadius: '4px',
+                    color: 'white', cursor: 'pointer'
+                  }}
+                >
+                  <Network size={12} />图谱
+                </button>
+              )}
               <button className="btn btn-secondary btn-sm"
                 onClick={onToggleEditMode}
                 style={{

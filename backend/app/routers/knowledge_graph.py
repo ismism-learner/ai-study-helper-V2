@@ -12,13 +12,6 @@ def get_service(db=Depends(get_db)) -> KnowledgeGraphService:
     return KnowledgeGraphService(db)
 
 
-class BookProcessRequest(BaseModel):
-    text: str = Field(..., min_length=10)
-    title: str = Field(..., min_length=1)
-    author: Optional[str] = None
-    metadata: Optional[dict] = None
-
-
 class SearchRequest(BaseModel):
     keyword: str = Field(..., min_length=1)
     entity_type: Optional[str] = None
@@ -55,12 +48,27 @@ async def kg_health_check():
 
 
 @router.get("/graph-data")
-async def get_graph_data(book_title: Optional[str] = None, service: KnowledgeGraphService = Depends(get_service)):
+async def get_graph_data(
+    book_title: Optional[str] = None,
+    service: KnowledgeGraphService = Depends(get_service),
+):
     try:
         data = service.get_graph_data(book_title)
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取图谱数据失败: {str(e)}")
+
+
+@router.get("/by-tag/{tag}")
+async def get_graph_data_by_tag(
+    tag: str,
+    service: KnowledgeGraphService = Depends(get_service),
+):
+    try:
+        data = service.get_graph_data_by_tag(tag)
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"按标签获取图谱数据失败: {str(e)}")
 
 
 @router.get("/statistics")
@@ -73,7 +81,9 @@ async def get_statistics(service: KnowledgeGraphService = Depends(get_service)):
 
 
 @router.post("/search")
-async def search_entities(request: SearchRequest, service: KnowledgeGraphService = Depends(get_service)):
+async def search_entities(
+    request: SearchRequest, service: KnowledgeGraphService = Depends(get_service)
+):
     try:
         results = service.search_nodes(
             keyword=request.keyword,
@@ -86,7 +96,9 @@ async def search_entities(request: SearchRequest, service: KnowledgeGraphService
 
 
 @router.delete("/nodes/{node_id}")
-async def delete_node(node_id: str, service: KnowledgeGraphService = Depends(get_service)):
+async def delete_node(
+    node_id: str, service: KnowledgeGraphService = Depends(get_service)
+):
     try:
         success = service.delete_node(node_id)
         if not success:
@@ -104,9 +116,15 @@ class UpdateNodeRequest(BaseModel):
 
 
 @router.put("/nodes/{node_id}")
-async def update_node(node_id: str, request: UpdateNodeRequest, service: KnowledgeGraphService = Depends(get_service)):
+async def update_node(
+    node_id: str,
+    request: UpdateNodeRequest,
+    service: KnowledgeGraphService = Depends(get_service),
+):
     try:
-        node = service.update_node(node_id, name=request.name, description=request.description)
+        node = service.update_node(
+            node_id, name=request.name, description=request.description
+        )
         if not node:
             raise HTTPException(status_code=404, detail="节点不存在")
         return {
@@ -133,19 +151,22 @@ async def clear_all(service: KnowledgeGraphService = Depends(get_service)):
 
 
 @router.post("/quick-summary")
-async def create_quick_summary(request: QuickSummaryRequest, service: KnowledgeGraphService = Depends(get_service)):
+async def create_quick_summary(
+    request: QuickSummaryRequest, service: KnowledgeGraphService = Depends(get_service)
+):
     try:
         from app.services.ai_service import ai_service
         from app.config import settings_manager
-        
+
         prompt = settings_manager.quick_summary_prompt
         full_prompt = f"{prompt}\n\n【文本内容】\n{request.text}"
-        
+
         content = await ai_service.generate_text(full_prompt)
-        
+
         import json
         import re
-        json_match = re.search(r'```json\s*(\{.*?\})\s*```', content, re.DOTALL)
+
+        json_match = re.search(r"```json\s*(\{.*?\})\s*```", content, re.DOTALL)
         if json_match:
             data = json.loads(json_match.group(1))
         else:
@@ -153,8 +174,13 @@ async def create_quick_summary(request: QuickSummaryRequest, service: KnowledgeG
             if json_match:
                 data = json.loads(json_match.group())
             else:
-                data = {"label": "快速梳理", "definition": content, "key_concepts": [], "structure": []}
-        
+                data = {
+                    "label": "快速梳理",
+                    "definition": content,
+                    "key_concepts": [],
+                    "structure": [],
+                }
+
         node = service.create_node(
             name=data.get("label", "快速梳理"),
             description=data.get("definition", ""),
@@ -169,7 +195,7 @@ async def create_quick_summary(request: QuickSummaryRequest, service: KnowledgeG
                 "structure": data.get("structure", []),
             },
         )
-        
+
         return {
             "success": True,
             "node": {
@@ -184,19 +210,23 @@ async def create_quick_summary(request: QuickSummaryRequest, service: KnowledgeG
 
 
 @router.post("/detailed-question")
-async def create_detailed_question(request: DetailedQuestionRequest, service: KnowledgeGraphService = Depends(get_service)):
+async def create_detailed_question(
+    request: DetailedQuestionRequest,
+    service: KnowledgeGraphService = Depends(get_service),
+):
     try:
         from app.services.ai_service import ai_service
         from app.config import settings_manager
-        
+
         prompt = settings_manager.kg_concept_prompt
         full_prompt = f"{prompt}\n\n【文本内容】\n{request.text}"
-        
+
         content = await ai_service.generate_text(full_prompt)
-        
+
         import json
         import re
-        json_match = re.search(r'```json\s*(\{.*?\})\s*```', content, re.DOTALL)
+
+        json_match = re.search(r"```json\s*(\{.*?\})\s*```", content, re.DOTALL)
         if json_match:
             data = json.loads(json_match.group(1))
         else:
@@ -204,8 +234,14 @@ async def create_detailed_question(request: DetailedQuestionRequest, service: Kn
             if json_match:
                 data = json.loads(json_match.group())
             else:
-                data = {"label": "概念", "definition": content, "domain": "", "key_concepts": [], "suggested_questions": []}
-        
+                data = {
+                    "label": "概念",
+                    "definition": content,
+                    "domain": "",
+                    "key_concepts": [],
+                    "suggested_questions": [],
+                }
+
         node = service.create_detailed_question(
             name=data.get("label", "概念"),
             description=data.get("definition", ""),
@@ -219,7 +255,7 @@ async def create_detailed_question(request: DetailedQuestionRequest, service: Kn
                 "suggested_questions": data.get("suggested_questions", []),
             },
         )
-        
+
         return {
             "success": True,
             "node": {

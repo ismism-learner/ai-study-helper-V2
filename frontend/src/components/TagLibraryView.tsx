@@ -7,6 +7,7 @@ import BatchUploadModal from './BatchUploadModal';
 import BookManageView from './BookManageView';
 import QuickTagModal from './QuickTagModal';
 import QuarkUploadModal from './QuarkUploadModal';
+import TagKnowledgeGraphPanel from './TagKnowledgeGraphPanel';
 import { useQuarkUpload } from '../hooks';
 import {
   TagBookCard,
@@ -20,6 +21,7 @@ import { BookOpen, Loader2, Tag, Clock, ChevronUp, ChevronDown, Tag as TagIcon, 
 interface TagLibraryViewProps {
   selectedTag: string | null;
   onBookSelect: (book: BookDocument) => void;
+  onTagSelect?: (tag: string) => void;
 }
 
 type ViewType = 'main' | 'manage';
@@ -41,7 +43,7 @@ interface ContextMenuState {
   y: number;
 }
 
-const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBookSelect }) => {
+const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBookSelect, onTagSelect }) => {
   const [allBooks, setAllBooks] = useState<BookDocument[]>([]);
   const [timePeriods, setTimePeriods] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,6 +68,7 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBookSele
   
   const [showQuickTagModal, setShowQuickTagModal] = useState(false);
   const [quickTagInitialTag, setQuickTagInitialTag] = useState(''); 
+  const [showGraphView, setShowGraphView] = useState(false); 
 
   const {
     showQuarkModal,
@@ -517,6 +520,16 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBookSele
     );
   }
 
+  if (showGraphView && selectedTag) {
+    return (
+      <TagKnowledgeGraphPanel
+        tag={selectedTag}
+        onBookSelect={onBookSelect}
+        onBack={() => setShowGraphView(false)}
+      />
+    );
+  }
+
   if (isLoading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
@@ -548,6 +561,7 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBookSele
           setQuickTagInitialTag(tag);
           setShowQuickTagModal(true);
         }}
+        onShowGraphView={selectedTag ? () => setShowGraphView(true) : undefined}
         onToggleEditMode={() => setEditMode(!editMode)}
         onZoomOut={() => setScale(prev => Math.max(0.2, prev - 0.1))}
         onZoomIn={() => setScale(prev => Math.min(3, prev + 0.1))}
@@ -590,7 +604,14 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBookSele
                 <button
                   key={group.tag}
                   className={`tag-tab ${expandedTags.has(group.tag) ? 'active' : ''}`}
-                  onClick={() => toggleTag(group.tag)}
+                  onClick={() => {
+                    if (onTagSelect) {
+                      onTagSelect(group.tag === '未分类' ? '' : group.tag);
+                    } else {
+                      toggleTag(group.tag);
+                    }
+                  }}
+                  onDoubleClick={() => toggleTag(group.tag)}
                 >
                   <Tag size={12} />
                   {group.tag}

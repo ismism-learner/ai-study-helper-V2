@@ -3,9 +3,6 @@ import { api } from './client';
 export const knowledgeGraphApi = {
   healthCheck: () => api.get('/knowledge-graph/health'),
 
-  processBook: (params: { text: string; title: string; author?: string; metadata?: Record<string, unknown> }) =>
-    api.post('/knowledge-graph/books/process', params),
-
   listBooks: () => api.get('/knowledge-graph/books'),
 
   getBookEntities: (title: string) =>
@@ -26,6 +23,9 @@ export const knowledgeGraphApi = {
   getGraphData: (bookTitle?: string) =>
     api.get('/knowledge-graph/graph-data', { params: bookTitle ? { book_title: bookTitle } : {} }),
 
+  getGraphDataByTag: (tag: string) =>
+    api.get(`/knowledge-graph/by-tag/${encodeURIComponent(tag)}`),
+
   getStatistics: () => api.get('/knowledge-graph/statistics'),
 
   createQuickSummary: (data: { text: string; book_id: string; book_title: string; chapter_index?: number; text_position: number }) =>
@@ -42,13 +42,13 @@ export const knowledgeGraphApi = {
 };
 
 export const cognitiveChainApi = {
-  createChain: (data: { root_concept: string; context?: string; user_id?: string; source_doc_id?: string; source_doc_title?: string; source_chapter_index?: number }) =>
+  createChain: (data: { root_concept: string; context?: string; user_id?: string; source_doc_id?: string; source_doc_title?: string; source_chapter_index?: number; source_knowledge_node_id?: string }) =>
     api.post('/cognitive-chains/create', data),
 
-  createChainStream: (_params: { root_concept: string; context?: string; user_id?: string; source_doc_id?: string; source_doc_title?: string; source_chapter_index?: number }) =>
+  createChainStream: (_params: { root_concept: string; context?: string; user_id?: string; source_doc_id?: string; source_doc_title?: string; source_chapter_index?: number; source_knowledge_node_id?: string }) =>
     `/api/cognitive-chains/create/stream`,
 
-  expandChain: (data: { chain_id: string; parent_node_id: string; concept_to_explain: string; context?: string; source_doc_id?: string; source_doc_title?: string; source_chapter_index?: number }) =>
+  expandChain: (data: { chain_id: string; parent_node_id: string; concept_to_explain: string; context?: string; source_doc_id?: string; source_doc_title?: string; source_chapter_index?: number; source_knowledge_node_id?: string }) =>
     api.post('/cognitive-chains/expand', data),
 
   explainConcept: (data: { concept: string; context?: string }) =>
@@ -65,4 +65,7 @@ export const cognitiveChainApi = {
 
   deleteChain: (chainId: string) =>
     api.delete(`/cognitive-chains/${chainId}`),
+
+  findChainsByConcept: (conceptName: string, limit: number = 10) =>
+    api.get(`/cognitive-chains/by-concept/${encodeURIComponent(conceptName)}`, { params: { limit } }),
 };

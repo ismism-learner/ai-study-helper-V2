@@ -398,11 +398,16 @@ class AIService:
                     reasoning = message.reasoning_content
                     # 从reasoning中提取JSON
                     import re
-                    json_match = re.search(r'```json\s*(\{.*?\})\s*```', reasoning, re.DOTALL)
+
+                    json_match = re.search(
+                        r"```json\s*(\{.*?\})\s*```", reasoning, re.DOTALL
+                    )
                     if json_match:
                         content = json_match.group(1)
                     else:
-                        json_match = re.search(r'\{[^{}]*"label"[^{}]*\}', reasoning, re.DOTALL)
+                        json_match = re.search(
+                            r'\{[^{}]*"label"[^{}]*\}', reasoning, re.DOTALL
+                        )
                         if json_match:
                             content = json_match.group()
                         else:
@@ -588,19 +593,10 @@ class AIService:
         print(f"[polish_note] Model: {self.model}")
         print(f"[polish_note] Note content length: {len(note_content)}")
 
-        prompt = f"""请润色以下笔记内容，要求：
+        prompt_template = settings_manager.polish_note_prompt
+        prompt = prompt_template.replace("{note_content}", note_content)
 
-1. 将口语化表达转换为更规范的书面化表达
-2. 保持原有内容和意思不变
-3. 删除重复性内容
-4. 优化句子结构，使其更加通顺流畅
-5. 保留关键信息和重要细节
-6. 不要添加原文中没有的内容
-
-笔记内容：
-{note_content}
-
-请直接输出润色后的内容，不要添加任何解释说明。"""
+        system_prompt = settings_manager.polish_note_system_prompt
 
         async def _call_api():
             response = await self.client.chat.completions.create(
@@ -608,7 +604,7 @@ class AIService:
                 messages=[
                     {
                         "role": "system",
-                        "content": "你是一个专业的笔记编辑助手，擅长将口语化的笔记内容转换为清晰、规范的书面化表达，同时保持内容的完整性和准确性。",
+                        "content": system_prompt,
                     },
                     {"role": "user", "content": prompt},
                 ],
@@ -640,23 +636,10 @@ class AIService:
         print(f"[generate_note] Model: {self.model}")
         print(f"[generate_note] Note content length: {len(note_content)}")
 
-        prompt = f"""请根据以下笔记内容，生成一个规范的笔记标题和润色后的内容。
+        prompt_template = settings_manager.generate_note_prompt
+        prompt = prompt_template.replace("{note_content}", note_content)
 
-要求：
-1. 标题：简洁明了，能够概括笔记的核心内容（不超过20个字）
-2. 内容：将口语化表达转换为规范的书面化表达，删除重复性内容，优化句子结构
-3. 保持原有内容和意思不变
-4. 保留关键信息和重要细节
-5. 不要添加原文中没有的内容
-
-笔记内容：
-{note_content}
-
-请严格按照以下JSON格式输出，不要添加任何其他内容：
-{{
-  "title": "生成的标题",
-  "content": "润色后的内容"
-}}"""
+        system_prompt = settings_manager.generate_note_system_prompt
 
         async def _call_api():
             response = await self.client.chat.completions.create(
@@ -664,7 +647,7 @@ class AIService:
                 messages=[
                     {
                         "role": "system",
-                        "content": "你是一个专业的笔记编辑助手，擅长根据用户输入的内容生成规范的笔记标题和润色后的内容。你必须严格按照JSON格式输出。",
+                        "content": system_prompt,
                     },
                     {"role": "user", "content": prompt},
                 ],

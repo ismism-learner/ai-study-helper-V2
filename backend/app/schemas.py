@@ -161,14 +161,14 @@ class ExplainResponse(BaseModel):
 
 
 class SettingsResponse(BaseModel):
-    api_key: str
-    api_base: str
-    model_name: str
-    ai_backend_type: str = "api"
-    opencode_cli_path: str = "opencode"
-    framework_prompt: str
-    explain_prompt: str
-    optimize_prompt: str
+    api_key: str = ""
+    api_base: str = ""
+    model_name: str = ""
+    ai_backend_type: str = ""
+    opencode_cli_path: str = ""
+    framework_prompt: str = ""
+    explain_prompt: str = ""
+    optimize_prompt: str = ""
     quick_note_polish_prompt: str = ""
     chapter_note_system_prompt: str = ""
     chapter_note_prompt: str = ""
@@ -176,6 +176,19 @@ class SettingsResponse(BaseModel):
     long_text_rewrite_system_prompt: str = ""
     long_text_rewrite_prompt: str = ""
     batch_upload_size: int = 5
+    embedding_enabled: bool = False
+    embedding_model: str = ""
+    embedding_device: str = ""
+    kg_concept_prompt: str = ""
+    quick_summary_prompt: str = ""
+    polish_note_prompt: str = ""
+    polish_note_system_prompt: str = ""
+    generate_note_prompt: str = ""
+    generate_note_system_prompt: str = ""
+    structure_system_prompt: str = ""
+    structure_user_prompt: str = ""
+    section_fill_prompt: str = ""
+    kg_concept_user_prompt: str = ""
     neo4j_enabled: bool = False
     neo4j_uri: str = "bolt://localhost:7687"
     neo4j_user: str = "neo4j"
@@ -207,12 +220,19 @@ class SettingsUpdate(BaseModel):
     long_text_rewrite_system_prompt: Optional[str] = None
     long_text_rewrite_prompt: Optional[str] = None
     batch_upload_size: Optional[int] = None
-    neo4j_enabled: Optional[bool] = None
-    neo4j_uri: Optional[str] = None
-    neo4j_user: Optional[str] = None
-    neo4j_password: Optional[str] = None
+    embedding_enabled: Optional[bool] = None
+    embedding_model: Optional[str] = None
+    embedding_device: Optional[str] = None
     kg_concept_prompt: Optional[str] = None
     quick_summary_prompt: Optional[str] = None
+    polish_note_prompt: Optional[str] = None
+    polish_note_system_prompt: Optional[str] = None
+    generate_note_prompt: Optional[str] = None
+    generate_note_system_prompt: Optional[str] = None
+    structure_system_prompt: Optional[str] = None
+    structure_user_prompt: Optional[str] = None
+    section_fill_prompt: Optional[str] = None
+    kg_concept_user_prompt: Optional[str] = None
 
 
 class APIConfigCreate(BaseModel):

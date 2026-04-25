@@ -5,6 +5,11 @@ __pycache__/
 # 忽略数据库文件
 *.db
 *.db.*
+*.db-shm
+*.db-wal
+
+# 忽略Neo4j目录（已移除）
+neo4j/
 
 # 忽略上传的书籍文件
 backend/uploads/

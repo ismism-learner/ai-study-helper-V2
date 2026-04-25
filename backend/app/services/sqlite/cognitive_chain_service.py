@@ -5,7 +5,13 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
-from app.models import CognitiveChain, CognitiveNode, BookDocument, KnowledgeNode, KnowledgeEdge
+from app.models import (
+    CognitiveChain,
+    CognitiveNode,
+    BookDocument,
+    KnowledgeNode,
+    KnowledgeEdge,
+)
 from app.services.ai_service import ai_service
 from app.config import settings_manager
 
@@ -31,23 +37,39 @@ class CognitiveChainService:
         chapter_index: int = None,
         parent_knowledge_node_id: str = None,
     ) -> Optional[KnowledgeNode]:
-        existing = self.db.query(KnowledgeNode).filter(KnowledgeNode.name == concept).first()
+        existing = (
+            self.db.query(KnowledgeNode).filter(KnowledgeNode.name == concept).first()
+        )
         if existing:
-            logger.info(f"知识图谱节点已存在: {concept}")
+            logger.info(f"知识图谱节点已存在: {concept}, 类型: {existing.node_type}")
             if parent_knowledge_node_id and parent_knowledge_node_id != existing.id:
-                edge_exists = self.db.query(KnowledgeEdge).filter(
-                    KnowledgeEdge.source_id == parent_knowledge_node_id,
-                    KnowledgeEdge.target_id == existing.id,
-                ).first()
+                parent_node = (
+                    self.db.query(KnowledgeNode)
+                    .filter(KnowledgeNode.id == parent_knowledge_node_id)
+                    .first()
+                )
+                if existing.node_type == "QuickSummary":
+                    logger.warning(f"跳过创建边: 目标节点 '{concept}' 是 QuickSummary，不允许被 EXPLAINS 边连接")
+                    return existing
+                edge_exists = (
+                    self.db.query(KnowledgeEdge)
+                    .filter(
+                        KnowledgeEdge.source_id == parent_knowledge_node_id,
+                        KnowledgeEdge.target_id == existing.id,
+                    )
+                    .first()
+                )
                 if not edge_exists:
                     edge = KnowledgeEdge(
                         source_id=parent_knowledge_node_id,
                         target_id=existing.id,
-                        relation_type="RELATES_TO",
-                        description=f"相关概念",
+                        relation_type="EXPLAINS",
+                        edge_type="EXPLAINS",
+                        description=f"解释概念",
                         book_id=book_id,
                     )
                     self.db.add(edge)
+                    logger.info(f"创建边: {parent_node.name if parent_node else parent_knowledge_node_id} --[EXPLAINS]--> {concept}")
             return existing
 
         knowledge_node = KnowledgeNode(
@@ -67,13 +89,20 @@ class CognitiveChainService:
             edge = KnowledgeEdge(
                 source_id=parent_knowledge_node_id,
                 target_id=knowledge_node.id,
-                relation_type="RELATES_TO",
-                description=f"相关概念",
+                relation_type="EXPLAINS",
+                edge_type="EXPLAINS",
+                description=f"解释概念",
                 book_id=book_id,
             )
             self.db.add(edge)
+            parent_node = (
+                self.db.query(KnowledgeNode)
+                .filter(KnowledgeNode.id == parent_knowledge_node_id)
+                .first()
+            )
+            logger.info(f"创建边: {parent_node.name if parent_node else parent_knowledge_node_id} --[EXPLAINS]--> {concept}")
 
-        logger.info(f"同步到知识图谱: {concept}")
+        logger.info(f"同步到知识图谱: {concept}, 类型: {node_type}")
         return knowledge_node
 
     async def create_chain(
@@ -84,12 +113,15 @@ class CognitiveChainService:
         book_id: str = None,
         book_title: str = None,
         chapter_index: int = None,
+        source_knowledge_node_id: str = None,
     ) -> Dict[str, Any]:
         full_context = root_concept
         if context:
             full_context = root_concept + "\n\n参考内容：\n" + context
 
-        explanation = await self._generate_concept_explanation(root_concept, full_context)
+        explanation = await self._generate_concept_explanation(
+            root_concept, full_context
+        )
         label = explanation.get("label", root_concept[:15])
 
         chain = CognitiveChain(
@@ -99,7 +131,9 @@ class CognitiveChainService:
             book_title=book_title,
             total_nodes=1,
             total_edges=0,
-            domains=[explanation.get("domain", "通用")] if explanation.get("domain") else [],
+            domains=[explanation.get("domain", "通用")]
+            if explanation.get("domain")
+            else [],
         )
         self.db.add(chain)
         self.db.flush()
@@ -126,6 +160,7 @@ class CognitiveChainService:
             book_id=book_id,
             book_title=book_title,
             chapter_index=chapter_index,
+            parent_knowledge_node_id=source_knowledge_node_id,
         )
 
         self.db.commit()
@@ -143,19 +178,32 @@ class CognitiveChainService:
         book_id: str = None,
         book_title: str = None,
         chapter_index: int = None,
+        source_knowledge_node_id: str = None,
     ) -> Dict[str, Any]:
         chain = self.get_chain(chain_id)
         if not chain:
             raise ValueError(f"认知链不存在: {chain_id}")
 
-        parent_cognitive_node = self.db.query(CognitiveNode).filter(CognitiveNode.id == parent_node_id).first()
-        parent_knowledge_node_id = None
-        if parent_cognitive_node:
-            parent_kg_node = self.db.query(KnowledgeNode).filter(KnowledgeNode.name == parent_cognitive_node.concept).first()
-            if parent_kg_node:
-                parent_knowledge_node_id = parent_kg_node.id
+        # 确定父知识节点ID：优先用直接传入的，否则通过概念名匹配
+        parent_knowledge_node_id = source_knowledge_node_id
+        if not parent_knowledge_node_id:
+            parent_cognitive_node = (
+                self.db.query(CognitiveNode)
+                .filter(CognitiveNode.id == parent_node_id)
+                .first()
+            )
+            if parent_cognitive_node:
+                parent_kg_node = (
+                    self.db.query(KnowledgeNode)
+                    .filter(KnowledgeNode.name == parent_cognitive_node.concept)
+                    .first()
+                )
+                if parent_kg_node:
+                    parent_knowledge_node_id = parent_kg_node.id
 
-        explanation = await self._generate_concept_explanation(concept_to_explain, context)
+        explanation = await self._generate_concept_explanation(
+            concept_to_explain, context
+        )
         label = explanation.get("label", concept_to_explain[:15])
 
         new_node = CognitiveNode(
@@ -196,7 +244,9 @@ class CognitiveChainService:
         return await self._generate_concept_explanation(concept, context)
 
     def get_chain(self, chain_id: str) -> Optional[CognitiveChain]:
-        return self.db.query(CognitiveChain).filter(CognitiveChain.id == chain_id).first()
+        return (
+            self.db.query(CognitiveChain).filter(CognitiveChain.id == chain_id).first()
+        )
 
     def get_chain_dict(self, chain_id: str) -> Optional[Dict[str, Any]]:
         chain = self.get_chain(chain_id)
@@ -213,6 +263,43 @@ class CognitiveChainService:
             .all()
         )
         return [self._chain_to_dict(c, include_nodes=False) for c in chains]
+
+    def get_chain_by_knowledge_node(
+        self, knowledge_node_id: str
+    ) -> Optional[Dict[str, Any]]:
+        cognitive_node = (
+            self.db.query(CognitiveNode)
+            .filter(CognitiveNode.knowledge_node_id == knowledge_node_id)
+            .first()
+        )
+        if not cognitive_node:
+            return None
+        chain_dict = self.get_chain_dict(cognitive_node.chain_id)
+        if not chain_dict:
+            return None
+        chain_dict["matched_cognitive_node_id"] = cognitive_node.id
+        return chain_dict
+
+    def find_chains_by_concept(
+        self, concept_name: str, limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """按概念名查找包含该概念的认知链（用于知识图谱实体跳转）"""
+        nodes = (
+            self.db.query(CognitiveNode)
+            .filter(CognitiveNode.concept == concept_name)
+            .order_by(CognitiveNode.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+        seen_chain_ids = set()
+        chains = []
+        for node in nodes:
+            if node.chain_id not in seen_chain_ids:
+                seen_chain_ids.add(node.chain_id)
+                chain = self.get_chain(node.chain_id)
+                if chain:
+                    chains.append(self._chain_to_dict(chain, include_nodes=False))
+        return chains
 
     def get_user_chains(self, user_id: str, limit: int = 20) -> List[Dict[str, Any]]:
         chains = (
@@ -236,19 +323,15 @@ class CognitiveChainService:
     async def _generate_concept_explanation(
         self, concept: str, context: str = ""
     ) -> Dict[str, Any]:
+        concept_user_prompt_template = settings_manager.kg_concept_user_prompt
         if context:
-            prompt = f"""用户输入：
-{concept}
-
-上下文：
-{context}
-
-请分析上述内容，提取核心概念并解释。"""
+            prompt = concept_user_prompt_template.format(
+                concept=concept, context_section=f"\n上下文：\n{context}"
+            )
         else:
-            prompt = f"""用户输入：
-{concept}
-
-请分析上述内容，提取核心概念并解释。"""
+            prompt = concept_user_prompt_template.format(
+                concept=concept, context_section=""
+            )
 
         try:
             content = await ai_service.generate_text(
@@ -326,7 +409,9 @@ class CognitiveChainService:
                 return content[start : end + 1]
             return "{}"
 
-    def _chain_to_dict(self, chain: CognitiveChain, include_nodes: bool = True) -> Dict[str, Any]:
+    def _chain_to_dict(
+        self, chain: CognitiveChain, include_nodes: bool = True
+    ) -> Dict[str, Any]:
         result = {
             "id": chain.id,
             "title": chain.title,
@@ -373,11 +458,13 @@ class CognitiveChainService:
         edges = []
         for node in nodes:
             if node.parent_node_id:
-                edges.append({
-                    "id": f"edge-{node.id}",
-                    "source_id": node.parent_node_id,
-                    "target_id": node.id,
-                    "relation_type": "EXPLAINS",
-                    "description": f"解释概念: {node.concept}",
-                })
+                edges.append(
+                    {
+                        "id": f"edge-{node.id}",
+                        "source_id": node.parent_node_id,
+                        "target_id": node.id,
+                        "relation_type": "EXPLAINS",
+                        "description": f"解释概念: {node.concept}",
+                    }
+                )
         return edges

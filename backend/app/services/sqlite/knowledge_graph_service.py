@@ -55,6 +55,9 @@ class KnowledgeGraphService:
         if node_type == "QuickSummary" and text_position is not None:
             self._update_nodes_parent_summary(book_id, text_position, node.id, chapter_index)
         
+        if node_type == "QuickSummary":
+            self._connect_orphan_detailed_questions(book_id, chapter_index, node.id)
+        
         return node
 
     def _update_nodes_parent_summary(self, book_id: str, new_summary_position: int, new_summary_id: str, new_chapter_index: int = None):
@@ -69,8 +72,19 @@ class KnowledgeGraphService:
             .first()
         )
         
+        next_summary = (
+            self.db.query(KnowledgeNode)
+            .filter(
+                KnowledgeNode.book_id == book_id,
+                KnowledgeNode.node_type == "QuickSummary",
+                KnowledgeNode.text_position > new_summary_position,
+            )
+            .order_by(KnowledgeNode.text_position.asc())
+            .first()
+        )
+        
         if prev_summary:
-            nodes_to_update = (
+            nodes_before_new = (
                 self.db.query(KnowledgeNode)
                 .filter(
                     KnowledgeNode.book_id == book_id,
@@ -80,8 +94,34 @@ class KnowledgeGraphService:
                 )
                 .all()
             )
-            for node in nodes_to_update:
+            for node in nodes_before_new:
                 node.parent_summary_id = prev_summary.id
+            
+            if next_summary:
+                nodes_after_new = (
+                    self.db.query(KnowledgeNode)
+                    .filter(
+                        KnowledgeNode.book_id == book_id,
+                        KnowledgeNode.node_type == "DetailedQuestion",
+                        KnowledgeNode.text_position >= new_summary_position,
+                        KnowledgeNode.text_position < next_summary.text_position,
+                    )
+                    .all()
+                )
+                for node in nodes_after_new:
+                    if node.parent_summary_id == prev_summary.id:
+                        node.parent_summary_id = new_summary_id
+                        self.db.query(KnowledgeEdge).filter(
+                            KnowledgeEdge.source_id == prev_summary.id,
+                            KnowledgeEdge.target_id == node.id,
+                        ).delete()
+                        self.create_edge(
+                            source_id=new_summary_id,
+                            target_id=node.id,
+                            relation_type="HAS_QUESTION",
+                            edge_type="BRANCH_EXTEND",
+                        )
+                        logger.info(f"[QuickSummary] Reassigned DetailedQuestion: {node.name} from {prev_summary.name} to new summary")
             
             logger.info(f"[QuickSummary] prev_summary: {prev_summary.name}, chapter_index={prev_summary.chapter_index}")
             logger.info(f"[QuickSummary] new_summary: position={new_summary_position}, chapter_index={new_chapter_index}")
@@ -92,40 +132,78 @@ class KnowledgeGraphService:
             
             logger.info(f"[QuickSummary] is_same_chapter={is_same_chapter}")
             
-            if is_same_chapter:
-                self.create_edge(
-                    source_id=prev_summary.id,
-                    target_id=new_summary_id,
-                    relation_type="SECTION_SEQUENCE",
-                    edge_type="SECTION_SEQUENCE",
-                )
-            else:
-                prev_chapter_main_node = (
-                    self.db.query(KnowledgeNode)
-                    .filter(
-                        KnowledgeNode.book_id == book_id,
-                        KnowledgeNode.node_type == "QuickSummary",
-                        KnowledgeNode.chapter_index == prev_summary.chapter_index,
-                    )
-                    .order_by(KnowledgeNode.text_position.asc())
-                    .first()
-                )
+            edge_type_to_use = "SECTION_SEQUENCE" if is_same_chapter else "CHAPTER_SEQUENCE"
+            
+            if next_summary:
+                self.db.query(KnowledgeEdge).filter(
+                    KnowledgeEdge.source_id == prev_summary.id,
+                    KnowledgeEdge.target_id == next_summary.id,
+                ).delete()
+            
+            self.create_edge(
+                source_id=prev_summary.id,
+                target_id=new_summary_id,
+                relation_type=edge_type_to_use,
+                edge_type=edge_type_to_use,
+            )
+            
+            if next_summary:
+                next_is_same_chapter = False
+                if new_chapter_index is not None and next_summary.chapter_index is not None:
+                    next_is_same_chapter = (new_chapter_index == next_summary.chapter_index)
                 
-                if prev_chapter_main_node:
-                    logger.info(f"[QuickSummary] prev_chapter_main_node: {prev_chapter_main_node.name}")
-                    self.create_edge(
-                        source_id=prev_chapter_main_node.id,
-                        target_id=new_summary_id,
-                        relation_type="CHAPTER_SEQUENCE",
-                        edge_type="CHAPTER_SEQUENCE",
-                    )
-                else:
-                    self.create_edge(
-                        source_id=prev_summary.id,
-                        target_id=new_summary_id,
-                        relation_type="CHAPTER_SEQUENCE",
-                        edge_type="CHAPTER_SEQUENCE",
-                    )
+                next_edge_type = "SECTION_SEQUENCE" if next_is_same_chapter else "CHAPTER_SEQUENCE"
+                self.create_edge(
+                    source_id=new_summary_id,
+                    target_id=next_summary.id,
+                    relation_type=next_edge_type,
+                    edge_type=next_edge_type,
+                )
+        else:
+            if next_summary:
+                logger.info(f"[QuickSummary] No prev_summary, connecting to next: {next_summary.name}")
+                self.create_edge(
+                    source_id=new_summary_id,
+                    target_id=next_summary.id,
+                    relation_type="CHAPTER_SEQUENCE",
+                    edge_type="CHAPTER_SEQUENCE",
+                )
+        
+        self.db.commit()
+
+    def _connect_orphan_detailed_questions(self, book_id: str, chapter_index: int, new_summary_id: str):
+        if chapter_index is None:
+            return
+        
+        orphan_nodes = (
+            self.db.query(KnowledgeNode)
+            .filter(
+                KnowledgeNode.book_id == book_id,
+                KnowledgeNode.node_type == "DetailedQuestion",
+                KnowledgeNode.chapter_index == chapter_index,
+                KnowledgeNode.parent_summary_id == None,
+            )
+            .all()
+        )
+        
+        for node in orphan_nodes:
+            node.parent_summary_id = new_summary_id
+            existing_edge = (
+                self.db.query(KnowledgeEdge)
+                .filter(
+                    KnowledgeEdge.source_id == new_summary_id,
+                    KnowledgeEdge.target_id == node.id,
+                )
+                .first()
+            )
+            if not existing_edge:
+                self.create_edge(
+                    source_id=new_summary_id,
+                    target_id=node.id,
+                    relation_type="HAS_QUESTION",
+                    edge_type="BRANCH_EXTEND",
+                )
+                logger.info(f"[QuickSummary] Connected orphan DetailedQuestion: {node.name} -> {new_summary_id}")
         
         self.db.commit()
 
@@ -228,6 +306,76 @@ class KnowledgeGraphService:
                 for e in edges
                 if e.source_id in [n.id for n in nodes] and e.target_id in [n.id for n in nodes]
             ],
+        }
+
+    def get_graph_data_by_tag(self, tag: str) -> Dict[str, Any]:
+        from app.models import BookDocument
+
+        books = (
+            self.db.query(BookDocument)
+            .filter(BookDocument.tags.contains(f'"{tag}"'))
+            .all()
+        )
+
+        book_ids = [b.id for b in books]
+        book_titles = [b.title for b in books]
+
+        if not book_ids:
+            return {"nodes": [], "edges": [], "books": []}
+
+        nodes = (
+            self.db.query(KnowledgeNode)
+            .filter(KnowledgeNode.book_id.in_(book_ids))
+            .all()
+        )
+
+        node_ids = [n.id for n in nodes]
+        edges = (
+            self.db.query(KnowledgeEdge)
+            .filter(
+                KnowledgeEdge.source_id.in_(node_ids),
+                KnowledgeEdge.target_id.in_(node_ids)
+            )
+            .all()
+        )
+
+        book_info_map = {b.id: {"title": b.title, "cover": b.cover_image} for b in books}
+
+        return {
+            "nodes": [
+                {
+                    "id": n.id,
+                    "name": n.name,
+                    "description": n.description,
+                    "entity_type": n.entity_type,
+                    "domain": n.domain,
+                    "confidence": n.confidence,
+                    "book_id": n.book_id,
+                    "book_title": n.book_title,
+                    "chapter_index": n.chapter_index,
+                    "node_type": n.node_type,
+                    "text_position": n.text_position,
+                    "parent_summary_id": n.parent_summary_id,
+                    "labels": [n.entity_type],
+                }
+                for n in nodes
+            ],
+            "edges": [
+                {
+                    "source": e.source_id,
+                    "target": e.target_id,
+                    "type": e.relation_type,
+                    "edge_type": e.edge_type,
+                    "description": e.description,
+                }
+                for e in edges
+                if e.source_id in node_ids and e.target_id in node_ids
+            ],
+            "books": [
+                {"id": b.id, "title": b.title, "cover": b.cover_image}
+                for b in books
+            ],
+            "book_info_map": book_info_map,
         }
 
     def get_statistics(self) -> Dict[str, Any]:

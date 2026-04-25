@@ -641,7 +641,6 @@
   right: 0;
   bottom: 0;
   overflow: hidden;
-  padding-top: 52px;
 }
 
 .book-reader-view .reader-four-panel {
@@ -662,7 +661,8 @@
   justify-content: flex-start;
   gap: 16px;
   min-height: 100%;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   padding: 10px;
 }
 
@@ -714,18 +714,21 @@
   overflow: visible;
   margin: 0 auto;
   flex-shrink: 0;
+  transform-origin: center center;
 }
 
 .book-reader-view .pdf-page {
   background: transparent !important;
   display: flex;
   justify-content: center;
+  transform-origin: center center;
 }
 
 .book-reader-view .pdf-page canvas {
   background: transparent !important;
   display: block;
   margin: 0 auto;
+  transform-origin: center center;
 }
 
 .book-reader-view .pdf-page .annotationLayer,

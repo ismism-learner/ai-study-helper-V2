@@ -339,157 +339,125 @@ DEFAULT_LONG_TEXT_REWRITE_PROMPT = """请根据原文内容，填充并改写以
 请输出完整改写后的小节内容："""
 
 
-DEFAULT_KG_EXTRACTION_PROMPT = """你是一个专业的哲学文本分析助手。你的任务是从给定的哲学文本中提取知识图谱实体。
+# 认知链概念解释提示词
+DEFAULT_POLISH_NOTE_PROMPT = """请润色以下笔记内容，要求：
 
-请仔细分析以下文本片段，识别并提取以下类型的实体：
+1. 将口语化表达转换为更规范的书面化表达
+2. 保持原有内容和意思不变
+3. 删除重复性内容
+4. 优化句子结构，使其更加通顺流畅
+5. 保留关键信息和重要细节
+6. 不要添加原文中没有的内容
 
-1. **Philosopher（哲学家）**: 文本中提到的哲学家姓名
-   - 包括生卒年份、国籍、所属学派等信息
-   
-2. **Concept（概念）**: 重要的哲学概念、术语
-   - 包括定义、类别（形而上学、认识论、伦理学等）、关键特征
-   
-3. **Theory（理论）**: 哲学理论或学说
-   - 包括核心主张、适用范围、局限性
-   
-4. **Work（著作）**: 提及的哲学著作
-   - 包括作者、出版年份、主要主题
-   
-5. **Argument（论证）**: 重要的论证结构
-   - 包括前提、结论、论证类型
-   
-6. **School（学派）**: 哲学流派或学派
-   - 包括时代、关键人物、核心教义
-   
-7. **Era（时代）**: 历史时期或时代背景
-   - 包括起止年份、时代特征
+笔记内容：
+{note_content}
 
-请按以下 JSON 格式返回提取结果：
+请直接输出润色后的内容，不要添加任何解释说明。"""
 
-```json
+DEFAULT_POLISH_NOTE_SYSTEM_PROMPT = "你是一个专业的笔记编辑助手，擅长将口语化的笔记内容转换为清晰、规范的书面化表达，同时保持内容的完整性和准确性。"
+
+# 笔记生成提示词
+DEFAULT_GENERATE_NOTE_PROMPT = """请根据以下笔记内容，生成一个规范的笔记标题和润色后的内容。
+
+要求：
+1. 标题：简洁明了，能够概括笔记的核心内容（不超过20个字）
+2. 内容：将口语化表达转换为规范的书面化表达，删除重复性内容，优化句子结构
+3. 保持原有内容和意思不变
+4. 保留关键信息和重要细节
+5. 不要添加原文中没有的内容
+
+笔记内容：
+{note_content}
+
+请严格按照以下JSON格式输出，不要添加任何其他内容：
+{{
+  "title": "生成的标题",
+  "content": "润色后的内容"
+}}"""
+
+DEFAULT_GENERATE_NOTE_SYSTEM_PROMPT = "你是一个专业的笔记编辑助手，擅长根据用户输入的内容生成规范的笔记标题和润色后的内容。你必须严格按照JSON格式输出。"
+
+# 章节结构分析提示词
+DEFAULT_STRUCTURE_SYSTEM_PROMPT = """你是一个专业的文档结构分析助手。你的任务是分析OCR识别的原始文本，提取出文档的章节结构，并标注每个章节在原文中的行号范围。
+
+【输出格式】
+你必须输出一个严格的JSON对象，格式如下：
 {
-  "philosophers": [
+  "book_title": "书籍/文档标题",
+  "total_chapters": 章节总数,
+  "chapters": [
     {
-      "name": "哲学家姓名",
-      "description": "简要描述",
-      "birth_year": 出生年份,
-      "death_year": 逝世年份,
-      "nationality": "国籍",
-      "schools": ["所属学派"],
-      "source_text": "原文引用",
-      "source_location": "位置信息（如页码）",
-      "confidence": 0.95
-    }
-  ],
-  "concepts": [
-    {
-      "name": "概念名称",
-      "description": "概念描述",
-      "category": "概念类别",
-      "definition": "定义",
-      "key_characteristics": ["特征1", "特征2"],
-      "examples": ["示例1"],
-      "source_text": "原文引用",
-      "source_location": "位置信息",
-      "confidence": 0.9
-    }
-  ],
-  "theories": [],
-  "works": [],
-  "arguments": [],
-  "schools": [],
-  "eras": []
-}
-```
-
-注意：
-- 只提取文本中明确提及的实体
-- 为每个实体提供原文引用作为证据
-- confidence 表示你对此提取的置信度（0-1之间）
-- 如果某类实体在文本中不存在，返回空数组
-- 确保 JSON 格式正确，可以被解析
-
-待分析文本：
-{text}"""
-
-DEFAULT_KG_RELATION_PROMPT = """你是一个专业的哲学文本分析助手。你的任务是从给定的哲学文本中提取实体之间的关系。
-
-基于以下已识别的实体列表，请分析文本并提取它们之间的关系：
-
-已识别实体：
-{entities}
-
-请识别以下类型的关系：
-
-**哲学家相关关系：**
-- BORN_IN: 出生于某地
-- DIED_IN: 逝世于某地
-- BELONGS_TO: 属于某学派
-- INFLUENCED_BY: 受到谁的影响
-- INFLUENCED: 影响了谁
-
-**著作相关关系：**
-- AUTHORED: 撰写了某著作
-- AUTHORED_BY: 由谁撰写
-- PUBLISHED_IN: 出版于某年
-
-**概念相关关系：**
-- PROPOSED: 提出了某概念
-- PROPOSED_BY: 由谁提出
-- RELATED_TO: 与某概念相关
-- CONTRADICTS: 与某概念矛盾
-- SUBSUMES: 包含/涵盖某概念
-- INSTANCE_OF: 是某概念的实例
-
-**理论相关关系：**
-- BASED_ON: 基于某理论
-- DERIVED_FROM: 派生自某理论
-- CRITIQUES: 批判某理论
-- SUPPORTS: 支持某理论
-
-**论证相关关系：**
-- CONTAINS: 包含某论证
-- PREMISE_OF: 是某论证的前提
-- CONCLUSION_OF: 是某论证的结论
-- ASSUMES: 假设了某概念
-- IMPLIES: 蕴含了某概念
-
-请按以下 JSON 格式返回关系列表：
-
-```json
-{
-  "relations": [
-    {
-      "source": "源实体名称",
-      "target": "目标实体名称",
-      "relation_type": "关系类型",
-      "description": "关系描述",
-      "strength": 0.9,
-      "evidence": "支持此关系的原文引用",
-      "confidence": 0.85
+      "index": 0,
+      "title": "第一章标题",
+      "summary": "该章节内容的简短概述（50字以内）",
+      "start_line": 1,
+      "end_line": 50,
+      "sections": [
+        {
+          "title": "1.1 小节标题",
+          "summary": "该小节内容的简短概述（30字以内）",
+          "key_points": ["要点1", "要点2"],
+          "start_line": 5,
+          "end_line": 25
+        }
+      ]
     }
   ]
 }
-```
 
-注意：
-- 只提取文本中明确表达的关系
-- 为每个关系提供原文引用作为证据
-- strength 表示关系强度（0-1之间）
-- confidence 表示你对此提取的置信度（0-1之间）
-- 确保 source 和 target 对应已识别实体列表中的名称
-- 确保 JSON 格式正确，可以被解析
+【行号规则 - 极其重要！】
+1. 原文的第一行是第1行（不是第0行）
+2. start_line：该章节/小节内容在原文中开始的行号
+3. end_line：该章节/小节内容在原文中结束的行号（包含该行）
+4. 行号必须准确，因为系统会根据行号从原文中切分出对应内容
+5. 章节之间不应有行号重叠，上一章的end_line+1应等于下一章的start_line
+6. 如果无法精确判断行号，给出估算值即可
 
-待分析文本：
-{text}"""
+【重要规则】
+1. 只输出JSON，不要输出任何其他内容
+2. JSON必须是合法的，可以被json.loads()解析
+3. chapters数组的顺序必须与原文中章节出现的顺序一致
+4. summary要简短精炼，不要长篇大论
+5. key_points只提取3-5个最重要的要点
+6. 如果原文没有明显的小节划分，sections可以为空数组
+7. 禁止使用任何emoji表情符号
+8. start_line和end_line是必填字段，不能省略"""
 
-DEFAULT_KG_CONCEPT_PROMPT = """你是一个白痴天才，请将下文尽可能详细说人话的方式与我复述。
+DEFAULT_STRUCTURE_USER_PROMPT = """请分析以下OCR识别的原始文本，提取出文档的章节结构，并标注每个章节在原文中的行号范围。
 
+文档标题：{chapter_title}
+
+原始文本（带行号前缀）：
+{numbered_text}
+
+请直接输出JSON格式的章节结构表，不要输出任何其他内容。确保每个章节都有准确的start_line和end_line。"""
+
+# 章节填充提示词
+DEFAULT_SECTION_FILL_PROMPT = """请将以下OCR识别的原始文本整理成结构清晰、通俗易懂的Markdown格式笔记。
+
+【全书结构表】（供参考，了解当前章节在全书中的位置）
+{structure}
+
+【当前章节信息】
+章节标题：{section_title}
+章节概述：{section_summary}
+
+【当前章节的原始文本】
+{section_text}
+
+【重要提醒】
+- 禁止使用任何emoji表情符号
+- 只使用纯文本和Markdown格式
+- 只输出当前章节的整理内容，不要输出其他章节的内容
+- 直接输出整理后的Markdown内容，不要添加任何解释说明"""
+
+# 认知链概念解释系统提示词
+DEFAULT_KG_CONCEPT_PROMPT = """你是一个知识渊博的导师，请用通俗易懂的方式详细解释概念。
 输出格式要求（必须严格遵循，只输出JSON，不要有其他内容）：
 ```json
 {
   "label": "概念简称（2-8个字）",
-  "definition": "用说人话的方式详细解释这个概念（100-200字）",
+  "definition": "用通俗易懂的方式详细解释这个概念（100-200字）",
   "domain": "所属领域",
   "key_concepts": ["相关概念1", "相关概念2"],
   "suggested_questions": ["追问建议1", "追问建议2"]
@@ -498,33 +466,30 @@ DEFAULT_KG_CONCEPT_PROMPT = """你是一个白痴天才，请将下文尽可能�
 
 重要规则：
 1. label 必须是简短精炼的概念名称，不是文本片段
-2. definition 必须用说人话的方式详细解释，不要用专业术语堆砌
+2. definition 必须用通俗易懂的方式详细解释，不要用专业术语堆砌
 3. 只输出JSON，不要有任何其他文字"""
 
-DEFAULT_QUICK_SUMMARY_PROMPT = """请快速梳理以下文本的核心内容和逻辑结构。
+# 认知链概念解释用户提示词
+DEFAULT_KG_CONCEPT_USER_PROMPT = """请解释以下概念：
+概念：{concept}
+{context_section}"""
 
+# 知识图谱快速梳理提示词
+DEFAULT_QUICK_SUMMARY_PROMPT = """请快速梳理以下文本的核心内容和逻辑结构。
 输出格式要求（必须严格遵循，只输出JSON，不要有其他内容）：
 ```json
 {
   "label": "章节/段落标题（简短概括，2-10个字）",
-  "definition": "核心内容概述（50-100字，说人话的方式）",
+  "definition": "核心内容概述（50-100字，通俗易懂）",
   "key_concepts": ["核心概念1", "核心概念2", "核心概念3"],
-  "structure": ["要点1", "要点2", "要点3"]
+  "suggested_questions": ["追问建议1", "追问建议2"]
 }
 ```
 
 重要规则：
-1. label 要简短精炼，能概括这段文本的主题
-2. definition 用说人话的方式概述核心内容
-3. key_concepts 提取3-5个核心概念
-4. structure 列出主要逻辑要点
-5. 只输出JSON，不要有任何其他文字"""
-DEFAULT_KG_EXPAND_PROMPT = (
-    "请解释以下概念及其与相关概念之间的关系，并提供进一步的认知扩展："
-)
-DEFAULT_KG_CHAT_PROMPT = (
-    "你是一个哲学和概念分析助手。请基于以下知识库内容和对话历史，回答用户的问题："
-)
+1. label 必须是简短精炼的标题，不是文本片段
+2. definition 必须用通俗易懂的方式概括核心内容
+3. 只输出JSON，不要有任何其他文字"""
 
 
 class Settings(BaseSettings):
@@ -543,21 +508,21 @@ class Settings(BaseSettings):
     timeline_prompt: str = DEFAULT_TIMELINE_PROMPT
     long_text_rewrite_system_prompt: str = DEFAULT_LONG_TEXT_REWRITE_SYSTEM_PROMPT
     long_text_rewrite_prompt: str = DEFAULT_LONG_TEXT_REWRITE_PROMPT
-    neo4j_enabled: bool = False
-    neo4j_uri: str = "bolt://localhost:7687"
-    neo4j_user: str = "neo4j"
-    neo4j_password: str = "password123"
     embedding_enabled: bool = True
     embedding_model: str = "BAAI/bge-m3"
     embedding_device: str = "cuda:0"
     embedding_use_fp16: bool = True
     embedding_dimension: int = 1024
-    kg_extraction_prompt: str = DEFAULT_KG_EXTRACTION_PROMPT
-    kg_relation_prompt: str = DEFAULT_KG_RELATION_PROMPT
     kg_concept_prompt: str = DEFAULT_KG_CONCEPT_PROMPT
-    kg_expand_prompt: str = DEFAULT_KG_EXPAND_PROMPT
-    kg_chat_prompt: str = DEFAULT_KG_CHAT_PROMPT
     quick_summary_prompt: str = DEFAULT_QUICK_SUMMARY_PROMPT
+    polish_note_prompt: str = DEFAULT_POLISH_NOTE_PROMPT
+    polish_note_system_prompt: str = DEFAULT_POLISH_NOTE_SYSTEM_PROMPT
+    generate_note_prompt: str = DEFAULT_GENERATE_NOTE_PROMPT
+    generate_note_system_prompt: str = DEFAULT_GENERATE_NOTE_SYSTEM_PROMPT
+    structure_system_prompt: str = DEFAULT_STRUCTURE_SYSTEM_PROMPT
+    structure_user_prompt: str = DEFAULT_STRUCTURE_USER_PROMPT
+    section_fill_prompt: str = DEFAULT_SECTION_FILL_PROMPT
+    kg_concept_user_prompt: str = DEFAULT_KG_CONCEPT_USER_PROMPT
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(BASE_DIR, ".env"),
@@ -642,14 +607,6 @@ class SettingsManager:
                         self._batch_upload_size = user_settings["batch_upload_size"]
                     else:
                         self._batch_upload_size = 5
-                    if "neo4j_enabled" in user_settings:
-                        self._settings.neo4j_enabled = user_settings["neo4j_enabled"]
-                    if "neo4j_uri" in user_settings:
-                        self._settings.neo4j_uri = user_settings["neo4j_uri"]
-                    if "neo4j_user" in user_settings:
-                        self._settings.neo4j_user = user_settings["neo4j_user"]
-                    if "neo4j_password" in user_settings:
-                        self._settings.neo4j_password = user_settings["neo4j_password"]
                     if "embedding_enabled" in user_settings:
                         self._settings.embedding_enabled = user_settings[
                             "embedding_enabled"
@@ -662,26 +619,46 @@ class SettingsManager:
                         self._settings.embedding_device = user_settings[
                             "embedding_device"
                         ]
-                    if "kg_extraction_prompt" in user_settings:
-                        self._settings.kg_extraction_prompt = user_settings[
-                            "kg_extraction_prompt"
-                        ]
-                    if "kg_relation_prompt" in user_settings:
-                        self._settings.kg_relation_prompt = user_settings[
-                            "kg_relation_prompt"
-                        ]
                     if "kg_concept_prompt" in user_settings:
                         self._settings.kg_concept_prompt = user_settings[
                             "kg_concept_prompt"
                         ]
-                    if "kg_expand_prompt" in user_settings:
-                        self._settings.kg_expand_prompt = user_settings[
-                            "kg_expand_prompt"
-                        ]
-                    if "kg_chat_prompt" in user_settings:
-                        self._settings.kg_chat_prompt = user_settings["kg_chat_prompt"]
                     if "quick_summary_prompt" in user_settings:
-                        self._settings.quick_summary_prompt = user_settings["quick_summary_prompt"]
+                        self._settings.quick_summary_prompt = user_settings[
+                            "quick_summary_prompt"
+                        ]
+                    if "polish_note_prompt" in user_settings:
+                        self._settings.polish_note_prompt = user_settings[
+                            "polish_note_prompt"
+                        ]
+                    if "polish_note_system_prompt" in user_settings:
+                        self._settings.polish_note_system_prompt = user_settings[
+                            "polish_note_system_prompt"
+                        ]
+                    if "generate_note_prompt" in user_settings:
+                        self._settings.generate_note_prompt = user_settings[
+                            "generate_note_prompt"
+                        ]
+                    if "generate_note_system_prompt" in user_settings:
+                        self._settings.generate_note_system_prompt = user_settings[
+                            "generate_note_system_prompt"
+                        ]
+                    if "structure_system_prompt" in user_settings:
+                        self._settings.structure_system_prompt = user_settings[
+                            "structure_system_prompt"
+                        ]
+                    if "structure_user_prompt" in user_settings:
+                        self._settings.structure_user_prompt = user_settings[
+                            "structure_user_prompt"
+                        ]
+                    if "section_fill_prompt" in user_settings:
+                        self._settings.section_fill_prompt = user_settings[
+                            "section_fill_prompt"
+                        ]
+                    if "kg_concept_user_prompt" in user_settings:
+                        self._settings.kg_concept_user_prompt = user_settings[
+                            "kg_concept_user_prompt"
+                        ]
             except Exception as e:
                 print(f"Failed to load user settings: {e}")
                 self._batch_upload_size = 5
@@ -705,19 +682,19 @@ class SettingsManager:
                 "ai_backend_type": self._settings.ai_backend_type,
                 "opencode_cli_path": self._settings.opencode_cli_path,
                 "batch_upload_size": self._batch_upload_size,
-                "neo4j_enabled": self._settings.neo4j_enabled,
-                "neo4j_uri": self._settings.neo4j_uri,
-                "neo4j_user": self._settings.neo4j_user,
-                "neo4j_password": self._settings.neo4j_password,
                 "embedding_enabled": self._settings.embedding_enabled,
                 "embedding_model": self._settings.embedding_model,
                 "embedding_device": self._settings.embedding_device,
-                "kg_extraction_prompt": self._settings.kg_extraction_prompt,
-                "kg_relation_prompt": self._settings.kg_relation_prompt,
                 "kg_concept_prompt": self._settings.kg_concept_prompt,
-                "kg_expand_prompt": self._settings.kg_expand_prompt,
-                "kg_chat_prompt": self._settings.kg_chat_prompt,
                 "quick_summary_prompt": self._settings.quick_summary_prompt,
+                "polish_note_prompt": self._settings.polish_note_prompt,
+                "polish_note_system_prompt": self._settings.polish_note_system_prompt,
+                "generate_note_prompt": self._settings.generate_note_prompt,
+                "generate_note_system_prompt": self._settings.generate_note_system_prompt,
+                "structure_system_prompt": self._settings.structure_system_prompt,
+                "structure_user_prompt": self._settings.structure_user_prompt,
+                "section_fill_prompt": self._settings.section_fill_prompt,
+                "kg_concept_user_prompt": self._settings.kg_concept_user_prompt,
             }
             with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
                 json.dump(user_settings, f, ensure_ascii=False, indent=2)
@@ -789,22 +766,6 @@ class SettingsManager:
         return self._batch_upload_size
 
     @property
-    def neo4j_enabled(self) -> bool:
-        return self._settings.neo4j_enabled
-
-    @property
-    def neo4j_uri(self) -> str:
-        return self._settings.neo4j_uri
-
-    @property
-    def neo4j_user(self) -> str:
-        return self._settings.neo4j_user
-
-    @property
-    def neo4j_password(self) -> str:
-        return self._settings.neo4j_password
-
-    @property
     def embedding_enabled(self) -> bool:
         return self._settings.embedding_enabled
 
@@ -821,28 +782,44 @@ class SettingsManager:
         return self._settings.embedding_device
 
     @property
-    def kg_extraction_prompt(self) -> str:
-        return self._settings.kg_extraction_prompt
-
-    @property
-    def kg_relation_prompt(self) -> str:
-        return self._settings.kg_relation_prompt
-
-    @property
     def kg_concept_prompt(self) -> str:
         return self._settings.kg_concept_prompt
 
     @property
-    def kg_expand_prompt(self) -> str:
-        return self._settings.kg_expand_prompt
-
-    @property
-    def kg_chat_prompt(self) -> str:
-        return self._settings.kg_chat_prompt
-
-    @property
     def quick_summary_prompt(self) -> str:
         return self._settings.quick_summary_prompt
+
+    @property
+    def polish_note_prompt(self) -> str:
+        return self._settings.polish_note_prompt
+
+    @property
+    def polish_note_system_prompt(self) -> str:
+        return self._settings.polish_note_system_prompt
+
+    @property
+    def generate_note_prompt(self) -> str:
+        return self._settings.generate_note_prompt
+
+    @property
+    def generate_note_system_prompt(self) -> str:
+        return self._settings.generate_note_system_prompt
+
+    @property
+    def structure_system_prompt(self) -> str:
+        return self._settings.structure_system_prompt
+
+    @property
+    def structure_user_prompt(self) -> str:
+        return self._settings.structure_user_prompt
+
+    @property
+    def section_fill_prompt(self) -> str:
+        return self._settings.section_fill_prompt
+
+    @property
+    def kg_concept_user_prompt(self) -> str:
+        return self._settings.kg_concept_user_prompt
 
     def update(
         self,
@@ -861,19 +838,19 @@ class SettingsManager:
         long_text_rewrite_system_prompt: Optional[str] = None,
         long_text_rewrite_prompt: Optional[str] = None,
         batch_upload_size: Optional[int] = None,
-        neo4j_enabled: Optional[bool] = None,
-        neo4j_uri: Optional[str] = None,
-        neo4j_user: Optional[str] = None,
-        neo4j_password: Optional[str] = None,
         embedding_enabled: Optional[bool] = None,
         embedding_model: Optional[str] = None,
         embedding_device: Optional[str] = None,
-        kg_extraction_prompt: Optional[str] = None,
-        kg_relation_prompt: Optional[str] = None,
         kg_concept_prompt: Optional[str] = None,
-        kg_expand_prompt: Optional[str] = None,
-        kg_chat_prompt: Optional[str] = None,
         quick_summary_prompt: Optional[str] = None,
+        polish_note_prompt: Optional[str] = None,
+        polish_note_system_prompt: Optional[str] = None,
+        generate_note_prompt: Optional[str] = None,
+        generate_note_system_prompt: Optional[str] = None,
+        structure_system_prompt: Optional[str] = None,
+        structure_user_prompt: Optional[str] = None,
+        section_fill_prompt: Optional[str] = None,
+        kg_concept_user_prompt: Optional[str] = None,
     ):
         if api_key is not None:
             self._settings.openai_api_key = api_key
@@ -908,32 +885,32 @@ class SettingsManager:
         if batch_upload_size is not None:
             if 1 <= batch_upload_size <= 10:
                 self._batch_upload_size = batch_upload_size
-        if neo4j_enabled is not None:
-            self._settings.neo4j_enabled = neo4j_enabled
-        if neo4j_uri is not None:
-            self._settings.neo4j_uri = neo4j_uri
-        if neo4j_user is not None:
-            self._settings.neo4j_user = neo4j_user
-        if neo4j_password is not None:
-            self._settings.neo4j_password = neo4j_password
         if embedding_enabled is not None:
             self._settings.embedding_enabled = embedding_enabled
         if embedding_model is not None:
             self._settings.embedding_model = embedding_model
         if embedding_device is not None:
             self._settings.embedding_device = embedding_device
-        if kg_extraction_prompt is not None:
-            self._settings.kg_extraction_prompt = kg_extraction_prompt
-        if kg_relation_prompt is not None:
-            self._settings.kg_relation_prompt = kg_relation_prompt
         if kg_concept_prompt is not None:
             self._settings.kg_concept_prompt = kg_concept_prompt
-        if kg_expand_prompt is not None:
-            self._settings.kg_expand_prompt = kg_expand_prompt
-        if kg_chat_prompt is not None:
-            self._settings.kg_chat_prompt = kg_chat_prompt
         if quick_summary_prompt is not None:
             self._settings.quick_summary_prompt = quick_summary_prompt
+        if polish_note_prompt is not None:
+            self._settings.polish_note_prompt = polish_note_prompt
+        if polish_note_system_prompt is not None:
+            self._settings.polish_note_system_prompt = polish_note_system_prompt
+        if generate_note_prompt is not None:
+            self._settings.generate_note_prompt = generate_note_prompt
+        if generate_note_system_prompt is not None:
+            self._settings.generate_note_system_prompt = generate_note_system_prompt
+        if structure_system_prompt is not None:
+            self._settings.structure_system_prompt = structure_system_prompt
+        if structure_user_prompt is not None:
+            self._settings.structure_user_prompt = structure_user_prompt
+        if section_fill_prompt is not None:
+            self._settings.section_fill_prompt = section_fill_prompt
+        if kg_concept_user_prompt is not None:
+            self._settings.kg_concept_user_prompt = kg_concept_user_prompt
         self._save_user_settings()
 
     def get_all(self) -> dict:
@@ -953,19 +930,19 @@ class SettingsManager:
             "long_text_rewrite_system_prompt": self._settings.long_text_rewrite_system_prompt,
             "long_text_rewrite_prompt": self._settings.long_text_rewrite_prompt,
             "batch_upload_size": self._batch_upload_size,
-            "neo4j_enabled": self._settings.neo4j_enabled,
-            "neo4j_uri": self._settings.neo4j_uri,
-            "neo4j_user": self._settings.neo4j_user,
-            "neo4j_password": self._settings.neo4j_password,
             "embedding_enabled": self._settings.embedding_enabled,
             "embedding_model": self._settings.embedding_model,
             "embedding_device": self._settings.embedding_device,
-            "kg_extraction_prompt": self._settings.kg_extraction_prompt,
-            "kg_relation_prompt": self._settings.kg_relation_prompt,
             "kg_concept_prompt": self._settings.kg_concept_prompt,
-            "kg_expand_prompt": self._settings.kg_expand_prompt,
-            "kg_chat_prompt": self._settings.kg_chat_prompt,
             "quick_summary_prompt": self._settings.quick_summary_prompt,
+            "polish_note_prompt": self._settings.polish_note_prompt,
+            "polish_note_system_prompt": self._settings.polish_note_system_prompt,
+            "generate_note_prompt": self._settings.generate_note_prompt,
+            "generate_note_system_prompt": self._settings.generate_note_system_prompt,
+            "structure_system_prompt": self._settings.structure_system_prompt,
+            "structure_user_prompt": self._settings.structure_user_prompt,
+            "section_fill_prompt": self._settings.section_fill_prompt,
+            "kg_concept_user_prompt": self._settings.kg_concept_user_prompt,
         }
 
 

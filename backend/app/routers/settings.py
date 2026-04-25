@@ -2,7 +2,6 @@ from fastapi import APIRouter, HTTPException
 from app.config import settings_manager
 from app.schemas import SettingsResponse, ModelsResponse, SettingsUpdate
 import httpx
-import threading
 
 router = APIRouter()
 
@@ -33,12 +32,19 @@ def get_settings():
         ),
         long_text_rewrite_prompt=all_settings.get("long_text_rewrite_prompt", ""),
         batch_upload_size=all_settings.get("batch_upload_size", 5),
-        neo4j_enabled=all_settings.get("neo4j_enabled", False),
-        neo4j_uri=all_settings.get("neo4j_uri", "bolt://localhost:7687"),
-        neo4j_user=all_settings.get("neo4j_user", "neo4j"),
-        neo4j_password=all_settings.get("neo4j_password", ""),
+        embedding_enabled=all_settings.get("embedding_enabled", False),
+        embedding_model=all_settings.get("embedding_model", ""),
+        embedding_device=all_settings.get("embedding_device", ""),
         kg_concept_prompt=all_settings.get("kg_concept_prompt", ""),
         quick_summary_prompt=all_settings.get("quick_summary_prompt", ""),
+        polish_note_prompt=all_settings.get("polish_note_prompt", ""),
+        polish_note_system_prompt=all_settings.get("polish_note_system_prompt", ""),
+        generate_note_prompt=all_settings.get("generate_note_prompt", ""),
+        generate_note_system_prompt=all_settings.get("generate_note_system_prompt", ""),
+        structure_system_prompt=all_settings.get("structure_system_prompt", ""),
+        structure_user_prompt=all_settings.get("structure_user_prompt", ""),
+        section_fill_prompt=all_settings.get("section_fill_prompt", ""),
+        kg_concept_user_prompt=all_settings.get("kg_concept_user_prompt", ""),
     )
 
 
@@ -93,32 +99,22 @@ def update_settings(settings_update: SettingsUpdate):
         chapter_note_system_prompt=settings_update.chapter_note_system_prompt,
         chapter_note_prompt=settings_update.chapter_note_prompt,
         timeline_prompt=settings_update.timeline_prompt,
+        long_text_rewrite_system_prompt=settings_update.long_text_rewrite_system_prompt,
+        long_text_rewrite_prompt=settings_update.long_text_rewrite_prompt,
         batch_upload_size=settings_update.batch_upload_size,
-        neo4j_enabled=settings_update.neo4j_enabled,
-        neo4j_uri=settings_update.neo4j_uri,
-        neo4j_user=settings_update.neo4j_user,
-        neo4j_password=settings_update.neo4j_password,
+        embedding_enabled=settings_update.embedding_enabled,
+        embedding_model=settings_update.embedding_model,
+        embedding_device=settings_update.embedding_device,
         kg_concept_prompt=settings_update.kg_concept_prompt,
         quick_summary_prompt=settings_update.quick_summary_prompt,
+        polish_note_prompt=settings_update.polish_note_prompt,
+        polish_note_system_prompt=settings_update.polish_note_system_prompt,
+        generate_note_prompt=settings_update.generate_note_prompt,
+        generate_note_system_prompt=settings_update.generate_note_system_prompt,
+        structure_system_prompt=settings_update.structure_system_prompt,
+        structure_user_prompt=settings_update.structure_user_prompt,
+        section_fill_prompt=settings_update.section_fill_prompt,
+        kg_concept_user_prompt=settings_update.kg_concept_user_prompt,
     )
-
-    # Re-initialize Neo4j services if config changed
-    if any(
-        v is not None
-        for v in [
-            settings_update.neo4j_enabled,
-            settings_update.neo4j_uri,
-            settings_update.neo4j_user,
-            settings_update.neo4j_password,
-        ]
-    ):
-
-        def _reinit_neo4j():
-            from app.services.neo4j import cleanup_neo4j_services, init_neo4j_services
-
-            cleanup_neo4j_services()
-            init_neo4j_services()
-
-        threading.Thread(target=_reinit_neo4j, daemon=True).start()
 
     return get_settings()

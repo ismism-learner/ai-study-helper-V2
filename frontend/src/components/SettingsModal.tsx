@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Settings, RefreshCw, Cloud, CheckCircle, XCircle, Loader2, ExternalLink, Copy, Palette, Database } from 'lucide-react';
+import { Settings, RefreshCw, Cloud, CheckCircle, XCircle, Loader2, ExternalLink, Copy, Palette } from 'lucide-react';
 import { quarkApi } from '../api';
 import DuplicateManager from './DuplicateManager';
 import ThemeSwitcher from './ThemeSwitcher';
@@ -24,12 +24,19 @@ interface SettingsData {
   chapter_note_prompt: string;
   timeline_prompt: string;
   batch_upload_size: number;
-  neo4j_enabled: boolean;
-  neo4j_uri: string;
-  neo4j_user: string;
-  neo4j_password: string;
+
   kg_concept_prompt: string;
   quick_summary_prompt: string;
+  long_text_rewrite_system_prompt: string;
+  long_text_rewrite_prompt: string;
+  polish_note_prompt: string;
+  polish_note_system_prompt: string;
+  generate_note_prompt: string;
+  generate_note_system_prompt: string;
+  structure_system_prompt: string;
+  structure_user_prompt: string;
+  section_fill_prompt: string;
+  kg_concept_user_prompt: string;
 }
 
 interface QuarkConfig {
@@ -128,19 +135,26 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     chapter_note_prompt: '',
     timeline_prompt: '',
     batch_upload_size: 5,
-    neo4j_enabled: false,
-    neo4j_uri: 'bolt://localhost:7687',
-    neo4j_user: 'neo4j',
-    neo4j_password: '',
+
     kg_concept_prompt: '',
     quick_summary_prompt: '',
+    long_text_rewrite_system_prompt: '',
+    long_text_rewrite_prompt: '',
+    polish_note_prompt: '',
+    polish_note_system_prompt: '',
+    generate_note_prompt: '',
+    generate_note_system_prompt: '',
+    structure_system_prompt: '',
+    structure_user_prompt: '',
+    section_fill_prompt: '',
+    kg_concept_user_prompt: '',
   });
   const [fullApiKey, setFullApiKey] = useState('');
   const [models, setModels] = useState<string[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'api' | 'api-configs' | 'prompts' | 'batch' | 'quark' | 'duplicates' | 'neo4j'>('api-configs');
+  const [activeTab, setActiveTab] = useState<'api' | 'api-configs' | 'prompts' | 'batch' | 'quark' | 'duplicates'>('api-configs');
   
   // API配置管理状态
   const [apiConfigs, setApiConfigs] = useState<Array<{
@@ -325,12 +339,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
         chapter_note_prompt: settings.chapter_note_prompt,
         timeline_prompt: settings.timeline_prompt,
         batch_upload_size: settings.batch_upload_size,
-        neo4j_enabled: settings.neo4j_enabled,
-        neo4j_uri: settings.neo4j_uri,
-        neo4j_user: settings.neo4j_user,
-        neo4j_password: settings.neo4j_password,
+
         kg_concept_prompt: settings.kg_concept_prompt,
         quick_summary_prompt: settings.quick_summary_prompt,
+        long_text_rewrite_system_prompt: settings.long_text_rewrite_system_prompt,
+        long_text_rewrite_prompt: settings.long_text_rewrite_prompt,
+        polish_note_prompt: settings.polish_note_prompt,
+        polish_note_system_prompt: settings.polish_note_system_prompt,
+        generate_note_prompt: settings.generate_note_prompt,
+        generate_note_system_prompt: settings.generate_note_system_prompt,
+        structure_system_prompt: settings.structure_system_prompt,
+        structure_user_prompt: settings.structure_user_prompt,
+        section_fill_prompt: settings.section_fill_prompt,
+        kg_concept_user_prompt: settings.kg_concept_user_prompt,
       });
       alert('设置保存成功！用户自定义提示词将被持久化保存。');
       onClose();
@@ -426,14 +447,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
             <Copy size={14} style={{ marginRight: 4 }} />
             重复检测
           </button>
-          <button
-            className={`btn ${activeTab === 'neo4j' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setActiveTab('neo4j')}
-            style={{ flex: 1 }}
-          >
-            <Database size={14} style={{ marginRight: 4 }} />
-            知识图谱
-          </button>
+
         </div>
 
         <div style={{ flex: 1, overflow: 'auto', paddingRight: 8 }}>
@@ -851,6 +865,176 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 </small>
               </div>
 
+              {/* 长文本改写系统提示词 */}
+              <div className="prompt-section" style={{ marginBottom: 20 }}>
+                <div className="prompt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <h4 style={{ margin: 0, color: '#495057' }}>长文本改写系统提示词</h4>
+                </div>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 150, fontFamily: 'monospace', fontSize: 13 }}
+                  value={settings.long_text_rewrite_system_prompt}
+                  onChange={(e) => setSettings({ ...settings, long_text_rewrite_system_prompt: e.target.value })}
+                  placeholder="输入长文本改写系统提示词..."
+                />
+                <small style={{ color: '#6c757d' }}>
+                  用于长文本改写功能的系统提示词，定义改写风格和规则。
+                </small>
+              </div>
+
+              {/* 长文本改写用户提示词 */}
+              <div className="prompt-section" style={{ marginBottom: 20 }}>
+                <div className="prompt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <h4 style={{ margin: 0, color: '#495057' }}>长文本改写用户提示词</h4>
+                </div>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 150, fontFamily: 'monospace', fontSize: 13 }}
+                  value={settings.long_text_rewrite_prompt}
+                  onChange={(e) => setSettings({ ...settings, long_text_rewrite_prompt: e.target.value })}
+                  placeholder="输入长文本改写用户提示词..."
+                />
+                <small style={{ color: '#6c757d' }}>
+                  用于长文本改写功能的用户提示词模板。使用 {"{original_content}"} 和 {"{section_identifier}"} 作为占位符。
+                </small>
+              </div>
+
+              {/* 笔记润色提示词 */}
+              <div className="prompt-section" style={{ marginBottom: 20 }}>
+                <div className="prompt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <h4 style={{ margin: 0, color: '#495057' }}>笔记润色提示词</h4>
+                </div>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 150, fontFamily: 'monospace', fontSize: 13 }}
+                  value={settings.polish_note_prompt}
+                  onChange={(e) => setSettings({ ...settings, polish_note_prompt: e.target.value })}
+                  placeholder="输入笔记润色提示词..."
+                />
+                <small style={{ color: '#6c757d' }}>
+                  用于笔记润色功能。使用 {"{note_content}"} 作为笔记内容占位符。
+                </small>
+              </div>
+
+              {/* 笔记润色系统提示词 */}
+              <div className="prompt-section" style={{ marginBottom: 20 }}>
+                <div className="prompt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <h4 style={{ margin: 0, color: '#495057' }}>笔记润色系统提示词</h4>
+                </div>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 150, fontFamily: 'monospace', fontSize: 13 }}
+                  value={settings.polish_note_system_prompt}
+                  onChange={(e) => setSettings({ ...settings, polish_note_system_prompt: e.target.value })}
+                  placeholder="输入笔记润色系统提示词..."
+                />
+                <small style={{ color: '#6c757d' }}>
+                  笔记润色功能的系统提示词，定义AI角色和行为。
+                </small>
+              </div>
+
+              {/* 笔记生成提示词 */}
+              <div className="prompt-section" style={{ marginBottom: 20 }}>
+                <div className="prompt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <h4 style={{ margin: 0, color: '#495057' }}>笔记生成提示词</h4>
+                </div>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 150, fontFamily: 'monospace', fontSize: 13 }}
+                  value={settings.generate_note_prompt}
+                  onChange={(e) => setSettings({ ...settings, generate_note_prompt: e.target.value })}
+                  placeholder="输入笔记生成提示词..."
+                />
+                <small style={{ color: '#6c757d' }}>
+                  用于一键生成笔记标题和内容。使用 {"{note_content}"} 作为笔记内容占位符。AI需返回JSON格式。
+                </small>
+              </div>
+
+              {/* 笔记生成系统提示词 */}
+              <div className="prompt-section" style={{ marginBottom: 20 }}>
+                <div className="prompt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <h4 style={{ margin: 0, color: '#495057' }}>笔记生成系统提示词</h4>
+                </div>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 150, fontFamily: 'monospace', fontSize: 13 }}
+                  value={settings.generate_note_system_prompt}
+                  onChange={(e) => setSettings({ ...settings, generate_note_system_prompt: e.target.value })}
+                  placeholder="输入笔记生成系统提示词..."
+                />
+                <small style={{ color: '#6c757d' }}>
+                  笔记生成功能的系统提示词，定义AI角色和输出格式要求。
+                </small>
+              </div>
+
+              {/* 结构分析系统提示词 */}
+              <div className="prompt-section" style={{ marginBottom: 20 }}>
+                <div className="prompt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <h4 style={{ margin: 0, color: '#495057' }}>结构分析系统提示词</h4>
+                </div>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 150, fontFamily: 'monospace', fontSize: 13 }}
+                  value={settings.structure_system_prompt}
+                  onChange={(e) => setSettings({ ...settings, structure_system_prompt: e.target.value })}
+                  placeholder="输入结构分析系统提示词..."
+                />
+                <small style={{ color: '#6c757d' }}>
+                  用于PDF书籍结构分析（第一阶段）。定义输出JSON格式和行号规则。
+                </small>
+              </div>
+
+              {/* 结构分析用户提示词 */}
+              <div className="prompt-section" style={{ marginBottom: 20 }}>
+                <div className="prompt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <h4 style={{ margin: 0, color: '#495057' }}>结构分析用户提示词</h4>
+                </div>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 150, fontFamily: 'monospace', fontSize: 13 }}
+                  value={settings.structure_user_prompt}
+                  onChange={(e) => setSettings({ ...settings, structure_user_prompt: e.target.value })}
+                  placeholder="输入结构分析用户提示词..."
+                />
+                <small style={{ color: '#6c757d' }}>
+                  用于PDF书籍结构分析。使用 {"{chapter_title}"} 和 {"{numbered_text}"} 作为占位符。
+                </small>
+              </div>
+
+              {/* 章节填充提示词 */}
+              <div className="prompt-section" style={{ marginBottom: 20 }}>
+                <div className="prompt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <h4 style={{ margin: 0, color: '#495057' }}>章节填充提示词</h4>
+                </div>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 150, fontFamily: 'monospace', fontSize: 13 }}
+                  value={settings.section_fill_prompt}
+                  onChange={(e) => setSettings({ ...settings, section_fill_prompt: e.target.value })}
+                  placeholder="输入章节填充提示词..."
+                />
+                <small style={{ color: '#6c757d' }}>
+                  用于根据结构表填充章节内容（第二阶段）。使用 {"{structure}"}、{"{section_title}"}、{"{section_summary}"}、{"{section_text}"} 作为占位符。
+                </small>
+              </div>
+
+              {/* 认知链概念解释用户提示词 */}
+              <div className="prompt-section" style={{ marginBottom: 20 }}>
+                <div className="prompt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <h4 style={{ margin: 0, color: '#495057' }}>认知链概念解释用户提示词</h4>
+                </div>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 150, fontFamily: 'monospace', fontSize: 13 }}
+                  value={settings.kg_concept_user_prompt}
+                  onChange={(e) => setSettings({ ...settings, kg_concept_user_prompt: e.target.value })}
+                  placeholder="输入认知链概念解释用户提示词..."
+                />
+                <small style={{ color: '#6c757d' }}>
+                  用于右键提问时构建用户消息。使用 {"{concept}"} 和 {"{context_section}"} 作为占位符。
+                </small>
+              </div>
+
               {/* 主题切换 */}
               <div className="prompt-section" style={{ marginBottom: 20 }}>
                 <div className="prompt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -1079,98 +1263,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
             <DuplicateManager />
           )}
 
-          {activeTab === 'neo4j' && (
-            <>
-              <div style={{ marginBottom: 20 }}>
-                <h4 style={{ margin: '0 0 12px 0', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Database size={18} />
-                  Neo4j 知识图谱配置
-                </h4>
-                <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 16 }}>
-                  配置 Neo4j 图数据库连接，启用知识图谱和认知链功能。
-                  推荐使用 Docker 启动：<code style={{ background: 'var(--bg-elevated)', padding: '2px 6px', borderRadius: 4, fontSize: 12 }}>docker compose up -d neo4j</code>
-                </p>
 
-                <div className="form-group" style={{ marginBottom: 16 }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={settings.neo4j_enabled}
-                      onChange={(e) => setSettings({ ...settings, neo4j_enabled: e.target.checked })}
-                      style={{ width: 18, height: 18, cursor: 'pointer' }}
-                    />
-                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>启用 Neo4j 知识图谱</span>
-                  </label>
-                  <small style={{ color: 'var(--text-muted)', marginLeft: 26 }}>
-                    启用后可在文档三面板中使用「问答」和「知识图谱」功能
-                  </small>
-                </div>
-
-                {settings.neo4j_enabled && (
-                  <div style={{ background: 'var(--bg-surface)', padding: 16, borderRadius: 8, border: '1px solid var(--border-default)' }}>
-                    <div className="form-group">
-                      <label>连接 URI</label>
-                      <input
-                        type="text"
-                        className="input"
-                        value={settings.neo4j_uri}
-                        onChange={(e) => setSettings({ ...settings, neo4j_uri: e.target.value })}
-                        placeholder="bolt://localhost:7687"
-                      />
-                      <small style={{ color: 'var(--text-muted)' }}>
-                        Docker 默认: bolt://localhost:7687 | Aura 云端: neo4j+s://xxxxx.databases.neo4j.io
-                      </small>
-                    </div>
-
-                    <div className="form-group">
-                      <label>用户名</label>
-                      <input
-                        type="text"
-                        className="input"
-                        value={settings.neo4j_user}
-                        onChange={(e) => setSettings({ ...settings, neo4j_user: e.target.value })}
-                        placeholder="neo4j"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>密码</label>
-                      <input
-                        type="password"
-                        className="input"
-                        value={settings.neo4j_password}
-                        onChange={(e) => setSettings({ ...settings, neo4j_password: e.target.value })}
-                        placeholder="输入 Neo4j 密码"
-                      />
-                      <small style={{ color: 'var(--text-muted)' }}>
-                        Docker 默认密码: password123
-                      </small>
-                    </div>
-
-                    <div style={{ background: 'var(--bg-elevated)', padding: 12, borderRadius: 8, marginTop: 8 }}>
-                      <p style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-                        快速启动 Neo4j (Docker)
-                      </p>
-                      <code style={{ display: 'block', fontSize: 12, color: 'var(--text-secondary)', background: 'var(--bg-base)', padding: 8, borderRadius: 4, fontFamily: 'monospace' }}>
-                        docker compose up -d neo4j
-                      </code>
-                      <p style={{ margin: '8px 0 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
-                        启动后访问 <a href="http://localhost:7474" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-500)' }}>http://localhost:7474</a> 查看 Neo4j 浏览器
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {!settings.neo4j_enabled && (
-                  <div style={{ textAlign: 'center', padding: 30, color: 'var(--text-muted)', background: 'var(--bg-surface)', borderRadius: 8, marginTop: 12 }}>
-                    <Database size={32} style={{ marginBottom: 8, opacity: 0.5 }} />
-                    <p style={{ margin: 0 }}>知识图谱功能未启用</p>
-                    <p style={{ margin: '4px 0 0 0', fontSize: 12 }}>勾选上方开关以启用</p>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
         </div>
 
         <div className="modal-actions" style={{ marginTop: 16, borderTop: '1px solid #e9ecef', paddingTop: 16 }}>
