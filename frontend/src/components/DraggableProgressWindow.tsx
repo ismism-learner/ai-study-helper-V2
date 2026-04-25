@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Minimize2, Maximize2, Check, AlertCircle, Loader } from 'lucide-react';
+import { X, Minimize2, Maximize2, Check, AlertCircle } from 'lucide-react';
+import LoadingBook from './LoadingBook';
 
 interface ProgressItem {
   id: string;
@@ -117,7 +118,7 @@ const DraggableProgressWindow: React.FC<DraggableProgressWindowProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white' }}>
           {isProcessing ? (
-            <Loader size={16} className="spinning" />
+            <LoadingBook size={16} />
           ) : (
             <Check size={16} />
           )}
@@ -203,7 +204,7 @@ const DraggableProgressWindow: React.FC<DraggableProgressWindowProps> = ({
               </span>
               {processingCount > 0 && (
                 <span style={{ color: 'var(--primary-500)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Loader size={12} className="spinning" /> 处理中: {processingCount}
+                  <LoadingBook size={12} /> 处理中: {processingCount}
                 </span>
               )}
             </div>
@@ -247,7 +248,7 @@ const DraggableProgressWindow: React.FC<DraggableProgressWindowProps> = ({
                   color: 'white',
                   flexShrink: 0,
                 }}>
-                  {item.status === 'processing' && <Loader size={10} className="spinning" />}
+                  {item.status === 'processing' && <LoadingBook size={12} />}
                   {item.status === 'success' && <Check size={10} />}
                   {item.status === 'error' && <X size={10} />}
                   {item.status === 'no_events' && <AlertCircle size={10} />}

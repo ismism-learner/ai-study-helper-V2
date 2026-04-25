@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Check, X, RefreshCw, Play, Pause, SkipForward } from 'lucide-react';
+import { Check, X, Play, Pause, SkipForward } from 'lucide-react';
+import LoadingBook from './LoadingBook';
 
 interface BatchOptimizePanelProps {
   paragraphs: string[];
@@ -206,7 +207,7 @@ const BatchOptimizePanel: React.FC<BatchOptimizePanelProps> = ({
               <span className="batch-item-number">段落 {index + 1}</span>
               {state.isProcessing && (
                 <span className="processing-badge">
-                  <RefreshCw size={12} className="spinning" /> 处理中...
+                  <LoadingBook size={12} /> 处理中...
                 </span>
               )}
               {state.isCompleted && (

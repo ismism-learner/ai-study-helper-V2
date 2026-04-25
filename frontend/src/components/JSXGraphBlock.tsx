@@ -192,6 +192,8 @@ const JSXGraphBlock: React.FC<JSXGraphBlockProps> = ({ config }) => {
         @keyframes jsxgraph-spin {
           to { transform: rotate(360deg); }
         }
+      `}</style>
+      <style>{`
         #${containerId.current} .JXGtext {
           fill: #cbd5e1 !important;
           color: #cbd5e1 !important;

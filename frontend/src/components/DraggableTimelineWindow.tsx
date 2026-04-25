@@ -9,10 +9,10 @@ import {
   Plus, 
   Calendar,
   Sparkles,
-  Loader,
   AlertCircle
 } from 'lucide-react';
 import { worldTimelineApi } from '../api';
+import LoadingBook from './LoadingBook';
 
 interface TimelineNoteParseResult {
   event_date: string;
@@ -316,7 +316,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white' }}>
           {isProcessing ? (
-            <Loader size={16} className="spinning" />
+            <LoadingBook size={16} />
           ) : (
             <Sparkles size={16} />
           )}
@@ -509,7 +509,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
 
           {isGenerating && (
             <div style={{ textAlign: 'center', padding: '20px' }}>
-              <Loader size={32} className="spinning" style={{ margin: '0 auto 12px', color: 'var(--accent-500)' }} />
+              <LoadingBook size={32} />
               <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: 0 }}>
                 AI正在分析文档内容...
               </p>
@@ -772,7 +772,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
         <div style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--text-muted)' }}>
           {isGenerating ? (
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Loader size={12} className="spinning" />
+              <LoadingBook size={12} />
               生成中...
             </span>
           ) : aiGeneratedEvents.length > 0 ? (

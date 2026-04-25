@@ -5,10 +5,11 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import rehypeHighlight from 'rehype-highlight';
-import { ChevronRight, ChevronDown, Sparkles, X, Box, Code, FunctionSquare, Type, LayoutGrid, RefreshCw, Eye } from 'lucide-react';
+import { ChevronRight, ChevronDown, Sparkles, X, Box, Code, FunctionSquare, Type, LayoutGrid, Eye } from 'lucide-react';
 import 'katex/dist/katex.min.css';
 import 'highlight.js/styles/github-dark.css';
 import { createNode, VisualizationNode as VizNode } from './NodeCanvas';
+import LoadingBook from './LoadingBook';
 const NodeCanvas = lazy(() => import('./NodeCanvas'));
 import '../styles/node-canvas.css';
 
@@ -413,7 +414,7 @@ const NoteCardPanel: React.FC<NoteCardPanelProps> = ({
                         disabled={chapter.note?.isGenerating}
                         title="重新润色此章节的笔记"
                       >
-                        <RefreshCw size={12} className={chapter.note?.isGenerating ? 'spinning' : ''} />
+                        <LoadingBook size={12} />
                         <span>{chapter.note?.isGenerating ? '润色中...' : '重新润色'}</span>
                       </button>
                     </div>

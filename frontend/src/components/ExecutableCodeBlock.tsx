@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import hljs from 'highlight.js';
-import { Play, Loader, Trash2 } from 'lucide-react';
+import { Play, Trash2 } from 'lucide-react';
 import { usePyodide } from '../hooks/usePyodide';
+import LoadingBook from './LoadingBook';
 
 // ── Props ─────────────────────────────────────────────────────────────
 interface ExecutableCodeBlockProps {
@@ -180,7 +181,7 @@ const ExecutableCodeBlock: React.FC<ExecutableCodeBlockProps> = ({
             disabled={isLoading}
           >
             {isLoading ? (
-              <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} />
+              <LoadingBook size={12} />
             ) : (
               <Play size={12} />
             )}
@@ -203,7 +204,7 @@ const ExecutableCodeBlock: React.FC<ExecutableCodeBlockProps> = ({
       {/* Loading indicator (first-time Pyodide load) */}
       {isLoading && !isLoaded && (
         <div style={styles.loadingOverlay}>
-          <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} />
+          <LoadingBook size={14} />
           加载 Python 运行时...
         </div>
       )}

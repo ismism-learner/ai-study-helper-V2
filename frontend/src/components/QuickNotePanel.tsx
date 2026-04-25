@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useUndoRedo, createUndoRedoKeyHandler } from '../hooks/useUndoRedo';
 import {
-  Zap, Send, Check, RefreshCw, FileText, Clock, CheckSquare, Square,
+  Zap, Send, Check, FileText, Clock, CheckSquare, Square,
   Sparkles, Trash2, FolderOpen, X, Edit3, Tag, ChevronUp, ChevronDown
 } from 'lucide-react';
 import { quickNoteApi, QuickNote, QuickNoteAIResult } from '../api';
+import LoadingBook from './LoadingBook';
 
 interface QuickNoteInputProps {
   sourceDocumentId?: string;
@@ -82,7 +83,7 @@ export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({
           >
             {isSubmitting ? (
               <>
-                <RefreshCw size={14} className="spinning" />
+                <LoadingBook size={14} />
                 保存中...
               </>
             ) : showSuccess ? (

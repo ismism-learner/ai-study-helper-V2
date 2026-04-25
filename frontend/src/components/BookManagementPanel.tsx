@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 import EditBookBody, { EditBookFormData } from './EditBookBody';
+import LoadingBook from './LoadingBook';
 
 interface BookManagementPanelProps {
   onBack?: () => void;
@@ -626,8 +627,7 @@ const BookManagementPanel: React.FC<BookManagementPanelProps> = ({ onBack, onBoo
   if (isLoading) {
     return (
       <div className="book-management-loading">
-        <div className="loading-spinner" />
-        <p>加载中...</p>
+        <LoadingBook size={28} />
       </div>
     );
   }
@@ -888,7 +888,7 @@ const BookManagementPanel: React.FC<BookManagementPanelProps> = ({ onBack, onBoo
                       />
                       {archivingBooks.has(book.id) && (
                         <div className="archive-spinner">
-                          <Loader size={12} className="spinning" />
+                          <LoadingBook size={14} />
                         </div>
                       )}
                     </div>

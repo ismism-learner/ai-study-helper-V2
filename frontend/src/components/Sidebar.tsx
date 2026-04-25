@@ -1,8 +1,9 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Document, Folder } from '../types';
-import { FileText, Trash2, Upload, Clock, Highlighter, Move, FolderOpen, X, Check, Home, FileText as FileTextIcon, Loader, Square, CheckSquare, Calendar, Sparkles } from 'lucide-react';
+import { FileText, Trash2, Upload, Clock, Highlighter, Move, FolderOpen, X, Check, Home, FileText as FileTextIcon, Square, CheckSquare, Calendar, Sparkles } from 'lucide-react';
 import FolderManager from './FolderManager';
 import BatchTimelineGeneratePanel from './BatchTimelineGeneratePanel';
+import LoadingBook from './LoadingBook';
 
 interface SidebarProps {
   documents: Document[];
@@ -922,7 +923,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
             {isMoving && (
               <div className="move-menu-loading">
-                <div className="loading-spinner" />
+                <LoadingBook size={20} />
                 <span>移动中...</span>
               </div>
             )}
@@ -959,7 +960,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <Check size={14} /> 已完成: {batchGenerate.completedDocs.size - batchGenerate.archivedDocs.size}
                   </span>
                   <span className="stat processing">
-                    <Loader size={14} className={batchGenerate.isProcessing ? 'spinning' : ''} /> 
+                    <LoadingBook size={14} />
                     处理中: {batchGenerate.processingDocs.size}
                   </span>
                   <span className="stat pending">
@@ -1015,7 +1016,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                           <div className="doc-status-icon">
                             {isArchived && <Check size={14} style={{ color: '#059669' }} />}
                             {isCompleted && !isArchived && <Check size={14} style={{ color: '#eab308' }} />}
-                            {isProcessing && <Loader size={14} className="spinning" style={{ color: '#3b82f6' }} />}
+                            {isProcessing && <LoadingBook size={14} />}
                             {isFailed && <X size={14} style={{ color: '#ef4444' }} />}
                             {!isCompleted && !isArchived && !isProcessing && !isFailed && <FileText size={14} />}
                           </div>

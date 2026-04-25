@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Settings, RefreshCw, Cloud, CheckCircle, XCircle, Loader2, ExternalLink, Copy, Palette } from 'lucide-react';
+import { Settings, RefreshCw, Cloud, CheckCircle, XCircle, ExternalLink, Copy, Palette } from 'lucide-react';
 import { quarkApi } from '../api';
 import DuplicateManager from './DuplicateManager';
 import ThemeSwitcher from './ThemeSwitcher';
+import LoadingBook from './LoadingBook';
 import '../styles/theme-switcher.css';
 
 interface SettingsModalProps {
@@ -1211,7 +1212,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   >
                     {quarkTesting ? (
                       <>
-                        <Loader2 size={14} className="spinning" style={{ marginRight: 4 }} />
+                        <LoadingBook size={14} />
                         测试中...
                       </>
                     ) : (

@@ -5,6 +5,7 @@ import { Highlight } from '../types';
 import { highlightApi } from '../api';
 import { Sparkles, Trash2, ChevronDown, ChevronUp, Edit3, Clock } from 'lucide-react';
 import TimelineNoteModal from './TimelineNoteModal';
+import LoadingBook from './LoadingBook';
 
 interface HighlightPanelProps {
   highlights: Highlight[];
@@ -207,7 +208,7 @@ const HighlightPanel: React.FC<HighlightPanelProps> = ({
                       >
                         {loadingId === highlight.id ? (
                           <>
-                            <span className="loading-spinner" /> 生成中...
+                            <LoadingBook size={14} /> 生成中...
                           </>
                         ) : (
                           <>

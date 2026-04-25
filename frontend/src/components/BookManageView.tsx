@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 import EditBookBody, { EditBookFormData } from './EditBookBody';
+import LoadingBook from './LoadingBook';
 
 interface BookManageViewProps {
   country?: Country | null;
@@ -509,8 +510,7 @@ const BookManageView: React.FC<BookManageViewProps> = ({ country, onBack, onBook
   if (isLoading) {
     return (
       <div className="book-manage-loading">
-        <div className="loading-spinner" />
-        <p>加载中...</p>
+        <LoadingBook size={28} />
       </div>
     );
   }
@@ -1011,7 +1011,7 @@ const BookManageView: React.FC<BookManageViewProps> = ({ country, onBack, onBook
                   >
                     {isGeneratingCovers ? (
                       <>
-                        <span className="spinning">⏳</span>
+                        <LoadingBook size={14} />
                         生成中...
                       </>
                     ) : (

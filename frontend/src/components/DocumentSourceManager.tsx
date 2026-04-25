@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { documentSourceApi } from '../api';
 import { RefreshCw, FolderOpen, Book, FileText, AlertCircle, Settings, Edit2, Save, X } from 'lucide-react';
+import LoadingBook from './LoadingBook';
 
 interface Source {
   id: string;
@@ -138,7 +139,7 @@ const DocumentSourceManager: React.FC<DocumentSourceManagerProps> = ({ onSyncCom
           >
             {isSyncing ? (
               <>
-                <RefreshCw size={16} className="spin" />
+                <LoadingBook size={16} />
                 同步中...
               </>
             ) : (

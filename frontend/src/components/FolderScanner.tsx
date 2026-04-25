@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Country, Category } from '../types';
 import { libraryApi, countryApi, categoryApi } from '../api';
-import { FolderOpen, Check, Loader2, CheckSquare, Square, ArrowRight, MapPin, Tag } from 'lucide-react';
+import { FolderOpen, Check, CheckSquare, Square, ArrowRight, MapPin, Tag } from 'lucide-react';
+import LoadingBook from './LoadingBook';
 
 interface ScannedFile {
   file_name: string;
@@ -170,7 +171,7 @@ const FolderScanner: React.FC<FolderScannerProps> = ({ onImportComplete }) => {
 
       {isLoading ? (
         <div className="scanner-loading">
-          <Loader2 size={32} className="spin" />
+          <LoadingBook size={32} />
           <p>正在扫描文件夹...</p>
         </div>
       ) : (
@@ -235,7 +236,7 @@ const FolderScanner: React.FC<FolderScannerProps> = ({ onImportComplete }) => {
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 size={16} className="spin" />
+                      <LoadingBook size={16} />
                       扫描中...
                     </>
                   ) : (
@@ -349,7 +350,7 @@ const FolderScanner: React.FC<FolderScannerProps> = ({ onImportComplete }) => {
               >
                 {importing ? (
                   <>
-                    <Loader2 size={16} className="spin" />
+                    <LoadingBook size={16} />
                     导入中...
                   </>
                 ) : (

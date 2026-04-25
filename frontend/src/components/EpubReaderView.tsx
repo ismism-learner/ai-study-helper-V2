@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { BookDocument } from '../types';
 import PDFNotesPanel from './PDFNotesPanel';
+import LoadingBook from './LoadingBook';
 
 interface EpubReaderViewProps {
   book: BookDocument;
@@ -542,8 +543,7 @@ const EpubReaderView: React.FC<EpubReaderViewProps> = ({ book, fileUrl, onBack }
       <div className="epub-content-wrapper">
         {isLoading && (
           <div className="reader-loading-overlay">
-            <div className="loading-spinner" />
-            <p>正在加载 EPUB...</p>
+            <LoadingBook size={28} />
           </div>
         )}
 

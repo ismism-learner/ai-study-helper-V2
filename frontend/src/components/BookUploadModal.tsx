@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Country, Category, TimePeriod } from '../types';
 import { bookApi, categoryApi, timePeriodApi, countryApi } from '../api';
-import { X, Upload, FileText, Tag, Calendar, MapPin, Plus, Loader, Grid, FolderOpen } from 'lucide-react';
+import { X, Upload, FileText, Tag, Calendar, MapPin, Plus, Grid, FolderOpen } from 'lucide-react';
+import LoadingBook from './LoadingBook';
 
 interface BookUploadModalProps {
   countryId?: string;
@@ -651,7 +652,7 @@ const BookUploadModal: React.FC<BookUploadModalProps> = ({ countryId, onClose, o
             >
               {isUploading ? (
                 <>
-                  <Loader size={16} className="spinning" />
+                  <LoadingBook size={16} />
                   上传中...
                 </>
               ) : (

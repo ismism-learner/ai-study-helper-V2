@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { duplicateApi } from '../api';
 import { 
-  Copy, AlertTriangle, CheckCircle, Loader2, 
+  Copy, AlertTriangle, CheckCircle, 
   Trash2, RefreshCw, FileText, Hash, ChevronDown, ChevronUp
 } from 'lucide-react';
+import LoadingBook from './LoadingBook';
 
 interface DuplicateGroup {
   group_id: string;
@@ -160,7 +161,7 @@ const DuplicateManager: React.FC<DuplicateManagerProps> = () => {
           >
             {computing ? (
               <>
-                <Loader2 size={14} className="spinning" style={{ marginRight: 4 }} />
+                <LoadingBook size={14} />
                 计算哈希中...
               </>
             ) : (
@@ -178,7 +179,7 @@ const DuplicateManager: React.FC<DuplicateManagerProps> = () => {
           >
             {scanning ? (
               <>
-                <Loader2 size={14} className="spinning" style={{ marginRight: 4 }} />
+                <LoadingBook size={14} />
                 扫描中...
               </>
             ) : (
@@ -223,7 +224,7 @@ const DuplicateManager: React.FC<DuplicateManagerProps> = () => {
       <div className="duplicate-groups">
         {loading ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
-            <Loader2 size={32} className="spinning" />
+            <LoadingBook size={32} />
             <p>加载中...</p>
           </div>
         ) : groups.length === 0 ? (

@@ -8,8 +8,9 @@ import 'katex/dist/katex.min.css';
 import { Document, Highlight, CreateHighlightRequest } from '../types';
 import { highlightApi, documentApi, optimizeApi } from '../api';
 import { cognitiveChainApi } from '../api/knowledgeGraph';
-import { Save, X, RefreshCw, Sparkles, Check, Bookmark, Undo2, Redo2 } from 'lucide-react';
+import { Save, X, Sparkles, Check, Bookmark, Undo2, Redo2 } from 'lucide-react';
 import { useUndoRedo, createUndoRedoKeyHandler } from '../hooks/useUndoRedo';
+import LoadingBook from './LoadingBook';
 
 interface FrameworkViewProps {
   document: Document;
@@ -554,7 +555,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
       return (
         <div className="framework-streaming">
           <div className="streaming-indicator">
-            <RefreshCw size={16} className="spinning" />
+            <LoadingBook size={16} />
             <span>正在生成...</span>
           </div>
           {streamingContent && (
@@ -628,7 +629,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
                       <span className="comparison-title">文本对比</span>
                       {state.isProcessing && (
                         <span className="processing-indicator">
-                          <RefreshCw size={14} className="spinning" />
+                          <LoadingBook size={14} />
                           AI处理中...
                         </span>
                       )}
@@ -999,7 +1000,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
         <h2 style={{ marginBottom: 20 }}>文章正文</h2>
         <div className="framework-streaming">
           <div className="streaming-indicator">
-            <RefreshCw size={16} className="spinning" />
+            <LoadingBook size={16} />
             <span>正在生成...</span>
           </div>
           {streamingContent && (

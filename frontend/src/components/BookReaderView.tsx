@@ -13,6 +13,7 @@ const EpubReaderView = lazy(() => import('./EpubReaderView'));
 import PDFOCRModal from './PDFOCRModal';
 import ChapterNoteViewer from './ChapterNoteViewer';
 import NoteCardPanel from './NoteCardPanel';
+import LoadingBook from './LoadingBook';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import '../styles/note-card.css';
@@ -1361,8 +1362,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
           >
             {isLoading && (
               <div className="reader-loading-overlay">
-                <div className="loading-spinner" />
-                <p>加载文档中...</p>
+                <LoadingBook size={28} />
               </div>
             )}
             <Document
@@ -1406,7 +1406,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
                             className="page-loading-placeholder"
                             style={{ width: pageWidth, height: estimatedHeight }}
                           >
-                            <div className="loading-spinner-small" />
+                            <LoadingBook size={20} />
                           </div>
                         }
                       />

@@ -45,12 +45,19 @@
 
 .library-content {
   flex: 1;
+  height: 100%;
   overflow: hidden;
 }
 
 .map-view-container {
   display: flex;
   height: 100%;
+}
+
+.map-main {
+  flex: 1;
+  height: 100%;
+  overflow: auto;
 }
 
 .map-sidebar {

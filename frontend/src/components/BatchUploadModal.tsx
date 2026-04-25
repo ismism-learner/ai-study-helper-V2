@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Upload, X, FileText, Check, Loader, MapPin, AlertTriangle, AlertCircle, FolderOpen } from 'lucide-react';
+import { Upload, X, FileText, Check, MapPin, AlertTriangle, AlertCircle, FolderOpen } from 'lucide-react';
 import { countryApi } from '../api';
 import { Country } from '../types';
+import LoadingBook from './LoadingBook';
 
 interface BatchUploadModalProps {
   countryId?: string;
@@ -537,10 +538,10 @@ const BatchUploadModal: React.FC<BatchUploadModalProps> = ({ countryId, folderId
                         </button>
                       )}
                       {file.status === 'checking' && (
-                        <Loader size={16} className="spinning" />
+                        <LoadingBook size={16} />
                       )}
                       {file.status === 'uploading' && (
-                        <Loader size={16} className="spinning" />
+                        <LoadingBook size={16} />
                       )}
                       {file.status === 'success' && (
                         <Check size={16} className="success-icon" />
@@ -590,7 +591,7 @@ const BatchUploadModal: React.FC<BatchUploadModalProps> = ({ countryId, folderId
           >
             {isChecking ? (
               <>
-                <Loader size={14} className="spinning" style={{ marginRight: 4 }} />
+                <LoadingBook size={14} />
                 检测重复中...
               </>
             ) : isUploading ? (

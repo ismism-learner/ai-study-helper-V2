@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Sparkles, Calendar, Check, Save, X, Tag, Plus, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { worldTimelineApi } from '../api';
+import LoadingBook from './LoadingBook';
 
 interface TimelineNoteParseResult {
   event_date: string;
@@ -643,15 +644,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
 
           {isGenerating && (
             <div style={{ textAlign: 'center', padding: '20px' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                border: '3px solid var(--border-default)',
-                borderTopColor: 'var(--accent-500)',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite',
-                margin: '0 auto 12px',
-              }} />
+              <LoadingBook size={32} />
               <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>
                 AI正在分析文档内容，提取时间事件...
               </p>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { dashboardApi, bookApi, taskApi, Task, activityApi, Activity } from '../api';
-import { BarChart3, Loader2, BookOpen, Clock, Play, Library, Plus, Bell, Settings, ChevronRight, CheckSquare, Square, X, Calendar, Trash2, Upload, FileText, Tag, Archive, ClipboardList, Share2, CheckCircle } from 'lucide-react';
+import { BarChart3, BookOpen, Clock, Play, Library, Plus, Bell, Settings, ChevronRight, CheckSquare, Square, X, Calendar, Trash2, Upload, FileText, Tag, Archive, ClipboardList, Share2, CheckCircle } from 'lucide-react';
 import { BookDocument } from '../types';
+import LoadingBook from './LoadingBook';
 
 interface OverviewData {
   total_documents: number;
@@ -273,8 +274,8 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ onBookSelect }) => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-        <Loader2 size={32} className="spinning" style={{ color: 'var(--primary-color)' }} />
+      <div className="dashboard-panel" style={{ outline: 'none', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)' }}>
+        <LoadingBook size={32} />
       </div>
     );
   }

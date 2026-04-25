@@ -13,6 +13,7 @@ const FinancialChartBlock = lazy(() => import('./FinancialChartBlock'));
 const JSXGraphBlock = lazy(() => import('./JSXGraphBlock'));
 import 'katex/dist/katex.min.css';
 import 'highlight.js/styles/github-dark.css';
+import LoadingBook from './LoadingBook';
 
 interface ChapterNoteViewerProps {
   chapterTitle: string;
@@ -426,7 +427,7 @@ const ChapterNoteViewer: React.FC<ChapterNoteViewerProps> = ({
       <div className="chapter-note-viewer-content">
         {isGenerating && !displayContent && (
           <div className="chapter-note-generating">
-            <div className="generating-spinner" />
+            <LoadingBook size={32} />
             <p>AI 正在整理笔记...</p>
             <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>将OCR文本整理为结构清晰的Markdown笔记</p>
           </div>

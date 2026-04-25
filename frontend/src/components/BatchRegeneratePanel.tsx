@@ -8,9 +8,9 @@ import {
   Pause, 
   CheckSquare, 
   Square,
-  FileText,
-  Loader
+  FileText
 } from 'lucide-react';
+import LoadingBook from './LoadingBook';
 import { documentApi } from '../api';
 
 interface IncompleteDocument {
@@ -210,7 +210,7 @@ const BatchRegeneratePanel: React.FC<BatchRegeneratePanelProps> = ({
 
               {loading ? (
                 <div className="loading-state">
-                  <Loader size={24} className="spinning" />
+                  <LoadingBook size={24} />
                   <span>正在扫描生成不完整的文档...</span>
                 </div>
               ) : incompleteDocs.length === 0 ? (

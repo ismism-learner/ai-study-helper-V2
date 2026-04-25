@@ -16,7 +16,8 @@ import {
   SelectionRectOverlay,
   tagLibraryStyles,
 } from './tagLibrary';
-import { BookOpen, Loader2, Tag, Clock, ChevronUp, ChevronDown, Tag as TagIcon, Layers, Upload } from 'lucide-react';
+import { BookOpen, Tag, Clock, ChevronUp, ChevronDown, Tag as TagIcon, Layers, Upload } from 'lucide-react';
+import LoadingBook from './LoadingBook';
 
 interface TagLibraryViewProps {
   selectedTag: string | null;
@@ -533,7 +534,7 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBookSele
   if (isLoading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-        <Loader2 size={32} className="spin" />
+        <LoadingBook size={32} />
       </div>
     );
   }

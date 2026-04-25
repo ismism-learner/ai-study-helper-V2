@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Document } from '../types';
-import { Search, X, ChevronUp, ChevronDown, Plus, Edit3, Trash2, BookOpen, Tag, Clock, FileText, Sparkles, Zap, Send, Check, RefreshCw, CheckSquare, Square, Calendar, RotateCcw, RotateCw } from 'lucide-react';
+import { Search, X, ChevronUp, ChevronDown, Plus, Edit3, Trash2, BookOpen, Tag, Clock, FileText, Sparkles, Zap, Send, Check, CheckSquare, Square, Calendar, RotateCcw, RotateCw } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 import { optimizeApi, worldTimelineApi, quickNoteApi, QuickNote } from '../api';
 import { useUndoRedo, createUndoRedoKeyHandler } from '../hooks/useUndoRedo';
+import LoadingBook from './LoadingBook';
 
 interface PDFNote {
   id: string;
@@ -1284,7 +1285,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                   >
                     {isSavingQuick ? (
                       <>
-                        <RefreshCw size={14} className="spinning" />
+                        <LoadingBook size={14} />
                         保存中...
                       </>
                     ) : (

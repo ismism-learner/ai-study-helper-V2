@@ -5,6 +5,7 @@ import { Calendar, Clock, Tag, Trash2, Edit3, Plus, ChevronUp, ChevronDown, Chec
 import TimelineNoteModal from './TimelineNoteModal';
 import ConfirmDialog from './ConfirmDialog';
 import DraggableTimelineWindow from './DraggableTimelineWindow';
+import LoadingBook from './LoadingBook';
 
 interface DocumentTimelineNotesProps {
   documentId: string;
@@ -341,15 +342,7 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
     return (
       <div className="document-timeline-notes" style={{ padding: '16px' }}>
         <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
-          <div className="loading-spinner" style={{
-            width: '24px',
-            height: '24px',
-            border: '2px solid var(--border-default)',
-            borderTopColor: 'var(--primary-500)',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 8px'
-          }} />
+          <LoadingBook size={20} />
           <p style={{ fontSize: '14px', margin: 0 }}>加载时间笔记...</p>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { Graph } from '@antv/g6';
 import { knowledgeGraphApi } from '../api/knowledgeGraph';
 import { bookApi } from '../api';
 import ConfirmDialog from './ConfirmDialog';
+import LoadingBook from './LoadingBook';
 import '../styles/knowledge-graph-panel.css';
 
 interface KnowledgeGraphPanelProps {
@@ -609,8 +610,7 @@ const KnowledgeGraphPanel: React.FC<KnowledgeGraphPanelProps> = ({
       <div className="kg-graph-container" ref={containerRef}>
         {loading && (
           <div className="kg-loading">
-            <div className="kg-spinner" />
-            <span>加载知识图谱...</span>
+            <LoadingBook size={28} />
           </div>
         )}
         {error && (

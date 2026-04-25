@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { CreateDocumentRequest } from '../types';
-import { Upload, FileText, X, Check, Loader } from 'lucide-react';
+import { Upload, FileText, X, Check } from 'lucide-react';
 import { documentApi } from '../api';
+import LoadingBook from './LoadingBook';
 
 interface CreateDocumentModalProps {
   onClose: () => void;
@@ -313,7 +314,7 @@ const CreateDocumentModal: React.FC<CreateDocumentModalProps> = ({
                           </button>
                         )}
                         {fileItem.status === 'uploading' && (
-                          <Loader size={16} className="spinning" style={{ animation: 'spin 1s linear infinite' }} />
+                          <LoadingBook size={16} />
                         )}
                         {fileItem.status === 'success' && (
                           <Check size={16} style={{ color: '#28a745' }} />

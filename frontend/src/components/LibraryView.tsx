@@ -1,6 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { BookDocument, Document } from '../types';
 import { bookApi } from '../api';
+import LoadingBook from './LoadingBook';
 const TagLibraryView = lazy(() => import('./TagLibraryView'));
 const BookUploadModal = lazy(() => import('./BookUploadModal'));
 const DocumentManager = lazy(() => import('./DocumentManager'));
@@ -118,7 +119,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({
             </div>
 
             <div className="map-main" style={{ overflow: 'auto' }}>
-              <Suspense fallback={<div>加载中...</div>}>
+              <Suspense fallback={<div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:'300px',width:'100%'}}><LoadingBook size={24} /></div>}>
                 <DashboardPanel onBookSelect={handleBookSelect} />
               </Suspense>
             </div>
@@ -126,7 +127,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({
         )}
 
         {currentView === 'tagLibrary' && (
-          <Suspense fallback={<div>加载中...</div>}>
+          <Suspense fallback={<div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:'300px',width:'100%'}}><LoadingBook size={24} /></div>}>
             <TagLibraryView
               selectedTag={selectedTag}
               onBookSelect={handleBookSelect}
@@ -136,7 +137,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({
         )}
 
         {currentView === 'documents' && (
-          <Suspense fallback={<div>加载中...</div>}>
+          <Suspense fallback={<div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:'300px',width:'100%'}}><LoadingBook size={24} /></div>}>
             <DocumentManager
               onBack={() => setCurrentView('map')}
               onDocumentClick={(doc) => {
@@ -147,7 +148,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({
         )}
 
         {currentView === 'timeline' && (
-          <Suspense fallback={<div>加载中...</div>}>
+          <Suspense fallback={<div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:'300px',width:'100%'}}><LoadingBook size={24} /></div>}>
             <TimelinePanel
               onBookSelect={handleBookSelect}
               onDocumentSelect={handleDocumentSelect}
@@ -157,7 +158,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({
         )}
 
         {currentView === 'bookReader' && selectedBook && (
-          <Suspense fallback={<div>加载中...</div>}>
+          <Suspense fallback={<div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:'300px',width:'100%'}}><LoadingBook size={24} /></div>}>
             <BookReaderView
               book={selectedBook}
               initialPage={initialPage}
@@ -173,7 +174,7 @@ const LibraryView: React.FC<LibraryViewProps> = ({
       </div>
 
       {showUploadModal && (
-        <Suspense fallback={<div>加载中...</div>}>
+        <Suspense fallback={<div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:'300px',width:'100%'}}><LoadingBook size={24} /></div>}>
           <BookUploadModal
             onClose={() => setShowUploadModal(false)}
             onSuccess={() => {

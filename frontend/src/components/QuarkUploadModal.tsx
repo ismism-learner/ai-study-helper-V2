@@ -1,4 +1,5 @@
-import { Cloud, X, CheckCircle, XCircle, Loader2, Copy, ExternalLink } from 'lucide-react';
+import { Cloud, X, CheckCircle, XCircle, Copy, ExternalLink } from 'lucide-react';
+import LoadingBook from './LoadingBook';
 import { QuarkUploadResult, QuarkUploadProgress } from '../hooks/useQuarkUpload';
 import { BookDocument } from '../types';
 
@@ -105,7 +106,7 @@ function QuarkUploadModal({
           {progress ? (
             <div className="quark-progress-container">
               <div className="quark-progress-header">
-                <Loader2 size={20} className="spinning" />
+                <LoadingBook size={20} />
                 <span>正在上传中...</span>
               </div>
               
@@ -249,7 +250,7 @@ function QuarkUploadModal({
             >
               {uploading ? (
                 <>
-                  <Loader2 size={14} className="spinning" style={{ marginRight: 4 }} />
+                  <LoadingBook size={14} />
                   上传中...
                 </>
               ) : (

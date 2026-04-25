@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { X, Loader2, CheckCircle, AlertCircle, FileText, XCircle, Cpu, Edit3, Save, Sparkles } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, FileText, XCircle, Cpu, Edit3, Save, Sparkles } from 'lucide-react';
 import { pdfOcrApi, chapterNoteApi } from '../api';
 import ChapterNoteViewer from './ChapterNoteViewer';
+import LoadingBook from './LoadingBook';
 
 interface PDFOCRModalProps {
   isOpen: boolean;
@@ -302,14 +303,14 @@ const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
       case 'initializing':
       case 'loading_model':
       case 'processing':
-        return <Loader2 size={48} className="status-icon spinning" />;
+        return <LoadingBook size={40} />;
       case 'completed':
         return <CheckCircle size={48} className="status-icon success" />;
       case 'failed':
       case 'cancelled':
         return <AlertCircle size={48} className="status-icon error" />;
       default:
-        return <Loader2 size={48} className="status-icon spinning" />;
+        return <LoadingBook size={40} />;
     }
   };
 

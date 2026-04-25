@@ -1,7 +1,8 @@
 import React from 'react';
-import { Send, RefreshCw, Check, X, Sparkles, Calendar, CheckSquare, Square, Plus, BookOpen, Trash2 } from 'lucide-react';
+import { Send, Check, X, Sparkles, Calendar, CheckSquare, Square, Plus, BookOpen, Trash2 } from 'lucide-react';
 import { QuickNote } from '../../api';
 import { PDFNote } from './types';
+import LoadingBook from '../LoadingBook';
 
 interface QuickModePanelProps {
   quickNotes: QuickNote[];
@@ -217,7 +218,7 @@ export const QuickModePanel: React.FC<QuickModePanelProps> = ({
             >
               {isSavingQuick ? (
                 <>
-                  <RefreshCw size={14} className="spinning" />
+                  <LoadingBook size={14} />
                   保存中...
                 </>
               ) : (

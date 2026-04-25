@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BookDocument } from '../types';
 import { bookApi } from '../api';
-import { X, Search, Loader2, Tag as TagIcon, CheckSquare, Square, GripVertical } from 'lucide-react';
+import { X, Search, Tag as TagIcon, CheckSquare, Square, GripVertical } from 'lucide-react';
+import LoadingBook from './LoadingBook';
 
 interface QuickTagModalProps {
   isOpen: boolean;
@@ -224,7 +225,7 @@ const QuickTagModal: React.FC<QuickTagModalProps> = ({ isOpen, onClose, onTagApp
             onClick={handleSearch}
             disabled={loading || !keyword.trim()}
           >
-            {loading ? <Loader2 size={14} className="spin" /> : <Search size={14} />}
+            {loading ? <LoadingBook size={14} /> : <Search size={14} />}
             搜索
           </button>
         </div>
@@ -283,7 +284,7 @@ const QuickTagModal: React.FC<QuickTagModalProps> = ({ isOpen, onClose, onTagApp
                 onClick={() => handleApplyTag(tagInput)}
                 disabled={selectedIds.size === 0 || !tagInput.trim() || applying}
               >
-                {applying ? <Loader2 size={14} className="spin" /> : '应用'}
+                {applying ? <LoadingBook size={14} /> : '应用'}
               </button>
             </div>
 
