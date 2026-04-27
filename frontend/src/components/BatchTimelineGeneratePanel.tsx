@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   X, 
   Calendar, 
@@ -331,7 +331,7 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                         textAlign: 'center',
                         fontWeight: 600,
                         fontSize: '16px',
-                        color: '#667eea'
+                        color: 'var(--primary-500)'
                       }}>
                         {concurrency}
                       </span>
@@ -378,7 +378,7 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
                         {selectedTags.map((tag, index) => (
                           <span key={index} style={{
-                            background: '#e0e7ff',
+                            background: 'var(--primary-light)',
                             padding: '4px 10px',
                             borderRadius: '12px',
                             fontSize: '13px',
@@ -416,7 +416,7 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                             style={{
                               width: '100%',
                               padding: '10px 14px',
-                              background: historyTagDropdownOpen ? '#f8fafc' : 'white',
+                              background: historyTagDropdownOpen ? 'var(--bg-muted)' : 'white',
                               border: '1px solid #e5e7eb',
                               borderRadius: '6px',
                               cursor: 'pointer',
@@ -424,7 +424,7 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                               alignItems: 'center',
                               justifyContent: 'space-between',
                               fontSize: '13px',
-                              color: '#374151',
+                              color: 'var(--text-primary)',
                               transition: 'all 0.2s ease'
                             }}
                           >
@@ -464,7 +464,7 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                                   alignItems: 'center',
                                   gap: '8px',
                                   padding: '8px 12px',
-                                  background: '#f8fafc',
+                                  background: 'var(--bg-muted)',
                                   borderRadius: '6px'
                                 }}>
                                    <Search size={14} style={{ color: 'var(--text-muted)' }} />
@@ -479,7 +479,7 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                                       outline: 'none',
                                       flex: 1,
                                       fontSize: '13px',
-                                      color: '#374151'
+                                      color: 'var(--text-primary)'
                                     }}
                                   />
                                   {historyTagSearchQuery && (
@@ -535,11 +535,11 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                                             gap: '6px',
                                             padding: '8px 10px',
                                             background: isSelected ? 'var(--accent-500)' : 'white',
-                                            border: '1px solid ' + (isSelected ? '#7c3aed' : '#e5e7eb'),
+                                            border: '1px solid ' + (isSelected ? 'var(--accent-600)' : 'var(--border-default)'),
                                             borderRadius: '6px',
                                             cursor: isSelected ? 'default' : 'pointer',
                                             fontSize: '12px',
-                                            color: isSelected ? 'white' : '#374151',
+                                            color: isSelected ? 'white' : 'var(--text-primary)',
                                             transition: 'all 0.15s ease',
                                             whiteSpace: 'nowrap',
                                             overflow: 'hidden',
@@ -562,7 +562,7 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                                 <div style={{
                                   padding: '10px 12px',
                                   borderTop: '1px solid #e5e7eb',
-                                  background: '#f8fafc',
+                                  background: 'var(--bg-muted)',
                                   borderRadius: '0 0 8px 8px'
                                 }}>
                                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px' }}>
@@ -669,7 +669,7 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                 </div>
 
                 <div style={{ 
-                  background: '#fef3c7', 
+                  background: 'var(--warning-light)', 
                   border: '1px solid #fbbf24', 
                   borderRadius: '6px', 
                   padding: '12px', 
@@ -694,11 +694,11 @@ const BatchTimelineGeneratePanel: React.FC<BatchTimelineGeneratePanelProps> = ({
                   gap: '12px',
                   marginBottom: '16px'
                 }}>
-                  <Check size={20} style={{ color: '#10b981' }} />
+                  <Check size={20} style={{ color: 'var(--success-500)' }} />
                   <span style={{ fontWeight: 500 }}>处理完成</span>
-                  <span style={{ color: '#10b981', fontSize: '13px' }}>成功: {successCount}</span>
+                  <span style={{ color: 'var(--success-500)', fontSize: '13px' }}>成功: {successCount}</span>
                   {failedCount > 0 && (
-                    <span style={{ color: '#ef4444', fontSize: '13px' }}>失败: {failedCount}</span>
+                    <span style={{ color: 'var(--danger-500)', fontSize: '13px' }}>失败: {failedCount}</span>
                   )}
                 </div>
                 

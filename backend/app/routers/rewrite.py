@@ -2,18 +2,19 @@
 长文本改写API路由
 """
 
+import asyncio
+import io
+from typing import Optional
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional
-import asyncio
-import io
 
 from app.services.long_text_rewrite_service import (
-    rewrite_long_text,
-    rewrite_long_text_stream,
     extract_sections,
     generate_framework,
+    rewrite_long_text,
+    rewrite_long_text_stream,
 )
 
 router = APIRouter(prefix="/rewrite", tags=["rewrite"])
@@ -23,9 +24,9 @@ class RewriteRequest(BaseModel):
     """改写请求"""
 
     text: str
-    system_prompt: Optional[str] = None
-    user_prompt: Optional[str] = None
-    style: Optional[str] = "通俗化"  # 通俗化、学术化、精简
+    system_prompt: str | None = None
+    user_prompt: str | None = None
+    style: str | None = "通俗化"  # 通俗化、学术化、精简
 
 
 class RewriteResponse(BaseModel):
@@ -135,7 +136,7 @@ async def api_preview_rewrite(request: RewriteRequest):
         if not sections:
             # 没有识别到章节，改写前1000字作为预览
             preview_text = request.text[:1000]
-            from app.services.long_text_rewrite_service import rewrite_section, Section
+            from app.services.long_text_rewrite_service import Section, rewrite_section
 
             section = Section(
                 level=1,

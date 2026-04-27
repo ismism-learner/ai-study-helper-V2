@@ -2,14 +2,15 @@
 可视化节点API - 处理代码块的AI规范化、节点管理和本地存储
 """
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from typing import List, Optional
-from pydantic import BaseModel
 from datetime import datetime, timezone
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import VisualizationNode, ChapterNote
+from app.models import ChapterNote, VisualizationNode
 from app.services.ai_service import ai_service
 
 router = APIRouter(prefix="/visualization-nodes", tags=["visualization-nodes"])
@@ -28,50 +29,50 @@ class NodePosition(BaseModel):
 class NodeConnection(BaseModel):
     target_id: str
     type: str  # input, output, reference
-    label: Optional[str] = None
+    label: str | None = None
 
 
 class CreateNodeRequest(BaseModel):
-    book_id: Optional[str] = None
-    chapter_note_id: Optional[str] = None
+    book_id: str | None = None
+    chapter_note_id: str | None = None
     node_type: str  # formula, code, chart, geometry
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     source_content: str
-    language: Optional[str] = None
+    language: str | None = None
     confidence: str = "high"
 
 
 class UpdateNodeRequest(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    position: Optional[NodePosition] = None
-    connections: Optional[List[NodeConnection]] = None
-    is_active: Optional[bool] = None
+    title: str | None = None
+    description: str | None = None
+    position: NodePosition | None = None
+    connections: list[NodeConnection] | None = None
+    is_active: bool | None = None
 
 
 class NormalizeRequest(BaseModel):
     source_content: str
     node_type: str
-    language: Optional[str] = None
+    language: str | None = None
 
 
 class NodeResponse(BaseModel):
     id: str
-    book_id: Optional[str]
-    chapter_note_id: Optional[str]
+    book_id: str | None
+    chapter_note_id: str | None
     node_type: str
     title: str
-    description: Optional[str]
+    description: str | None
     source_content: str
-    normalized_content: Optional[str]
-    render_config: Optional[dict]
+    normalized_content: str | None
+    render_config: dict | None
     position_x: float
     position_y: float
     width: int
     height: int
-    connections: Optional[List[dict]]
-    language: Optional[str]
+    connections: list[dict] | None
+    language: str | None
     confidence: str
     is_active: bool
     created_at: datetime
@@ -289,11 +290,11 @@ async def normalize_node(node_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"AI规范化失败: {str(e)}")
 
 
-@router.get("/", response_model=List[NodeResponse])
+@router.get("/", response_model=list[NodeResponse])
 async def list_nodes(
-    book_id: Optional[str] = None,
-    chapter_note_id: Optional[str] = None,
-    is_active: Optional[bool] = None,
+    book_id: str | None = None,
+    chapter_note_id: str | None = None,
+    is_active: bool | None = None,
     db: Session = Depends(get_db),
 ):
     """获取节点列表"""
@@ -397,7 +398,7 @@ async def delete_node(node_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/batch-save")
-async def batch_save_nodes(nodes: List[dict], db: Session = Depends(get_db)):
+async def batch_save_nodes(nodes: list[dict], db: Session = Depends(get_db)):
     """批量保存节点位置和配置（用于画布保存）"""
     for node_data in nodes:
         node = (

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+﻿import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   X, 
   Minimize2, 
@@ -304,7 +304,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
       <div
         onMouseDown={handleMouseDown}
         style={{
-          background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+          background: 'var(--accent-500)',
           padding: '12px 16px',
           display: 'flex',
           alignItems: 'center',
@@ -371,8 +371,8 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
         }}>
           {error && (
             <div style={{
-              background: '#fef2f2',
-              color: '#dc2626',
+              background: 'var(--danger-light)',
+              color: 'var(--danger-600)',
               padding: '8px 12px',
               borderRadius: '6px',
               fontSize: '12px',
@@ -387,8 +387,8 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
 
           {tagFeedback && (
             <div style={{
-              background: '#ecfdf5',
-              color: '#059669',
+              background: 'var(--success-light)',
+              color: 'var(--success-600)',
               padding: '8px 12px',
               borderRadius: '6px',
               fontSize: '12px',
@@ -461,7 +461,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                     {selectedTags.map((tag, index) => (
                       <span key={index} style={{
-                        background: '#e0e7ff',
+                        background: 'var(--primary-light)',
                         padding: '2px 8px',
                         borderRadius: '10px',
                         fontSize: '11px',
@@ -487,7 +487,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
                 disabled={isGenerating}
                 style={{
                   padding: '10px 16px',
-                  background: isGenerating ? '#9ca3af' : 'var(--accent-500)',
+                  background: isGenerating ? 'var(--text-muted)' : 'var(--accent-500)',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
@@ -518,7 +518,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
 
           {noEventsFound && !isGenerating && (
             <div style={{ textAlign: 'center', padding: '20px' }}>
-              <AlertCircle size={32} style={{ margin: '0 auto 12px', color: '#f59e0b' }} />
+              <AlertCircle size={32} style={{ margin: '0 auto 12px', color: 'var(--warning-500)' }} />
               <p style={{ color: 'var(--text-secondary, #94a3b8)', fontSize: '13px', margin: '0 0 12px' }}>
                 未识别到时间相关事件
               </p>
@@ -575,8 +575,8 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
                       onClick={() => setShowTagPanel(!showTagPanel)}
                       style={{
                         padding: '4px 8px',
-                        background: showTagPanel ? 'var(--accent-500)' : '#f3f4f6',
-                        color: showTagPanel ? 'white' : '#374151',
+                        background: showTagPanel ? 'var(--accent-500)' : 'var(--bg-muted)',
+                        color: showTagPanel ? 'white' : 'var(--text-primary)',
                         border: 'none',
                         borderRadius: '4px',
                         cursor: 'pointer',
@@ -594,8 +594,8 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
                     onClick={toggleSelectAll}
                     style={{
                       padding: '4px 8px',
-                      background: selectedEvents.size === aiGeneratedEvents.length ? '#10b981' : '#f3f4f6',
-                      color: selectedEvents.size === aiGeneratedEvents.length ? 'white' : '#374151',
+                      background: selectedEvents.size === aiGeneratedEvents.length ? 'var(--success-500)' : 'var(--bg-muted)',
+                      color: selectedEvents.size === aiGeneratedEvents.length ? 'white' : 'var(--text-primary)',
                       border: 'none',
                       borderRadius: '4px',
                       cursor: 'pointer',
@@ -609,7 +609,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
 
               {showTagPanel && selectedEvents.size > 0 && (
                 <div style={{
-                  background: '#f8fafc',
+                  background: 'var(--bg-muted)',
                   border: '1px solid #e5e7eb',
                   borderRadius: '6px',
                   padding: '8px',
@@ -634,7 +634,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
                       disabled={!batchTagInput.trim()}
                       style={{
                         padding: '6px 10px',
-                        background: batchTagInput.trim() ? 'var(--accent-500)' : '#9ca3af',
+                        background: batchTagInput.trim() ? 'var(--accent-500)' : 'var(--text-muted)',
                         color: 'white',
                         border: 'none',
                         borderRadius: '4px',
@@ -746,7 +746,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
                 disabled={selectedEvents.size === 0 || isSaving}
                 style={{
                   padding: '10px 16px',
-                  background: selectedEvents.size === 0 || isSaving ? '#9ca3af' : '#10b981',
+                  background: selectedEvents.size === 0 || isSaving ? 'var(--text-muted)' : 'var(--success-500)',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
@@ -778,7 +778,7 @@ const DraggableTimelineWindow: React.FC<DraggableTimelineWindowProps> = ({
           ) : aiGeneratedEvents.length > 0 ? (
             <span>识别到 {aiGeneratedEvents.length} 个事件，已选 {selectedEvents.size} 个</span>
           ) : noEventsFound ? (
-            <span style={{ color: '#f59e0b' }}>未识别到时间事件</span>
+            <span style={{ color: 'var(--warning-500)' }}>未识别到时间事件</span>
           ) : (
             <span>点击开始生成</span>
           )}

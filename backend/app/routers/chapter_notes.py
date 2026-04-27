@@ -1,24 +1,25 @@
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from typing import List, Optional
 
 from app.database import get_db
 from app.models import ChapterNote
 from app.schemas import (
     ChapterNoteCreate,
-    ChapterNoteUpdate,
-    ChapterNoteResponse,
     ChapterNoteGenerateRequest,
-    StructureGenerateRequest,
+    ChapterNoteResponse,
+    ChapterNoteUpdate,
     SectionGenerateRequest,
     SplitByStructureRequest,
+    StructureGenerateRequest,
 )
 from app.services.chapter_note_service import (
     generate_chapter_note,
     generate_chapter_note_stream,
-    generate_structure,
     generate_section_note,
+    generate_structure,
     split_text_by_structure,
 )
 
@@ -43,11 +44,11 @@ async def create_chapter_note(note: ChapterNoteCreate, db: Session = Depends(get
     return db_note
 
 
-@router.get("/chapter-notes", response_model=List[ChapterNoteResponse])
+@router.get("/chapter-notes", response_model=list[ChapterNoteResponse])
 def list_chapter_notes(
-    book_id: Optional[str] = None,
-    document_id: Optional[str] = None,
-    status: Optional[str] = None,
+    book_id: str | None = None,
+    document_id: str | None = None,
+    status: str | None = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -216,8 +217,8 @@ async def generate_and_save_chapter_note(note_id: str, db: Session = Depends(get
 
 @router.post("/chapter-notes/export")
 async def export_chapter_notes(
-    book_id: Optional[str] = None,
-    document_id: Optional[str] = None,
+    book_id: str | None = None,
+    document_id: str | None = None,
     db: Session = Depends(get_db),
 ):
     query = db.query(ChapterNote).filter(ChapterNote.status == "completed")

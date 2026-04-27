@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, lazy, Suspense } from 'react';
+﻿import React, { useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -185,10 +185,10 @@ const typeIcons: Record<string, React.ReactNode> = {
 };
 
 const typeColors: Record<string, string> = {
-  formula: '#8b5cf6',
-  code: '#3b82f6',
-  chart: '#10b981',
-  geometry: '#f59e0b',
+  formula: 'var(--accent-500)',
+  code: 'var(--primary-500)',
+  chart: 'var(--success-500)',
+  geometry: 'var(--warning-500)',
 };
 
 const NoteCardPanel: React.FC<NoteCardPanelProps> = ({
@@ -423,7 +423,7 @@ const NoteCardPanel: React.FC<NoteCardPanelProps> = ({
                   {/* 根据视图模式显示原文或改写内容 */}
                   {viewModes.get(chapter.index) === 'original' ? (
                     <div className="original-text-view">
-                      <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 13, lineHeight: 1.8, color: '#cbd5e1', fontFamily: 'inherit', margin: 0 }}>
+                      <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 13, lineHeight: 1.8, color: 'var(--border-default)', fontFamily: 'inherit', margin: 0 }}>
                         {chapters[chapter.index]}
                       </pre>
                     </div>

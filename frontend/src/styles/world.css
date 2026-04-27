@@ -126,7 +126,8 @@
 }
 
 .world-panel .country-item.active .country-count {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-inverse);
+  opacity: 0.8;
 }
 
 .world-panel .stats-grid {
@@ -237,7 +238,7 @@
 }
 
 .timeline-notes-view .note-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
   border-color: var(--primary-color);
 }
 
@@ -282,7 +283,7 @@
   max-width: 90vw;
   max-height: 80vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-xl);
   z-index: 1000;
 }
 
@@ -363,7 +364,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: var(--bg-muted);
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -528,7 +529,7 @@
   max-width: 90vw;
   max-height: 80vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-xl);
   z-index: 1000;
 }
 

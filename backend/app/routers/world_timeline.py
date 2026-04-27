@@ -1,17 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
-from typing import List, Optional
-from pydantic import BaseModel
 from datetime import datetime
 from itertools import groupby
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload
+
 from app.database import get_db
 from app.models import (
-    WorldTimelineEvent,
+    ActivityLog,
     BookDocument,
     Document,
     DocumentTimelineEvent,
-    ActivityLog,
+    WorldTimelineEvent,
 )
 
 router = APIRouter()
@@ -19,22 +21,22 @@ router = APIRouter()
 
 class TimelineEventCreate(BaseModel):
     event_date: str  # 格式：YYYY-MM-DD 或 YYYY-MM 或 YYYY
-    event_date_display: Optional[str] = None  # 显示格式
+    event_date_display: str | None = None  # 显示格式
     page_number: int
     event_title: str
-    event_description: Optional[str] = None
-    importance: Optional[str] = "normal"  # low, normal, high
-    tags: Optional[List[str]] = None
+    event_description: str | None = None
+    importance: str | None = "normal"  # low, normal, high
+    tags: list[str] | None = None
 
 
 class TimelineEventUpdate(BaseModel):
-    event_date: Optional[str] = None
-    event_date_display: Optional[str] = None
-    page_number: Optional[int] = None
-    event_title: Optional[str] = None
-    event_description: Optional[str] = None
-    importance: Optional[str] = None
-    tags: Optional[List[str]] = None
+    event_date: str | None = None
+    event_date_display: str | None = None
+    page_number: int | None = None
+    event_title: str | None = None
+    event_description: str | None = None
+    importance: str | None = None
+    tags: list[str] | None = None
 
 
 class TimelineEventResponse(BaseModel):
@@ -44,9 +46,9 @@ class TimelineEventResponse(BaseModel):
     event_date_display: str
     page_number: int
     event_title: str
-    event_description: Optional[str]
+    event_description: str | None
     importance: str
-    tags: Optional[List[str]]
+    tags: list[str] | None
     created_at: datetime
     updated_at: datetime
 
@@ -58,7 +60,7 @@ class BookTimelineSummary(BaseModel):
     book_id: str
     book_title: str
     total_events: int
-    date_range: Optional[str] = None  # 如："公元前221年 - 公元2024年"
+    date_range: str | None = None  # 如："公元前221年 - 公元2024年"
 
 
 def _build_event_response(event: WorldTimelineEvent) -> TimelineEventResponse:
@@ -78,12 +80,12 @@ def _build_event_response(event: WorldTimelineEvent) -> TimelineEventResponse:
 
 
 @router.get(
-    "/books/{book_id}/timeline-events", response_model=List[TimelineEventResponse]
+    "/books/{book_id}/timeline-events", response_model=list[TimelineEventResponse]
 )
 def get_book_timeline_events(
     book_id: str,
-    sort_by: Optional[str] = "date",  # date, page, created
-    order: Optional[str] = "asc",
+    sort_by: str | None = "date",  # date, page, created
+    order: str | None = "asc",
     db: Session = Depends(get_db),
 ):
     """获取指定书籍的所有时间节点记录"""
@@ -233,7 +235,7 @@ def get_timeline_event(event_id: str, db: Session = Depends(get_db)):
     return _build_event_response(event)
 
 
-@router.get("/library/timeline-summary", response_model=List[BookTimelineSummary])
+@router.get("/library/timeline-summary", response_model=list[BookTimelineSummary])
 def get_library_timeline_summary(db: Session = Depends(get_db)):
     """获取书库中所有书籍的时间节点汇总信息"""
     # 单次查询获取每本书的事件统计，避免N+1问题
@@ -311,11 +313,11 @@ def get_library_timeline_summary(db: Session = Depends(get_db)):
 
 @router.get("/library/timeline-events/search")
 def search_timeline_events(
-    query: Optional[str] = None,
-    book_id: Optional[str] = None,
-    date_from: Optional[str] = None,
-    date_to: Optional[str] = None,
-    importance: Optional[str] = None,
+    query: str | None = None,
+    book_id: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    importance: str | None = None,
     db: Session = Depends(get_db),
 ):
     """搜索时间节点记录"""

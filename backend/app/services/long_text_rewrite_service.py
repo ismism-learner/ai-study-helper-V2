@@ -10,10 +10,12 @@
 """
 
 import re
-from typing import List, Tuple, Optional, AsyncGenerator
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
-from app.services.ai_service import ai_service
+from typing import List, Optional, Tuple
+
 from app.config import settings_manager
+from app.services.ai_service import ai_service
 
 
 @dataclass
@@ -88,7 +90,7 @@ DEFAULT_FRAMEWORK_PROMPT = """请分析以下文章，提取出完整的章节�
 请输出章节结构："""
 
 
-def extract_sections(text: str) -> List[Section]:
+def extract_sections(text: str) -> list[Section]:
     """
     从文本中提取章节结构
 
@@ -165,7 +167,7 @@ def extract_sections(text: str) -> List[Section]:
     return sections
 
 
-def generate_framework(sections: List[Section]) -> str:
+def generate_framework(sections: list[Section]) -> str:
     """
     生成缩略框架
     每个小节只保留标识符和标题
@@ -179,7 +181,7 @@ def generate_framework(sections: List[Section]) -> str:
 
 def split_text_by_sections(
     text: str, max_chunk_size: int = 50000
-) -> List[Tuple[str, str]]:
+) -> list[tuple[str, str]]:
     """
     将文本按章节分割成多个块
 
@@ -231,8 +233,8 @@ def split_text_by_sections(
 async def rewrite_section(
     section: Section,
     context: str = "",
-    system_prompt: Optional[str] = None,
-    user_prompt: Optional[str] = None,
+    system_prompt: str | None = None,
+    user_prompt: str | None = None,
 ) -> str:
     """
     改写单个章节
@@ -278,9 +280,9 @@ async def rewrite_section(
 
 async def rewrite_long_text(
     text: str,
-    system_prompt: Optional[str] = None,
-    user_prompt: Optional[str] = None,
-    progress_callback: Optional[callable] = None,
+    system_prompt: str | None = None,
+    user_prompt: str | None = None,
+    progress_callback = None,
 ) -> str:
     """
     改写长文本
@@ -338,7 +340,7 @@ async def rewrite_long_text(
 
 
 async def rewrite_long_text_stream(
-    text: str, system_prompt: Optional[str] = None, user_prompt: Optional[str] = None
+    text: str, system_prompt: str | None = None, user_prompt: str | None = None
 ) -> AsyncGenerator[str, None]:
     """
     流式改写长文本

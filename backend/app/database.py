@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
+
 from app.config import settings
 
 engine = create_engine(
@@ -37,6 +38,6 @@ def get_db():
 
 
 def init_db():
-    from app.models import ActivityLog, Task, ChapterNote
+    from app.models import ActivityLog, ChapterNote, Task
 
     Base.metadata.create_all(bind=engine)

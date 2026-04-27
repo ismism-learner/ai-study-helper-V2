@@ -1,14 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy import func
 from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
 from app.database import get_db
-from app.models import Folder, Document
+from app.models import Document, Folder
 
 router = APIRouter()
 
 
-@router.get("/folders", response_model=List[dict])
+@router.get("/folders", response_model=list[dict])
 def list_folders(db: Session = Depends(get_db)):
     folders = db.query(Folder).all()
 

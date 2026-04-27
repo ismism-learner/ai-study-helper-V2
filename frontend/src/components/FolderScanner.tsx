@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Country, Category } from '../types';
 import { libraryApi, countryApi, categoryApi } from '../api';
 import { FolderOpen, Check, CheckSquare, Square, ArrowRight, MapPin, Tag } from 'lucide-react';
@@ -267,7 +267,7 @@ const FolderScanner: React.FC<FolderScannerProps> = ({ onImportComplete }) => {
           {newFiles.length > 0 && (
             <div className="file-section">
               <h3>待导入文件 ({newFiles.length})</h3>
-              <p style={{ fontSize: 12, color: '#6c757d', marginBottom: 8 }}>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>
                 点击文件可选中/取消选中，选中后点击底部"导入选中文件"按钮完成导入
               </p>
               <div className="file-list">
@@ -333,10 +333,10 @@ const FolderScanner: React.FC<FolderScannerProps> = ({ onImportComplete }) => {
               borderTop: '2px solid #e9ecef',
               marginTop: '16px'
             }}>
-              <div style={{ marginBottom: 8, fontSize: 13, color: '#495057' }}>
+              <div style={{ marginBottom: 8, fontSize: 13, color: 'var(--text-primary)' }}>
                 已选择 {selectedFiles.size} 个文件
                 {selectedFiles.size === 0 && (
-                  <span style={{ color: '#dc3545' }}> - 请先点击上方文件进行选择</span>
+                  <span style={{ color: 'var(--danger-500)' }}> - 请先点击上方文件进行选择</span>
                 )}
               </div>
               <button

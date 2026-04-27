@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, CheckCircle, AlertCircle, FileText, XCircle, Cpu, Edit3, Save, Sparkles } from 'lucide-react';
 import { pdfOcrApi, chapterNoteApi } from '../api';
 import ChapterNoteViewer from './ChapterNoteViewer';
@@ -520,7 +520,7 @@ const PDFOCRModal: React.FC<PDFOCRModalProps> = ({
                         disabled={isGeneratingNote}
                         style={{ 
                           display: 'flex', alignItems: 'center', gap: 4, 
-                          background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', 
+                          background: 'var(--accent-500)', 
                           color: 'white', border: 'none', borderRadius: 6, 
                           padding: '4px 10px', cursor: isGeneratingNote ? 'wait' : 'pointer',
                           fontSize: 12, fontWeight: 500

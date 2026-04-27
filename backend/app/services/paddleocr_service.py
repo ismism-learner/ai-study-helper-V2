@@ -1,16 +1,16 @@
-import os
-import sys
+import asyncio
 import json
 import logging
-import tempfile
-import threading
+import os
 import shutil
 import subprocess
-from typing import List, Dict, Any, Optional, Tuple
-from pathlib import Path
-from datetime import datetime
+import sys
+import tempfile
+import threading
 from concurrent.futures import ThreadPoolExecutor
-import asyncio
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +21,9 @@ class PaddleOCRResult:
         success: bool,
         text_content: str = "",
         error: str = None,
-        pages: List[Dict] = None,
-        code_blocks: List[Dict] = None,
-        ocr_results: List[Dict] = None,
+        pages: list[dict] = None,
+        code_blocks: list[dict] = None,
+        ocr_results: list[dict] = None,
     ):
         self.success = success
         self.text_content = text_content
@@ -32,7 +32,7 @@ class PaddleOCRResult:
         self.code_blocks = code_blocks or []
         self.ocr_results = ocr_results or []
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "success": self.success,
             "text_content": self.text_content,
@@ -90,7 +90,7 @@ class PaddleOCRService:
             pass
         return 0.0
 
-    def _get_gpu_memory_info(self) -> Tuple[float, float]:
+    def _get_gpu_memory_info(self) -> tuple[float, float]:
         try:
             result = subprocess.run(
                 [
@@ -112,8 +112,8 @@ class PaddleOCRService:
             pass
         return 0, 8192
 
-    def _check_gpu_available(self) -> Tuple[bool, str]:
-        print(f"[GPU检查] 开始检查 GPU 可用性...")
+    def _check_gpu_available(self) -> tuple[bool, str]:
+        print("[GPU检查] 开始检查 GPU 可用性...")
 
         try:
             import paddle
@@ -135,13 +135,13 @@ class PaddleOCRService:
                         ).total_memory
                         print(f"[GPU检查] GPU 0 显存: {gpu_memory / 1024**3:.2f} GB")
                     except Exception:
-                        print(f"[GPU检查] 无法获取 GPU 显存信息")
+                        print("[GPU检查] 无法获取 GPU 显存信息")
 
                     print(f"[GPU检查] ✅ GPU 可用: {gpu_name}")
                     logger.info(f"PaddlePaddle GPU available: {gpu_name}")
                     return True, "gpu"
 
-            print(f"[GPU检查] ❌ GPU 不可用，将使用 CPU")
+            print("[GPU检查] ❌ GPU 不可用，将使用 CPU")
             logger.info("PaddlePaddle GPU not available, using CPU")
             return False, "cpu"
         except Exception as e:
@@ -155,15 +155,15 @@ class PaddleOCRService:
         start_time = time.time()
 
         print(f"\n{'=' * 80}")
-        print(f"[PaddleOCR] 开始加载模型...")
+        print("[PaddleOCR] 开始加载模型...")
         print(f"[PaddleOCR] 开始时间: {time.strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"{'=' * 80}")
 
         try:
-            print(f"[PaddleOCR] 步骤1: 导入 PaddlePaddle...")
+            print("[PaddleOCR] 步骤1: 导入 PaddlePaddle...")
             import paddle
 
-            print(f"[PaddleOCR] 步骤2: 检查 GPU 可用性...")
+            print("[PaddleOCR] 步骤2: 检查 GPU 可用性...")
             self._use_gpu, self.device = self._check_gpu_available()
             print(f"[PaddleOCR] GPU 可用: {self._use_gpu}, 设备: {self.device}")
 
@@ -172,16 +172,16 @@ class PaddleOCRService:
                 print(f"[PaddleOCR] 错误: {error_msg}")
                 raise Exception(error_msg)
 
-            print(f"[PaddleOCR] 步骤3: 设置 GPU 设备...")
+            print("[PaddleOCR] 步骤3: 设置 GPU 设备...")
             paddle.device.set_device("gpu:0")
-            print(f"[PaddleOCR] 已设置 paddle device to GPU:0")
+            print("[PaddleOCR] 已设置 paddle device to GPU:0")
             logger.info("Set paddle device to GPU:0")
 
-            print(f"[PaddleOCR] 步骤4: 导入 PaddleOCR...")
+            print("[PaddleOCR] 步骤4: 导入 PaddleOCR...")
             from paddleocr import PaddleOCR
 
-            print(f"[PaddleOCR] 步骤5: 初始化 PaddleOCR 模型 (这可能需要10-30秒)...")
-            print(f"[PaddleOCR] 参数: use_angle_cls=True, lang='ch', use_gpu=True")
+            print("[PaddleOCR] 步骤5: 初始化 PaddleOCR 模型 (这可能需要10-30秒)...")
+            print("[PaddleOCR] 参数: use_angle_cls=True, lang='ch', use_gpu=True")
 
             init_start = time.time()
             self.ocr = PaddleOCR(
@@ -200,9 +200,9 @@ class PaddleOCRService:
             total_time = time.time() - start_time
 
             print(f"\n{'=' * 80}")
-            print(f"[PaddleOCR] ✅ 模型加载成功!")
+            print("[PaddleOCR] ✅ 模型加载成功!")
             print(f"[PaddleOCR] 总耗时: {total_time:.2f} 秒")
-            print(f"[PaddleOCR] 设备: GPU")
+            print("[PaddleOCR] 设备: GPU")
             print(f"{'=' * 80}\n")
 
             logger.info(
@@ -215,7 +215,7 @@ class PaddleOCRService:
             total_time = time.time() - start_time
 
             print(f"\n{'=' * 80}")
-            print(f"[PaddleOCR] ❌ 模型加载失败!")
+            print("[PaddleOCR] ❌ 模型加载失败!")
             print(f"[PaddleOCR] 错误: {e}")
             print(f"[PaddleOCR] 耗时: {total_time:.2f} 秒")
             print(f"{'=' * 80}\n")
@@ -254,7 +254,7 @@ class PaddleOCRService:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, self.load_model_sync)
 
-    def _process_single_image_sync(self, image_path: str) -> Dict[str, Any]:
+    def _process_single_image_sync(self, image_path: str) -> dict[str, Any]:
         """同步处理单张图片（在线程池中运行，加锁保护OCR调用）"""
         try:
             if not os.path.exists(image_path):
@@ -437,7 +437,7 @@ class PaddleOCRService:
             traceback.print_exc()
             return PaddleOCRResult(success=False, error=str(e))
 
-    def _extract_code_blocks(self, text_content: str) -> List[Dict]:
+    def _extract_code_blocks(self, text_content: str) -> list[dict]:
         import re
 
         code_blocks = []
@@ -508,8 +508,8 @@ class PaddleOCRService:
         return code_blocks
 
     def _detect_language(
-        self, code: str, keywords: Dict[str, List[str]]
-    ) -> Optional[str]:
+        self, code: str, keywords: dict[str, list[str]]
+    ) -> str | None:
         scores = {}
         for lang, kws in keywords.items():
             score = sum(1 for kw in kws if kw in code)
@@ -701,7 +701,7 @@ class PaddleOCRService:
         start_page: int = 0,
         end_page: int = None,
         progress_callback: callable = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         智能处理PDF
 
@@ -803,7 +803,7 @@ class PaddleOCRService:
         progress_callback: callable = None,
         status_callback: callable = None,
         concurrency: int = 1,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         从PDF提取文本 - 核心方法
 
@@ -823,7 +823,7 @@ class PaddleOCRService:
         Returns:
             Dict with success, text_content, pages, etc.
         """
-        print(f"\n[OCR PDF] ========== extract_text_from_pdf 开始 ==========")
+        print("\n[OCR PDF] ========== extract_text_from_pdf 开始 ==========")
         print(f"[OCR PDF] PDF 路径: {pdf_path}")
         print(f"[OCR PDF] start_page: {start_page}, end_page: {end_page}")
         print(f"[OCR PDF] 预处理线程数: {concurrency}")
@@ -865,11 +865,11 @@ class PaddleOCRService:
             all_temp_files = []
             page_image_map = {}
 
-            print(f"[OCR PDF] 正在提取PDF页面图片...")
+            print("[OCR PDF] 正在提取PDF页面图片...")
 
             for page_idx in range(start_page, actual_end):
                 if self.is_cancelled():
-                    print(f"[OCR PDF] 用户取消了处理")
+                    print("[OCR PDF] 用户取消了处理")
                     break
 
                 page = doc[page_idx]
@@ -932,7 +932,7 @@ class PaddleOCRService:
                 if result is not None:
                     results_dict[page_idx] = result
 
-            print(f"\n[OCR PDF] ========== 处理完成 ==========")
+            print("\n[OCR PDF] ========== 处理完成 ==========")
 
             for tmp_path in all_temp_files:
                 try:
@@ -1012,7 +1012,7 @@ class PaddleOCRService:
         end_page: int = None,
         progress_callback: callable = None,
         status_callback: callable = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         原地创建可搜索PDF
 
@@ -1142,7 +1142,7 @@ class PaddleOCRService:
             traceback.print_exc()
             return {"success": False, "error": str(e)}
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """获取服务状态"""
         return {
             "model_loaded": self.model_loaded,
@@ -1153,7 +1153,7 @@ class PaddleOCRService:
             "mode": "single_process_thread_pool",
         }
 
-    def get_gpu_status(self) -> Tuple[float, float, float]:
+    def get_gpu_status(self) -> tuple[float, float, float]:
         """获取GPU状态"""
         return (self._get_gpu_utilization(), *self._get_gpu_memory_info())
 

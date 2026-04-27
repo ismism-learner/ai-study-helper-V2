@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+﻿import React, { useState, useCallback, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Highlight, CreateHighlightRequest } from '../types';
@@ -325,7 +325,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
         <div className="modal-overlay" onClick={() => setShowPromptModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>创建高亮标记</h2>
-            <p style={{ marginBottom: 16, color: '#6c757d' }}>
+            <p style={{ marginBottom: 16, color: 'var(--text-muted)' }}>
               选中文本: <strong>"{selection?.text}"</strong>
             </p>
             
@@ -402,13 +402,13 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
             <div style={{
               fontSize: 13,
               fontWeight: 600,
-              color: '#667eea',
+              color: 'var(--primary-500)',
               display: 'flex',
               alignItems: 'center',
               gap: 6,
             }}>
               <span style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                background: 'var(--accent-500)',
                 color: 'white',
                 padding: '2px 8px',
                 borderRadius: 4,
@@ -417,7 +417,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
                 AI解释
               </span>
               {explanationPopup.isPinned && (
-                <span style={{ fontSize: 10, color: '#6c757d' }}>已固定</span>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>已固定</span>
               )}
             </div>
             <button
@@ -429,7 +429,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
                 padding: 4,
                 display: 'flex',
                 alignItems: 'center',
-                color: '#6c757d',
+                color: 'var(--text-muted)',
               }}
             >
               <X size={16} />
@@ -437,10 +437,10 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({
           </div>
           <div style={{
             fontSize: 12,
-            color: '#495057',
+            color: 'var(--text-primary)',
             marginBottom: 12,
             padding: '8px 12px',
-            background: '#f8f9fa',
+            background: 'var(--bg-muted)',
             borderRadius: 6,
             fontStyle: 'italic',
           }}>

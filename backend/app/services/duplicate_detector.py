@@ -1,9 +1,10 @@
 import hashlib
-import fitz
 import re
 from difflib import SequenceMatcher
-from typing import Optional, Dict, List, Tuple
 from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+import fitz
 
 
 class DuplicateDetector:
@@ -21,7 +22,7 @@ class DuplicateDetector:
 
     def calculate_content_hash(
         self, file_path: str, sample_pages: int = 100
-    ) -> Tuple[str, int]:
+    ) -> tuple[str, int]:
         with fitz.open(file_path) as doc:
             total_pages = len(doc)
 
@@ -131,7 +132,7 @@ class DuplicateDetector:
             page_count = len(doc)
         return page_count
 
-    def extract_title_variants(self, title: str) -> List[str]:
+    def extract_title_variants(self, title: str) -> list[str]:
         variants = [title]
 
         variants.append(title.lower())
@@ -171,11 +172,11 @@ class DuplicateDetector:
         self,
         title1: str,
         title2: str,
-        author1: Optional[str] = None,
-        author2: Optional[str] = None,
-        page_count1: Optional[int] = None,
-        page_count2: Optional[int] = None,
-    ) -> Dict:
+        author1: str | None = None,
+        author2: str | None = None,
+        page_count1: int | None = None,
+        page_count2: int | None = None,
+    ) -> dict:
         result = {
             "title_match": False,
             "title_similarity": 0.0,
@@ -232,10 +233,10 @@ class DuplicateCheckResult:
         self,
         is_duplicate: bool,
         duplicate_type: str,
-        existing_book_id: Optional[str] = None,
-        existing_book_title: Optional[str] = None,
+        existing_book_id: str | None = None,
+        existing_book_title: str | None = None,
         similarity_score: float = 0.0,
-        details: Optional[Dict] = None,
+        details: dict | None = None,
     ):
         self.is_duplicate = is_duplicate
         self.duplicate_type = duplicate_type

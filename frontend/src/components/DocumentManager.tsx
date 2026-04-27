@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { Document, Folder, Country, TimePeriod } from '../types';
 import { documentApi, folderApi, countryApi, timePeriodApi } from '../api';
 import BatchRegeneratePanel from './BatchRegeneratePanel';

@@ -1,11 +1,13 @@
 import json
 import os
-from typing import List, Dict, Optional
 from datetime import datetime
+from typing import Dict, List, Optional
+
 from sqlalchemy.orm import Session
+
 from app.models import BookDocument, Document
-from app.services.file_parser import FileParser
 from app.services.duplicate_detector import duplicate_detector
+from app.services.file_parser import FileParser
 
 CONFIG_FILE = os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "document_sources.json"
@@ -44,14 +46,14 @@ class DocumentSourceConfig:
             return
         self._initialized = True
         self._config = None
-        self._sources: List[SourceConfig] = []
-        self._sync_settings: Optional[SyncSettings] = None
+        self._sources: list[SourceConfig] = []
+        self._sync_settings: SyncSettings | None = None
         self._load_config()
 
     def _load_config(self):
         if os.path.exists(CONFIG_FILE):
             try:
-                with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                with open(CONFIG_FILE, encoding="utf-8") as f:
                     self._config = json.load(f)
                     self._sources = [
                         SourceConfig(s) for s in self._config.get("sources", [])
@@ -105,10 +107,10 @@ class DocumentSourceConfig:
         except Exception as e:
             print(f"Failed to create default config: {e}")
 
-    def get_sources(self) -> List[SourceConfig]:
+    def get_sources(self) -> list[SourceConfig]:
         return self._sources
 
-    def get_enabled_sources(self) -> List[SourceConfig]:
+    def get_enabled_sources(self) -> list[SourceConfig]:
         return [s for s in self._sources if s.enabled and s.path]
 
     def get_sync_settings(self) -> SyncSettings:
@@ -178,7 +180,7 @@ class DocumentSyncService:
         self.db = db
         self.config = DocumentSourceConfig()
 
-    def sync_all_sources(self) -> Dict:
+    def sync_all_sources(self) -> dict:
         results = {
             "total_scanned": 0,
             "books_added": 0,
@@ -210,7 +212,7 @@ class DocumentSyncService:
 
         return results
 
-    def _sync_source(self, source: SourceConfig) -> Dict:
+    def _sync_source(self, source: SourceConfig) -> dict:
         result = {
             "scanned": 0,
             "books_added": 0,
@@ -250,7 +252,7 @@ class DocumentSyncService:
 
         return result
 
-    def _sync_book(self, file_path: str, file_name: str, result: Dict):
+    def _sync_book(self, file_path: str, file_name: str, result: dict):
         existing = (
             self.db.query(BookDocument)
             .filter(BookDocument.file_path == file_path)
@@ -352,7 +354,7 @@ class DocumentSyncService:
         result["books_added"] += 1
 
     def _sync_document(
-        self, file_path: str, file_name: str, file_ext: str, result: Dict
+        self, file_path: str, file_name: str, file_ext: str, result: dict
     ):
         existing = (
             self.db.query(Document).filter(Document.file_path == file_path).first()
@@ -385,9 +387,10 @@ class DocumentSyncService:
 
     def _generate_pdf_cover(self, file_path: str) -> tuple:
         try:
-            import fitz
-            import io
             import base64
+            import io
+
+            import fitz
             from PIL import Image
 
             doc = fitz.open(file_path)

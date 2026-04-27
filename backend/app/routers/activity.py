@@ -1,8 +1,9 @@
+from datetime import UTC, datetime, timedelta
+from typing import Any, List, Optional
+
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from datetime import datetime, timedelta, UTC
-from typing import Optional, List, Any
+from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import ActivityLog, BookDocument, WorldTimelineEvent
@@ -14,16 +15,16 @@ class ActivityResponse(BaseModel):
     id: str
     action_type: str
     description: str
-    details: Optional[dict]
-    book_id: Optional[str]
-    document_id: Optional[str]
+    details: dict | None
+    book_id: str | None
+    document_id: str | None
     created_at: datetime
 
     class Config:
         from_attributes = True
 
 
-@router.get("", response_model=List[ActivityResponse])
+@router.get("", response_model=list[ActivityResponse])
 def get_activities(limit: int = 10, db: Session = Depends(get_db)):
     """获取最近的活动日志"""
     activities = (
@@ -36,9 +37,9 @@ def get_activities(limit: int = 10, db: Session = Depends(get_db)):
 def create_activity(
     action_type: str,
     description: str,
-    book_id: Optional[str] = None,
-    document_id: Optional[str] = None,
-    details: Optional[dict] = None,
+    book_id: str | None = None,
+    document_id: str | None = None,
+    details: dict | None = None,
     db: Session = Depends(get_db),
 ):
     """创建活动日志"""

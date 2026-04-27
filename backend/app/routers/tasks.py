@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy import or_
-from pydantic import BaseModel
-from datetime import datetime, timedelta, UTC
-from typing import Optional, List
 import json
+from datetime import UTC, datetime, timedelta
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy import or_
+from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import Task
@@ -14,31 +15,31 @@ router = APIRouter(tags=["tasks"])
 
 class TaskCreate(BaseModel):
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     due_date: datetime
     task_type: str = "general"
-    target_value: Optional[int] = None
+    target_value: int | None = None
     priority: str = "normal"
 
 
 class TaskUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    due_date: Optional[datetime] = None
-    completed: Optional[int] = None
-    current_value: Optional[int] = None
-    priority: Optional[str] = None
+    title: str | None = None
+    description: str | None = None
+    due_date: datetime | None = None
+    completed: int | None = None
+    current_value: int | None = None
+    priority: str | None = None
 
 
 class TaskResponse(BaseModel):
     id: str
     title: str
-    description: Optional[str]
+    description: str | None
     due_date: datetime
     completed: int
-    completed_at: Optional[datetime]
+    completed_at: datetime | None
     task_type: str
-    target_value: Optional[int]
+    target_value: int | None
     current_value: int
     priority: str
     created_at: datetime
@@ -48,7 +49,7 @@ class TaskResponse(BaseModel):
         from_attributes = True
 
 
-@router.get("", response_model=List[TaskResponse])
+@router.get("", response_model=list[TaskResponse])
 def get_tasks(include_completed: bool = False, db: Session = Depends(get_db)):
     """获取任务列表"""
     query = db.query(Task)
@@ -139,7 +140,7 @@ def uncomplete_task(task_id: str, db: Session = Depends(get_db)):
     return db_task
 
 
-@router.get("/upcoming", response_model=List[TaskResponse])
+@router.get("/upcoming", response_model=list[TaskResponse])
 def get_upcoming_tasks(days: int = 7, db: Session = Depends(get_db)):
     """获取即将到期的任务"""
     now = datetime.now(UTC)
@@ -155,7 +156,7 @@ def get_upcoming_tasks(days: int = 7, db: Session = Depends(get_db)):
     return tasks
 
 
-@router.get("/overdue", response_model=List[TaskResponse])
+@router.get("/overdue", response_model=list[TaskResponse])
 def get_overdue_tasks(db: Session = Depends(get_db)):
     """获取已过期的任务"""
     now = datetime.now(UTC)

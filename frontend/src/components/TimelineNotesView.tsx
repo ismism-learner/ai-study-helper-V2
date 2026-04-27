@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -157,13 +157,13 @@ const TimelineNotesView: React.FC<TimelineNotesViewProps> = ({
   const getImportanceColor = (importance: string) => {
     switch (importance) {
       case 'high':
-        return '#ef4444';
+        return 'var(--danger-500)';
       case 'normal':
-        return '#3b82f6';
+        return 'var(--primary-500)';
       case 'low':
-        return '#10b981';
+        return 'var(--success-500)';
       default:
-        return '#6b7280';
+        return 'var(--text-muted)';
     }
   };
 

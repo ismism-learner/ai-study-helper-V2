@@ -1,9 +1,10 @@
+import os
+import platform
 import re
 import subprocess
-import os
 import sys
-import platform
 import tempfile
+
 from docx import Document
 
 
@@ -72,7 +73,7 @@ class FileParser:
 
             text = doc.Content.Text.strip()
             return text
-        except Exception as e:
+        except Exception:
             return None
         finally:
             if doc:
@@ -121,7 +122,7 @@ class FileParser:
 
             result = FileParser.parse_docx(temp_file)
             return result
-        except Exception as e:
+        except Exception:
             return None
         finally:
             if doc:
@@ -240,14 +241,14 @@ class FileParser:
         ext = file_extension.lower().replace(".", "")
 
         if ext == "md" or ext == "markdown":
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 return f.read()
         elif ext == "docx":
             return FileParser.parse_docx(file_path)
         elif ext == "doc":
             return FileParser.parse_doc(file_path)
         elif ext == "txt":
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 return f.read()
         else:
             raise ValueError(f"不支持的文件格式: {file_extension}")

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+﻿import React, { useState, useCallback, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -1271,7 +1271,7 @@ const FrameworkView: React.FC<FrameworkViewProps> = ({
               gap: 6,
             }}>
               <span style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                background: 'var(--accent-500)',
                 color: 'white',
                 padding: '2px 8px',
                 borderRadius: 4,

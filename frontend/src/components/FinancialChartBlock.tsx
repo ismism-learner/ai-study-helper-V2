@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import { createChart, CandlestickSeries, HistogramSeries, ColorType } from 'lightweight-charts';
 import type { IChartApi, DeepPartial, ChartOptions } from 'lightweight-charts';
 
@@ -59,8 +59,8 @@ const FinancialChartBlock: React.FC<FinancialChartBlockProps> = ({ data }) => {
     try {
       const chartOptions: DeepPartial<ChartOptions> = {
         layout: {
-          background: { type: ColorType.Solid, color: '#1e1b2e' },
-          textColor: '#94a3b8',
+          background: { type: ColorType.Solid, color: 'var(--bg-base)' },
+          textColor: 'var(--text-muted)',
         },
         grid: {
           vertLines: { color: 'rgba(255, 255, 255, 0.05)' },
@@ -76,8 +76,8 @@ const FinancialChartBlock: React.FC<FinancialChartBlockProps> = ({ data }) => {
           borderColor: 'rgba(139, 92, 246, 0.2)',
         },
         crosshair: {
-          vertLine: { color: 'rgba(139, 92, 246, 0.3)', labelBackgroundColor: '#8b5cf6' },
-          horzLine: { color: 'rgba(139, 92, 246, 0.3)', labelBackgroundColor: '#8b5cf6' },
+          vertLine: { color: 'rgba(139, 92, 246, 0.3)', labelBackgroundColor: 'var(--accent-500)' },
+          horzLine: { color: 'rgba(139, 92, 246, 0.3)', labelBackgroundColor: 'var(--accent-500)' },
         },
       };
 
@@ -86,12 +86,12 @@ const FinancialChartBlock: React.FC<FinancialChartBlockProps> = ({ data }) => {
 
       // Add candlestick series
       const candlestickSeries = chart.addSeries(CandlestickSeries, {
-        upColor: '#10b981',
-        downColor: '#ef4444',
-        borderDownColor: '#ef4444',
-        borderUpColor: '#10b981',
-        wickDownColor: '#ef4444',
-        wickUpColor: '#10b981',
+        upColor: 'var(--success-500)',
+        downColor: 'var(--danger-500)',
+        borderDownColor: 'var(--danger-500)',
+        borderUpColor: 'var(--success-500)',
+        wickDownColor: 'var(--danger-500)',
+        wickUpColor: 'var(--success-500)',
       });
 
       candlestickSeries.setData(config.data);
@@ -148,11 +148,11 @@ const FinancialChartBlock: React.FC<FinancialChartBlockProps> = ({ data }) => {
   if (error) {
     return (
       <div style={{
-        background: '#1e1b2e',
+        background: 'var(--bg-base)',
         border: '1px solid rgba(239, 68, 68, 0.3)',
         borderRadius: 8,
         padding: 16,
-        color: '#ef4444',
+        color: 'var(--danger-500)',
         fontSize: 14,
         marginBottom: 16,
       }}>
@@ -163,7 +163,7 @@ const FinancialChartBlock: React.FC<FinancialChartBlockProps> = ({ data }) => {
           background: 'rgba(0, 0, 0, 0.3)',
           borderRadius: 4,
           fontSize: 12,
-          color: '#94a3b8',
+          color: 'var(--text-muted)',
           overflowX: 'auto',
           maxHeight: 120,
           whiteSpace: 'pre-wrap',
@@ -177,7 +177,7 @@ const FinancialChartBlock: React.FC<FinancialChartBlockProps> = ({ data }) => {
 
   return (
     <div style={{
-      background: '#1e1b2e',
+      background: 'var(--bg-base)',
       border: '1px solid rgba(139, 92, 246, 0.2)',
       borderRadius: 8,
       padding: 16,
@@ -187,7 +187,7 @@ const FinancialChartBlock: React.FC<FinancialChartBlockProps> = ({ data }) => {
         <div style={{
           fontSize: 14,
           fontWeight: 600,
-          color: '#e2e8f0',
+          color: 'var(--border-subtle)',
           marginBottom: 12,
           paddingBottom: 8,
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)',

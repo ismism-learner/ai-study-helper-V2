@@ -1,29 +1,31 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
-from typing import List, Optional
-import tempfile
-import os
 import json
+import os
+import tempfile
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload
+
 from app.database import get_db
-from app.models import Document, Highlight, DocumentTimelineEvent
+from app.models import Document, DocumentTimelineEvent, Highlight
 from app.schemas import (
     DocumentCreate,
-    DocumentUpdate,
     DocumentResponse,
-    HighlightCreate,
-    HighlightResponse,
+    DocumentTimelineEventCreate,
+    DocumentTimelineEventResponse,
+    DocumentTimelineEventUpdate,
+    DocumentUpdate,
     ExplainRequest,
     ExplainResponse,
-    ParagraphOptimizeRequest,
-    ParagraphOptimizeResponse,
+    HighlightCreate,
+    HighlightResponse,
     NotePolishRequest,
     NotePolishResponse,
-    DocumentTimelineEventCreate,
-    DocumentTimelineEventUpdate,
-    DocumentTimelineEventResponse,
+    ParagraphOptimizeRequest,
+    ParagraphOptimizeResponse,
 )
 from app.services.ai_service import ai_service
 from app.services.document_processor import DocumentProcessor
@@ -32,9 +34,9 @@ from app.services.file_parser import FileParser
 router = APIRouter()
 
 
-@router.post("/documents/upload-batch", response_model=List[DocumentResponse])
+@router.post("/documents/upload-batch", response_model=list[DocumentResponse])
 async def upload_documents(
-    files: List[UploadFile] = File(...),
+    files: list[UploadFile] = File(...),
     folder_id: str = None,
     archive_status: str = "unarchived_doc",
     doc_type: str = "text_document",
@@ -93,7 +95,7 @@ async def upload_documents(
 async def upload_document_with_path(
     file: UploadFile = File(...),
     title: str = Form(...),
-    relative_path: Optional[str] = Form(None),
+    relative_path: str | None = Form(None),
     archive_status: str = Form("unarchived_doc"),
     db: Session = Depends(get_db),
 ):
@@ -103,7 +105,7 @@ async def upload_document_with_path(
     relative_path: 文件的相对路径，格式为 "文件夹名/子文件夹/文件名.docx"
     系统会根据相对路径自动创建文件夹层级结构
     """
-    print(f"\n=== 上传文档请求（带路径）===")
+    print("\n=== 上传文档请求（带路径）===")
     print(f"文件名: {file.filename}")
     print(f"标题: {title}")
     print(f"相对路径: {relative_path}")
@@ -285,7 +287,7 @@ async def create_document(doc: DocumentCreate, db: Session = Depends(get_db)):
     return db_doc
 
 
-@router.get("/documents", response_model=List[DocumentResponse])
+@router.get("/documents", response_model=list[DocumentResponse])
 def list_documents(
     folder_id: str = None,
     archive_status: str = None,
@@ -369,7 +371,7 @@ def list_documents(
     return result
 
 
-@router.get("/documents/tags", response_model=List[str])
+@router.get("/documents/tags", response_model=list[str])
 def get_all_document_tags(db: Session = Depends(get_db)):
     """获取所有文档标签"""
     documents = db.query(Document.tags).filter(Document.tags != None).all()
@@ -474,8 +476,9 @@ async def generate_framework(doc_id: str, db: Session = Depends(get_db)):
     从原文内容生成经过AI处理的文章正文，保存到 framework_content 字段
     使用用户保存的 framework_prompt 提示词模板
     """
-    from app.config import settings_manager
     import traceback
+
+    from app.config import settings_manager
 
     doc = db.query(Document).filter(Document.id == doc_id).first()
     if not doc:
@@ -581,8 +584,9 @@ async def generate_framework_stream(doc_id: str, db: Session = Depends(get_db)):
 
     关键修复：使用独立数据库会话保存内容，避免请求中止时数据库会话被关闭导致保存失败
     """
-    from app.config import settings_manager
     import traceback
+
+    from app.config import settings_manager
 
     doc = db.query(Document).filter(Document.id == doc_id).first()
     if not doc:
@@ -692,12 +696,12 @@ def delete_document(doc_id: str, db: Session = Depends(get_db)):
 # 文档时间轴事件 API
 @router.get(
     "/documents/{doc_id}/timeline-events",
-    response_model=List[DocumentTimelineEventResponse],
+    response_model=list[DocumentTimelineEventResponse],
 )
 def get_document_timeline_events(
     doc_id: str,
-    sort_by: Optional[str] = "date",
-    order: Optional[str] = "asc",
+    sort_by: str | None = "date",
+    order: str | None = "asc",
     db: Session = Depends(get_db),
 ):
     """获取文档的时间轴事件"""
@@ -836,7 +840,7 @@ async def create_highlight(
     return db_highlight
 
 
-@router.get("/documents/{doc_id}/highlights", response_model=List[HighlightResponse])
+@router.get("/documents/{doc_id}/highlights", response_model=list[HighlightResponse])
 def list_highlights(doc_id: str, db: Session = Depends(get_db)):
     highlights = db.query(Highlight).filter(Highlight.document_id == doc_id).all()
     return highlights
@@ -958,7 +962,7 @@ async def optimize_paragraph_stream(request: ParagraphOptimizeRequest):
                 data = json.dumps({"content": chunk, "done": False}, ensure_ascii=False)
                 yield f"data: {data}\n\n"
 
-            print(f"[optimize_paragraph_stream] Successfully optimized paragraph")
+            print("[optimize_paragraph_stream] Successfully optimized paragraph")
             data = json.dumps(
                 {"content": "", "done": True, "full_content": full_content},
                 ensure_ascii=False,
@@ -1071,9 +1075,10 @@ async def batch_generate_content(request: dict, db: Session = Depends(get_db)):
     接收文档ID列表，为每个文档生成正文内容
     使用用户保存的 framework_prompt 提示词模板
     """
-    from app.config import settings_manager
     import asyncio
     import traceback
+
+    from app.config import settings_manager
 
     document_ids = request.get("document_ids", [])
 
@@ -1176,7 +1181,7 @@ async def batch_generate_content(request: dict, db: Session = Depends(get_db)):
                     "title": doc.title if doc else None,
                 }
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             error_msg = "请求超时"
             print(f"Timeout for document {doc_id}")
             results.append(
@@ -1249,28 +1254,28 @@ class TimelineNoteParseResult(BaseModel):
     event_date_display: str
     event_title: str
     event_description: str
-    tags: Optional[List[str]] = None
+    tags: list[str] | None = None
 
 
 class SaveTimelineNotesBatchRequest(BaseModel):
-    events: List[TimelineNoteParseResult]
-    default_tags: Optional[List[str]] = None
+    events: list[TimelineNoteParseResult]
+    default_tags: list[str] | None = None
 
 
 class AIGenerateTimelineNotesRequest(BaseModel):
-    custom_prompt: Optional[str] = None
-    content: Optional[str] = None
+    custom_prompt: str | None = None
+    content: str | None = None
 
 
 class AIGenerateTimelineNotesResponse(BaseModel):
     raw_output: str
-    parsed_events: List[TimelineNoteParseResult]
+    parsed_events: list[TimelineNoteParseResult]
     total_events: int
 
 
 class AIGenerateTimelineNotesFromContentRequest(BaseModel):
     content: str
-    custom_prompt: Optional[str] = None
+    custom_prompt: str | None = None
 
 
 @router.post(
@@ -1322,7 +1327,7 @@ async def ai_generate_timeline_notes_from_content(
         raise HTTPException(status_code=500, detail=f"生成时间笔记失败: {error_msg}")
 
 
-def parse_timeline_notes_output(output: str) -> List[TimelineNoteParseResult]:
+def parse_timeline_notes_output(output: str) -> list[TimelineNoteParseResult]:
     """
     解析AI生成的时间笔记输出
     支持格式：
@@ -1615,9 +1620,10 @@ async def batch_regenerate_content(request: dict, db: Session = Depends(get_db))
 
     与 batch_generate_content 不同，此接口会强制重新生成，即使已有正文
     """
-    from app.config import settings_manager
     import asyncio
     import traceback
+
+    from app.config import settings_manager
 
     document_ids = request.get("document_ids", [])
     force_regenerate = request.get("force_regenerate", True)
@@ -1733,7 +1739,7 @@ async def batch_regenerate_content(request: dict, db: Session = Depends(get_db))
                     "title": doc.title if doc else None,
                 }
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             error_msg = "请求超时"
             print(f"Timeout for document {doc_id}")
             results.append(

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+﻿import React, { useState, useCallback, useEffect } from 'react';
 import { Upload, X, FileText, Check, MapPin, AlertTriangle, AlertCircle, FolderOpen } from 'lucide-react';
 import { countryApi } from '../api';
 import { Country } from '../types';
@@ -402,7 +402,7 @@ const BatchUploadModal: React.FC<BatchUploadModalProps> = ({ countryId, folderId
 
           <div className="country-select-section" style={{ 
             padding: '16px', 
-            background: '#f8f9fa', 
+            background: 'var(--bg-muted)', 
             borderRadius: 8, 
             marginBottom: 16 
           }}>
@@ -412,7 +412,7 @@ const BatchUploadModal: React.FC<BatchUploadModalProps> = ({ countryId, folderId
               gap: 8, 
               marginBottom: 8,
               fontWeight: 500,
-              color: '#495057'
+              color: 'var(--text-primary)'
             }}>
               <MapPin size={16} />
               所属国家/地区
@@ -440,14 +440,14 @@ const BatchUploadModal: React.FC<BatchUploadModalProps> = ({ countryId, folderId
           {duplicateFiles.length > 0 && (
             <div style={{ 
               padding: 16, 
-              background: '#fff3cd', 
+              background: 'var(--warning-light)', 
               borderRadius: 8, 
               marginBottom: 16,
               border: '1px solid #ffc107'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <AlertTriangle size={18} color="#856404" />
-                <span style={{ fontWeight: 500, color: '#856404' }}>
+                <span style={{ fontWeight: 500, color: 'var(--warning-500)' }}>
                   检测到 {duplicateFiles.length} 本重复书籍
                 </span>
               </div>
@@ -455,7 +455,7 @@ const BatchUploadModal: React.FC<BatchUploadModalProps> = ({ countryId, folderId
                 {duplicateFiles.map(file => (
                   <div key={file.id} style={{ 
                     padding: '8px 12px', 
-                    background: '#fff', 
+                    background: 'var(--bg-base)', 
                     borderRadius: 4, 
                     marginBottom: 4,
                     fontSize: 13
@@ -484,7 +484,7 @@ const BatchUploadModal: React.FC<BatchUploadModalProps> = ({ countryId, folderId
                     </span>
                   )}
                   {duplicateFiles.length > 0 && (
-                    <span className="stat" style={{ color: '#856404' }}>
+                    <span className="stat" style={{ color: 'var(--warning-500)' }}>
                       <AlertTriangle size={14} />
                       {duplicateFiles.length} 重复
                     </span>
@@ -502,7 +502,7 @@ const BatchUploadModal: React.FC<BatchUploadModalProps> = ({ countryId, folderId
                 {files.map(file => (
                   <div key={file.id} className={`file-item ${file.status}`} style={{
                     opacity: file.status === 'duplicate' ? 0.6 : 1,
-                    background: file.status === 'duplicate' ? '#fff3cd' : undefined
+                    background: file.status === 'duplicate' ? 'var(--warning-light)' : undefined
                   }}>
                     <div className="file-icon">
                       <FileText size={20} />
@@ -522,7 +522,7 @@ const BatchUploadModal: React.FC<BatchUploadModalProps> = ({ countryId, folderId
                       <span className="file-size">
                         {formatFileSize(file.file.size)}
                         {file.status === 'duplicate' && file.duplicateInfo && (
-                          <span style={{ color: '#856404', marginLeft: 8 }}>
+                          <span style={{ color: 'var(--warning-500)', marginLeft: 8 }}>
                             → 与《{file.duplicateInfo.existing_book_title}》重复
                           </span>
                         )}
@@ -624,7 +624,7 @@ const BatchUploadModal: React.FC<BatchUploadModalProps> = ({ countryId, folderId
               </p>
 
               <div style={{ 
-                background: '#f8f9fa', 
+                background: 'var(--bg-muted)', 
                 borderRadius: 8, 
                 padding: 12, 
                 marginBottom: 16,
@@ -647,7 +647,7 @@ const BatchUploadModal: React.FC<BatchUploadModalProps> = ({ countryId, folderId
               </div>
 
               <div style={{ 
-                background: '#d4edda', 
+                background: 'var(--success-light)', 
                 padding: 12, 
                 borderRadius: 8, 
                 marginBottom: 16,

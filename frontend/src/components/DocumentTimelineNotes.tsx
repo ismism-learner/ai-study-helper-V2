@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { WorldTimelineEvent } from '../types';
 import { worldTimelineApi } from '../api';
 import { Calendar, Clock, Tag, Trash2, Edit3, Plus, ChevronUp, ChevronDown, Check } from 'lucide-react';
@@ -382,7 +382,7 @@ const DocumentTimelineNotes: React.FC<DocumentTimelineNotesProps> = ({
           color: 'var(--text-primary)'
         }}>
           <span style={{ 
-            background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+            background: 'var(--accent-500)',
             color: 'white',
             padding: '1px 6px',
             borderRadius: 3,

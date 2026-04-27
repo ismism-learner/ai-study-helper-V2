@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { BookDocument, WorldTimelineEvent, CreateTimelineEventRequest } from '../types';
 import { worldTimelineApi } from '../api';
 import HierarchicalTimeline from './HierarchicalTimeline';
@@ -455,7 +455,7 @@ const WorldPanel: React.FC<WorldPanelProps> = ({ book, currentPage, onJumpToPage
                   style={{
                     width: '100%',
                     padding: '6px 10px',
-                    background: '#f3f4f6',
+                    background: 'var(--bg-muted)',
                     border: '1px solid #d1d5db',
                     borderRadius: '4px',
                     fontSize: '12px',
@@ -463,7 +463,7 @@ const WorldPanel: React.FC<WorldPanelProps> = ({ book, currentPage, onJumpToPage
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    color: '#374151'
+                    color: 'var(--text-primary)'
                   }}
                 >
                   <span>快速选择历史标签 ({historyTags.length}个可用)</span>
@@ -497,7 +497,7 @@ const WorldPanel: React.FC<WorldPanelProps> = ({ book, currentPage, onJumpToPage
                               }
                             }}
                             style={{
-                              background: isAdded ? '#8b5cf6' : 'var(--bg-surface, #334155)',
+                              background: isAdded ? 'var(--accent-500)' : 'var(--bg-surface, #334155)',
                               color: isAdded ? 'white' : 'var(--text-primary, #e2e8f0)',
                               border: '1px solid var(--border-color, #475569)',
                               borderRadius: '12px',

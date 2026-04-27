@@ -7,7 +7,7 @@ import { ArrowLeft, ZoomIn, ZoomOut, Maximize2, Minimize2, FileText, Download, R
 import PDFNotesPanel from './PDFNotesPanel';
 import ResizablePanels from './ResizablePanels';
 import KnowledgeGraphPanel from './KnowledgeGraphPanel';
-import CognitiveChainPanel from './CognitiveChainPanel';
+import AgentChatPanel from './AgentChatPanel';
 
 const EpubReaderView = lazy(() => import('./EpubReaderView'));
 import PDFOCRModal from './PDFOCRModal';
@@ -124,6 +124,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   const [graphRefreshKey, setGraphRefreshKey] = useState(0);
   const [activeChainId, setActiveChainId] = useState<string | null>(null);
   const [externalMessage, setExternalMessage] = useState<{ role: 'user' | 'assistant' | 'system'; content: string; nodeType?: string; chapterIndex?: number; knowledgeNodeId?: string } | null>(null);
+  const [ocrFontSize, setOcrFontSize] = useState(16);
   const contextMenuRef = useRef<typeof contextMenu>(null);
   const updateContextMenu = useCallback((val: typeof contextMenu) => {
     contextMenuRef.current = val;
@@ -440,7 +441,8 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
     return chapters
       .map(ch => ch.replace(/\n+$/, '').replace(/^\n+/, ''))
       .filter(ch => ch.length > 0)
-      .join('\n');
+      .join('\n')
+      .replace(/\n+$/, '');
   }, []);
 
   useEffect(() => {
@@ -522,18 +524,15 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
   }, []);
 
   const saveOCRText = useCallback(async (text: string) => {
-    console.log('[SAVE OCR TEXT] 开始保存');
-    console.log('[SAVE OCR TEXT] book.file_path:', book.file_path);
-    console.log('[SAVE OCR TEXT] text length:', text?.length);
-    console.log('[SAVE OCR TEXT] text preview:', text?.substring(0, 100));
-    if (!book.file_path || !text) {
-      console.log('[SAVE OCR TEXT] 跳过保存 - file_path 或 text 为空');
+    const clean = text
+      .replace(/\n{3,}/g, '\n')
+      .replace(/\n+$/, '')
+      .replace(/^\n+/, '');
+    if (!book.file_path || !clean) {
       return;
     }
     try {
-      console.log('[SAVE OCR TEXT] 调用 API...');
-      const result = await pdfOcrApi.saveOcrText(book.file_path, text);
-      console.log('[SAVE OCR TEXT] API 返回:', result.data);
+      await pdfOcrApi.saveOcrText(book.file_path, clean);
     } catch (error) {
       console.error('[SAVE OCR TEXT] 保存失败:', error);
     }
@@ -652,6 +651,20 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
       setOcrText(newFullText);
     }, 500);
   }, [reassembleFromEditChapters, parseChapters, toEditChapters, saveOCRText]);
+
+  const handleMergeNewlines = useCallback(() => {
+    const chapters = editChaptersRef.current;
+    if (chapters.length === 0) return;
+    const merged = chapters.map((ch: string) => ch.replace(/\n{2,}/g, '\n'));
+    const mergedText = reassembleFromEditChapters(merged);
+    setEditChapters(merged);
+    editChaptersRef.current = merged;
+    setEditText(mergedText);
+    setOcrText(mergedText);
+    saveOCRText(mergedText);
+    setFixNotification(`已合并全部 ${merged.length} 个章节的多余换行符`);
+    setTimeout(() => setFixNotification(null), 2000);
+  }, [reassembleFromEditChapters, saveOCRText]);
 
   const handleOCRTextSelection = useCallback(async () => {
     if (!ocrText) return;
@@ -1427,8 +1440,8 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
         )}
           </div>
 
-          {/* 第2栏：问答/认知链 */}
-          <CognitiveChainPanel
+          {/* 第2栏：Agent对话 */}
+          <AgentChatPanel
             bookTitle={book.title}
             sourceDocId={book.id}
             ocrText={ocrText || undefined}
@@ -1478,12 +1491,25 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
               <div className="ocr-header-actions">
                 {rightPanelMode === 'ocr' && !editMode && (
                   <>
+                    <div className="ocr-font-size-control">
+                      <button
+                        className="font-size-btn"
+                        onClick={() => setOcrFontSize(s => Math.max(10, s - 2))}
+                        title="减小字号"
+                      >A-</button>
+                      <span className="font-size-value">{ocrFontSize}</span>
+                      <button
+                        className="font-size-btn"
+                        onClick={() => setOcrFontSize(s => Math.min(36, s + 2))}
+                        title="增大字号"
+                      >A+</button>
+                    </div>
                     <button 
                       className="auto-fix-btn"
                       onClick={() => handleGenerateNote()}
                       disabled={isGeneratingNote || (() => { const t = ocrChapters.length > 0 ? ocrChapters[currentOcrChapter] : ocrText; return t ? t.length > MAX_NOTE_CHARS : false; })()}
                       title={(() => { const t = ocrChapters.length > 0 ? ocrChapters[currentOcrChapter] : ocrText; const len = t ? t.length : 0; return len > MAX_NOTE_CHARS ? `文本过长（${len.toLocaleString()}字），请先分章节` : '将当前章节OCR文本整理为Markdown笔记'; })()}
-                      style={(() => { const t = ocrChapters.length > 0 ? ocrChapters[currentOcrChapter] : ocrText; const len = t ? t.length : 0; const overLimit = len > MAX_NOTE_CHARS; return isGeneratingNote ? { opacity: 0.6, cursor: 'wait' } : overLimit ? { opacity: 0.4, cursor: 'not-allowed', background: 'linear-gradient(135deg, var(--text-muted), var(--bg-surface))', color: 'var(--text-secondary)', borderColor: 'transparent' } : { background: 'var(--gradient-accent)', color: 'white', borderColor: 'transparent' }; })()}
+                      style={(() => { const t = ocrChapters.length > 0 ? ocrChapters[currentOcrChapter] : ocrText; const len = t ? t.length : 0; const overLimit = len > MAX_NOTE_CHARS; return isGeneratingNote ? { opacity: 0.6, cursor: 'wait' } : overLimit ? { opacity: 0.4, cursor: 'not-allowed', background: 'var(--text-muted)', color: 'var(--text-secondary)', borderColor: 'transparent' } : { background: 'var(--accent-500)', color: 'white', borderColor: 'transparent' }; })()}
                     >
                       <Sparkles size={16} />
                       <span>{isGeneratingNote ? '整理中...' : (() => { const t = ocrChapters.length > 0 ? ocrChapters[currentOcrChapter] : ocrText; return t && t.length > MAX_NOTE_CHARS ? '过长' : '笔记'; })()}</span>
@@ -1514,6 +1540,13 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
                       title="保存编辑"
                     >
                       <span>✓ 保存</span>
+                    </button>
+                    <button 
+                      className="auto-fix-btn"
+                      onClick={handleMergeNewlines}
+                      title="将多个连续换行符合并为一个空行"
+                    >
+                      <span>¶ 合并换行</span>
                     </button>
                     <button 
                       className="auto-fix-btn"
@@ -1569,6 +1602,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
                 onChange={handleEditTextChange}
                 placeholder="在此编辑文字..."
                 spellCheck={false}
+                style={{ fontSize: ocrFontSize }}
               />
             ) : (
               <div 
@@ -1576,7 +1610,7 @@ const BookReaderView: React.FC<BookReaderViewProps> = ({ book: propsBook, onBack
                 onMouseUp={handleOCRTextSelection}
                 onContextMenu={handleOCRContextMenu}
               >
-                <pre>{ocrChapters.length > 0 ? ocrChapters[currentOcrChapter] : ocrText}</pre>
+                <pre style={{ fontSize: ocrFontSize }}>{ocrChapters.length > 0 ? ocrChapters[currentOcrChapter] : ocrText}</pre>
               </div>
             )}
             {contextMenu?.show && (

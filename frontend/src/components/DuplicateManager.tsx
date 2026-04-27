@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { duplicateApi } from '../api';
 import { 
   Copy, AlertTriangle, CheckCircle, 
@@ -194,7 +194,7 @@ const DuplicateManager: React.FC<DuplicateManagerProps> = () => {
 
       {stats.total_scanned > 0 && (
         <div style={{ 
-          background: '#f8f9fa', 
+          background: 'var(--bg-muted)', 
           padding: 16, 
           borderRadius: 8, 
           marginBottom: 20,
@@ -208,15 +208,15 @@ const DuplicateManager: React.FC<DuplicateManagerProps> = () => {
           </div>
           <div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>完全重复</div>
-            <div style={{ fontSize: 20, fontWeight: 'bold', color: '#dc3545' }}>{stats.exact_duplicates}</div>
+            <div style={{ fontSize: 20, fontWeight: 'bold', color: 'var(--danger-500)' }}>{stats.exact_duplicates}</div>
           </div>
           <div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>内容重复</div>
-            <div style={{ fontSize: 20, fontWeight: 'bold', color: '#fd7e14' }}>{stats.content_duplicates}</div>
+            <div style={{ fontSize: 20, fontWeight: 'bold', color: 'var(--warning-500)' }}>{stats.content_duplicates}</div>
           </div>
           <div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>元数据重复</div>
-            <div style={{ fontSize: 20, fontWeight: 'bold', color: '#ffc107' }}>{stats.metadata_duplicates}</div>
+            <div style={{ fontSize: 20, fontWeight: 'bold', color: 'var(--warning-500)' }}>{stats.metadata_duplicates}</div>
           </div>
         </div>
       )}
@@ -229,7 +229,7 @@ const DuplicateManager: React.FC<DuplicateManagerProps> = () => {
           </div>
         ) : groups.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
-            <CheckCircle size={48} style={{ marginBottom: 16, color: '#28a745' }} />
+            <CheckCircle size={48} style={{ marginBottom: 16, color: 'var(--success-500)' }} />
             <p>没有发现重复书籍</p>
             <p style={{ fontSize: 12 }}>点击"计算文件哈希"然后"扫描重复"来检测重复书籍</p>
           </div>
@@ -247,7 +247,7 @@ const DuplicateManager: React.FC<DuplicateManagerProps> = () => {
               <div 
                 style={{ 
                   padding: '12px 16px',
-                  background: '#f8f9fa',
+                  background: 'var(--bg-muted)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -275,9 +275,9 @@ const DuplicateManager: React.FC<DuplicateManagerProps> = () => {
                         justifyContent: 'space-between',
                         padding: '12px',
                         marginBottom: 8,
-                        background: book.is_primary ? '#d4edda' : '#fff3cd',
+                        background: book.is_primary ? 'var(--success-light)' : 'var(--warning-light)',
                         borderRadius: 4,
-                        border: `1px solid ${book.is_primary ? '#c3e6cb' : '#ffc107'}`
+                        border: `1px solid ${book.is_primary ? 'var(--success-border)' : 'var(--warning-500)'}`
                       }}
                     >
                       <div style={{ flex: 1 }}>
@@ -287,7 +287,7 @@ const DuplicateManager: React.FC<DuplicateManagerProps> = () => {
                           {book.is_primary === 1 && (
                             <span style={{ 
                               fontSize: 10, 
-                              background: '#28a745', 
+                              background: 'var(--success-500)', 
                               color: 'white', 
                               padding: '2px 6px', 
                               borderRadius: 4 
@@ -330,7 +330,7 @@ const DuplicateManager: React.FC<DuplicateManagerProps> = () => {
                             </button>
                             <button
                               className="btn btn-danger"
-                              style={{ padding: '4px 8px', fontSize: 12, background: '#dc3545', color: 'white' }}
+                              style={{ padding: '4px 8px', fontSize: 12, background: 'var(--danger-500)', color: 'white' }}
                               onClick={() => handleDeleteBook(book.id, book.title, true)}
                               disabled={processing === book.id}
                             >
@@ -351,10 +351,10 @@ const DuplicateManager: React.FC<DuplicateManagerProps> = () => {
       <div style={{ 
         marginTop: 20, 
         padding: 16, 
-        background: '#e7f3ff', 
+        background: 'var(--primary-light)', 
         borderRadius: 8,
         fontSize: 13,
-        color: '#0066cc'
+        color: 'var(--primary-500)'
       }}>
         <h4 style={{ margin: '0 0 8px 0' }}>重复检测说明</h4>
         <ul style={{ margin: 0, paddingLeft: 20 }}>

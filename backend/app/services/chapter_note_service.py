@@ -1,6 +1,7 @@
-from app.services.ai_service import ai_service
-from app.config import settings_manager
 import json
+
+from app.config import settings_manager
+from app.services.ai_service import ai_service
 
 # Token估算常量
 # GLM-5.1: 200K上下文窗口，最大输出128K tokens
@@ -46,7 +47,7 @@ async def generate_chapter_note(
         )
 
     # 超长文本分段处理
-    print(f"[generate_chapter_note] 超长文本，启动分段处理...")
+    print("[generate_chapter_note] 超长文本，启动分段处理...")
 
     # 按字符数分割（简单直接）
     chunks = []
@@ -115,7 +116,7 @@ async def generate_chapter_note_stream(
         return
 
     # 超长文本分段处理
-    print(f"[generate_chapter_note_stream] 超长文本，启动分段处理...")
+    print("[generate_chapter_note_stream] 超长文本，启动分段处理...")
 
     chunks = []
     for i in range(0, text_len, MAX_CHINESE_CHARS):

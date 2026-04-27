@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Document } from '../types';
 import { Search, X, ChevronUp, ChevronDown, Plus, Edit3, Trash2, BookOpen, Tag, Clock, FileText, Sparkles, Zap, Send, Check, CheckSquare, Square, Calendar, RotateCcw, RotateCw } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
@@ -1402,7 +1402,7 @@ const PDFNotesPanel: React.FC<PDFNotesPanelProps> = ({
                       disabled={selectedTimelineEvents.size === 0}
                       style={{
                         padding: '6px 16px',
-                        background: selectedTimelineEvents.size === 0 ? 'var(--bg-tertiary)' : 'var(--gradient-accent)',
+                        background: selectedTimelineEvents.size === 0 ? 'var(--bg-tertiary)' : 'var(--accent-500)',
                         color: 'white',
                         border: 'none',
                         borderRadius: 6,

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+﻿import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Highlight } from '../types';
@@ -108,7 +108,7 @@ const HighlightPanel: React.FC<HighlightPanelProps> = ({
       <div className="highlight-panel-header">
         <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ 
-            background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+            background: 'var(--warning-500)',
             color: 'white',
             padding: '1px 6px',
             borderRadius: 3,

@@ -125,7 +125,7 @@
   width: 18px;
   height: 18px;
   border-radius: 4px;
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   color: white;
   font-size: 10px;
   font-weight: 600;
@@ -161,8 +161,8 @@
 
 /* 查看笔记按钮样式 */
 .view-note-btn {
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: var(--success-lighter);
+  border: 1px solid var(--success-border);
   cursor: pointer;
   color: var(--success-500);
   padding: 4px 6px;
@@ -175,14 +175,14 @@
 }
 
 .view-note-btn:hover {
-  background: rgba(16, 185, 129, 0.25);
+  background: var(--success-light);
   border-color: var(--success-500);
 }
 
 /* 切换原文/改写按钮样式 */
 .toggle-view-btn {
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.4);
+  background: var(--primary-lighter);
+  border: 1px solid var(--primary-border);
   cursor: pointer;
   color: var(--primary-500);
   padding: 4px 8px;
@@ -195,7 +195,7 @@
 }
 
 .toggle-view-btn:hover {
-  background: rgba(59, 130, 246, 0.25);
+  background: var(--primary-light);
   border-color: var(--primary-500);
 }
 
@@ -409,7 +409,7 @@
 .viz-suggestion-btn:hover {
   background: var(--bg-hover);
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .viz-confidence-tag {
@@ -437,7 +437,7 @@
   padding: 8px 16px;
   border-radius: 6px;
   border: none;
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   color: white;
   cursor: pointer;
   font-size: 12px;
@@ -447,7 +447,7 @@
 
 .generate-note-btn-full:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 8px var(--primary-shadow);
 }
 
 .generate-note-btn-full:disabled {
@@ -605,7 +605,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: var(--bg-overlay);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -625,7 +625,7 @@
   padding: 4px 10px;
   border-radius: 6px;
   border: none;
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   color: white;
   cursor: pointer;
   font-size: 11px;
@@ -636,7 +636,7 @@
 
 .generate-all-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 2px 8px var(--primary-shadow);
 }
 
 .generate-all-btn:disabled {
@@ -671,7 +671,7 @@
 .generate-progress-fill {
   height: 100%;
   width: 30%;
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   border-radius: 2px;
   animation: progress-slide 1.5s ease-in-out infinite;
 }

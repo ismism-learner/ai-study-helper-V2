@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+﻿import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { WorldTimelineEvent } from '../types';
 import { 
   ZoomIn, 
@@ -265,10 +265,10 @@ const HierarchicalTimeline: React.FC<HierarchicalTimelineProps> = ({
   // 获取重要性颜色
   const getImportanceColor = (importance: string): string => {
     switch (importance) {
-      case 'high': return '#ef4444';
-      case 'normal': return '#3b82f6';
-      case 'low': return '#6b7280';
-      default: return '#3b82f6';
+      case 'high': return 'var(--danger-500)';
+      case 'normal': return 'var(--primary-500)';
+      case 'low': return 'var(--text-muted)';
+      default: return 'var(--primary-500)';
     }
   };
 
@@ -595,15 +595,15 @@ const HierarchicalTimeline: React.FC<HierarchicalTimelineProps> = ({
         </div>
         <div className="legend-items">
           <div className="legend-item">
-            <div className="legend-dot" style={{ background: '#ef4444', width: 12, height: 12 }}></div>
+            <div className="legend-dot" style={{ background: 'var(--danger-500)', width: 12, height: 12 }}></div>
             <span>重要事件</span>
           </div>
           <div className="legend-item">
-            <div className="legend-dot" style={{ background: '#3b82f6', width: 10, height: 10 }}></div>
+            <div className="legend-dot" style={{ background: 'var(--primary-500)', width: 10, height: 10 }}></div>
             <span>普通事件</span>
           </div>
           <div className="legend-item">
-            <div className="legend-dot" style={{ background: '#6b7280', width: 8, height: 8 }}></div>
+            <div className="legend-dot" style={{ background: 'var(--text-muted)', width: 8, height: 8 }}></div>
             <span>次要事件</span>
           </div>
           <div className="legend-item">

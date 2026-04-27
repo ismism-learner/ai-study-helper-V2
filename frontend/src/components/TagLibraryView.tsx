@@ -1,14 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { BookDocument } from '../types';
 import { bookApi, timePeriodApi } from '../api';
-import TimelineView from './TimelineView';
 import BookUploadModal from './BookUploadModal';
-import BatchUploadModal from './BatchUploadModal';
-import BookManageView from './BookManageView';
 import QuickTagModal from './QuickTagModal';
-import QuarkUploadModal from './QuarkUploadModal';
 import TagKnowledgeGraphPanel from './TagKnowledgeGraphPanel';
-import { useQuarkUpload } from '../hooks';
 import {
   TagBookCard,
   BookSelectionContextMenu,
@@ -16,20 +11,13 @@ import {
   SelectionRectOverlay,
   tagLibraryStyles,
 } from './tagLibrary';
-import { BookOpen, Tag, Clock, ChevronUp, ChevronDown, Tag as TagIcon, Layers, Upload } from 'lucide-react';
+import { BookOpen, Tag, Upload } from 'lucide-react';
 import LoadingBook from './LoadingBook';
 
 interface TagLibraryViewProps {
   selectedTag: string | null;
   onBookSelect: (book: BookDocument) => void;
   onTagSelect?: (tag: string) => void;
-}
-
-type ViewType = 'main' | 'manage';
-
-interface TagGroup {
-  tag: string;
-  books: BookDocument[];
 }
 
 interface SelectionRect {
@@ -46,17 +34,13 @@ interface ContextMenuState {
 
 const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBookSelect, onTagSelect }) => {
   const [allBooks, setAllBooks] = useState<BookDocument[]>([]);
-  const [timePeriods, setTimePeriods] = useState<any[]>([]);
+  const [, setTimePeriods] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [showBatchUploadModal, setShowBatchUploadModal] = useState(false);
-  const [viewMode] = useState<'timeline' | 'grid'>(selectedTag ? 'timeline' : 'grid');
-  const [filterYear, setFilterYear] = useState<number | null>(null);
-  const [currentView, setCurrentView] = useState<ViewType>('main');
-  const [expandedTags, setExpandedTags] = useState<Set<string>>(new Set());
-  const [editMode, setEditMode] = useState(false);
-  const [scale, setScale] = useState(1);
-  const [showBooks, setShowBooks] = useState(true);
+  const [tagBarExpanded, setTagBarExpanded] = useState(false);
+  const tagBarRef = useRef<HTMLDivElement>(null);
+  const tagCount = allBooks.reduce((count, book) => count + (book.tags?.length || 0), 0);
+  const tagBarOverflows = tagCount > 30;
 
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedBookIds, setSelectedBookIds] = useState<Set<string>>(new Set());
@@ -71,16 +55,6 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBookSele
   const [quickTagInitialTag, setQuickTagInitialTag] = useState(''); 
   const [showGraphView, setShowGraphView] = useState(false); 
 
-  const {
-    showQuarkModal,
-    setShowQuarkModal,
-    quarkUploading,
-    quarkUploadResults,
-    quarkUploadProgress,
-    handleUploadToQuark,
-    handleCopyShareUrl,
-    handleCopyAllShareUrls,
-  } = useQuarkUpload();
 
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const gridAreaRef = useRef<HTMLDivElement>(null);
@@ -119,39 +93,6 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBookSele
     }
   };
 
-  const booksByTag = useMemo(() => {
-    if (selectedTag) {
-      return allBooks.filter(b => b.tags && b.tags.includes(selectedTag));
-    }
-
-    const groupMap: Record<string, BookDocument[]> = {};
-    const untagged: BookDocument[] = [];
-
-    allBooks.forEach(book => {
-      if (book.tags && book.tags.length > 0) {
-        book.tags.forEach(tag => {
-          if (!groupMap[tag]) groupMap[tag] = [];
-          groupMap[tag].push(book);
-        });
-      } else {
-        untagged.push(book);
-      }
-    });
-
-    const result: TagGroup[] = Object.entries(groupMap)
-      .map(([tag, books]) => ({
-        tag,
-        books: [...new Map(books.map(b => [b.id, b])).values()]
-      }))
-      .sort((a, b) => b.books.length - a.books.length);
-
-    if (untagged.length > 0) {
-      result.push({ tag: '未分类', books: untagged });
-    }
-
-    return result;
-  }, [allBooks, selectedTag]);
-
   const displayBooks = selectedTag
     ? allBooks.filter(b => b.tags && b.tags.includes(selectedTag))
     : allBooks;
@@ -164,56 +105,21 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBookSele
     return Array.from(tagSet).sort();
   }, [allBooks]);
 
-  const generatedTimeline = useMemo(() => {
-    if (!showBooks || !selectedTag) return [];
-
-    const yearMap = new Map<number, BookDocument[]>();
-    const unclassifiedBooks: BookDocument[] = [];
-
-    displayBooks.forEach(book => {
-      let year = book.content_era_start || book.content_era_end || book.year_start || book.year_end;
-
-      if (!year && book.time_period_id) {
-        const period = timePeriods.find(p => p.id === book.time_period_id);
-        if (period) year = period.start_year || period.end_year;
-      }
-
-      if (!year) {
-        unclassifiedBooks.push(book);
-      } else {
-        if (!yearMap.has(year)) yearMap.set(year, []);
-        yearMap.get(year)!.push(book);
-      }
+  const tagCountMap = useMemo(() => {
+    const map = new Map<string, number>();
+    allBooks.forEach(book => {
+      book.tags?.forEach(tag => {
+        map.set(tag, (map.get(tag) || 0) + 1);
+      });
     });
-
-    const result: any[] = [];
-    if (unclassifiedBooks.length > 0) {
-      result.push({ year: -999999, books: unclassifiedBooks });
-    }
-    yearMap.forEach((yearBooks, year) => {
-      result.push({ year, books: yearBooks });
-    });
-
-    return result.sort((a, b) => a.year - b.year);
-  }, [displayBooks, timePeriods, showBooks, selectedTag]);
+    return map;
+  }, [allBooks]);
 
   const handleUploadSuccess = () => {
     setShowUploadModal(false);
-    setShowBatchUploadModal(false);
     loadData();
   };
 
-  const handleDeleteBook = async (bookId: string) => {
-    if (!window.confirm('确定要删除这本书籍吗？')) return;
-    try {
-      await bookApi.delete(bookId);
-      setSelectedBookIds(prev => { const next = new Set(prev); next.delete(bookId); return next; });
-      loadData();
-    } catch (error) {
-      console.error('Failed to delete book:', error);
-      alert('删除失败');
-    }
-  };
 
   const handleBatchDelete = async () => {
     const count = selectedBookIds.size;
@@ -427,43 +333,6 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBookSele
     />
   );
 
-  const filteredBooks = filterYear
-    ? displayBooks.filter(b =>
-        b.content_era_start === filterYear ||
-        b.content_era_end === filterYear ||
-        b.year_start === filterYear ||
-        b.year_end === filterYear
-      )
-    : displayBooks;
-
-  const allYears = Array.from(
-    new Set(displayBooks.flatMap(b =>
-      [b.content_era_start, b.content_era_end, b.year_start, b.year_end].filter(Boolean)
-    ))
-  ).sort((a, b) => (a || 0) - (b || 0));
-
-  const getEra = (year: number | null): string => {
-    if (!year) return '未知';
-    if (year < -500) return '古代';
-    if (year < 500) return '古典';
-    if (year < 1500) return '中世纪';
-    if (year < 1800) return '近代早期';
-    if (year < 1900) return '近代';
-    return '当代';
-  };
-
-  const booksByEra = useMemo(() => {
-    const eraMap: Record<string, BookDocument[]> = {};
-    filteredBooks.forEach(book => {
-      const era = getEra(
-        book.content_era_start || book.content_era_end || book.year_start || book.year_end
-      );
-      if (!eraMap[era]) eraMap[era] = [];
-      eraMap[era].push(book);
-    });
-    return eraMap;
-  }, [filteredBooks]);
-
   const selectedBooksTags = useMemo(() => {
     const tagCountMap: Record<string, number> = {};
     selectedBookIds.forEach(id => {
@@ -477,13 +346,6 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBookSele
     return Object.entries(tagCountMap).map(([tag, count]) => ({ tag, count }));
   }, [selectedBookIds, allBooks]);
 
-  const toggleTag = (tag: string) => {
-    setExpandedTags(prev => {
-      const next = new Set(prev);
-      next.has(tag) ? next.delete(tag) : next.add(tag);
-      return next;
-    });
-  };
 
   const handleBatchRemoveTag = async (tagToRemove: string) => {
     try {
@@ -509,18 +371,6 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBookSele
     return false;
   });
 
-  if (currentView === 'manage') {
-    return (
-      <BookManageView
-        onBack={() => {
-          setCurrentView('main');
-          loadData();
-        }}
-        onBookSelect={onBookSelect}
-      />
-    );
-  }
-
   if (showGraphView && selectedTag) {
     return (
       <TagKnowledgeGraphPanel
@@ -540,39 +390,23 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBookSele
   }
 
   return (
-    <div className="country-detail-view" onMouseUp={handleGridMouseUp} onMouseMove={handleGridMouseMove}>
+    <div className="tag-library-layout" onMouseUp={handleGridMouseUp} onMouseMove={handleGridMouseMove}>
       <TagLibraryHeader
         selectedTag={selectedTag}
         isSelectionMode={isSelectionMode}
         selectedBookIdsSize={selectedBookIds.size}
-        filterYear={filterYear}
-        allYears={allYears}
-        viewMode={viewMode}
-        editMode={editMode}
-        scale={scale}
-        showBooks={showBooks}
-        onFilterYearChange={setFilterYear}
         onToggleSelectionMode={() => setIsSelectionMode(true)}
         onExitSelectionMode={exitSelectionMode}
-        onShowBatchUploadModal={() => setShowBatchUploadModal(true)}
         onShowUploadModal={() => setShowUploadModal(true)}
-        onShowManageView={() => setCurrentView('manage')}
-        onShowQuarkModal={() => setShowQuarkModal(true)}
         onShowQuickTagModal={(tag = '') => {
           setQuickTagInitialTag(tag);
           setShowQuickTagModal(true);
         }}
-        onShowGraphView={selectedTag ? () => setShowGraphView(true) : undefined}
-        onToggleEditMode={() => setEditMode(!editMode)}
-        onZoomOut={() => setScale(prev => Math.max(0.2, prev - 0.1))}
-        onZoomIn={() => setScale(prev => Math.min(3, prev + 0.1))}
-        onResetZoom={() => setScale(1)}
-        onToggleShowBooks={() => setShowBooks(!showBooks)}
       />
 
       <div
         ref={gridAreaRef}
-        className={`country-content ${isSelectionMode ? 'sel-mode' : ''}`}
+        className={`tag-library-scroll ${isSelectionMode ? 'sel-mode' : ''}`}
         onMouseDown={handleGridMouseDown}
         onContextMenu={handleGridContextMenu}
       >
@@ -580,96 +414,66 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBookSele
           <div className="empty-state">
             <BookOpen size={64} strokeWidth={1} />
             <h3>暂无书籍</h3>
-            <p>点击"批量上传"快速添加多本书籍</p>
+            <p>点击"上传书籍"添加你的第一本书</p>
             <div className="empty-actions">
-              <button className="btn btn-primary" onClick={() => setShowBatchUploadModal(true)}>
-                <Layers size={16} />批量上传
-              </button>
-              <button className="btn btn-secondary" onClick={() => setShowUploadModal(true)}>
-                <Upload size={16} />单本上传
+              <button className="btn btn-primary" onClick={() => setShowUploadModal(true)}>
+                <Upload size={16} />上传书籍
               </button>
             </div>
           </div>
-        ) : selectedTag && viewMode === 'timeline' ? (
-          <TimelineView
-            timeline={generatedTimeline}
-            onBookClick={onBookSelect}
-            onDeleteBook={handleDeleteBook}
-            onBooksUpdated={loadData}
-            editMode={editMode}
-          />
-        ) : !selectedTag && viewMode === 'grid' ? (
+        ) : (
           <div className="books-by-era">
-            <div className="tag-tabs-bar">
-              {(booksByTag as TagGroup[]).map(group => (
-                <button
-                  key={group.tag}
-                  className={`tag-tab ${expandedTags.has(group.tag) ? 'active' : ''}`}
-                  onClick={() => {
-                    if (onTagSelect) {
-                      onTagSelect(group.tag === '未分类' ? '' : group.tag);
-                    } else {
-                      toggleTag(group.tag);
-                    }
-                  }}
-                  onDoubleClick={() => toggleTag(group.tag)}
-                >
-                  <Tag size={12} />
-                  {group.tag}
-                  <span className="tab-count">{group.books.length}</span>
-                </button>
-              ))}
-            </div>
+            {allAvailableTags.length > 0 && (
+               <div
+                 ref={tagBarRef}
+                 className={`tag-tabs-bar${!tagBarExpanded && tagBarOverflows ? ' collapsed' : ''}`}
+               >
+                 {allAvailableTags.map(tag => (
+                   <button
+                     key={tag}
+                     className={`tag-tab ${selectedTag === tag ? 'active' : ''}`}
+                     onClick={() => {
+                       if (selectedTag === tag) {
+                         onTagSelect?.('');
+                       } else {
+                         onTagSelect?.(tag);
+                       }
+                     }}
+                   >
+                     <Tag size={12} />
+                     {tag}
+                     <span className="tab-count">{tagCountMap.get(tag) || 0}</span>
+                   </button>
+                 ))}
+                 {tagBarOverflows && (
+                   <button
+                     className="tag-bar-expand-btn"
+                     onClick={() => setTagBarExpanded(!tagBarExpanded)}
+                   >
+                     {tagBarExpanded ? '▲ 收起' : `▼ 全部 (${allAvailableTags.length})`}
+                   </button>
+                 )}
+               </div>
+             )}
             <div className="tag-content-area">
-              {(booksByTag as TagGroup[]).filter(g => expandedTags.has(g.tag)).map(group => (
-                <div key={group.tag} className="tag-section">
-                  <div className="section-header">
-                    <span className="section-title">{group.tag}</span>
-                    <button 
-                      className="section-tag-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setQuickTagInitialTag(group.tag === '未分类' ? '__untagged__' : group.tag);
-                        setShowQuickTagModal(true);
-                      }}
-                      title="对此标签下的书打标签"
-                    >
-                      <TagIcon size={12} />
-                      打标
-                    </button>
-                    <span className="section-count">{group.books.length}本</span>
-                  </div>
+              {selectedTag ? (
+                displayBooks.length > 0 ? (
                   <div className="section-books-grid">
-                    {group.books.map(book => renderBookCard(book))}
+                    {displayBooks.map(book => renderBookCard(book))}
                   </div>
-                </div>
-              ))}
-              {(booksByTag as TagGroup[]).filter(g => expandedTags.has(g.tag)).length === 0 && (
-                <div className="empty-hint">点击上方标签查看书籍</div>
+                ) : (
+                  <div className="empty-hint">该标签下没有书籍</div>
+                )
+              ) : (
+                <>
+                  {allBooks.length === 0 && (
+                    <div className="empty-hint">暂无书籍，请先上传</div>
+                  )}
+                </>
               )}
             </div>
           </div>
-        ) : selectedTag && viewMode === 'grid' ? (
-          <div className="books-by-era">
-            {Object.entries(booksByEra).map(([era, eraBooks]) => (
-              <div key={era} className="era-category">
-                <div className="era-header" onClick={() => toggleTag(era)}>
-                  <div className="era-title">
-                    <Clock size={16} />{era}<span className="era-count">({eraBooks.length}本)</span>
-                  </div>
-                  <div className="era-toggle">
-                    {expandedTags.has(era) ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                  </div>
-                </div>
-                <div className={`era-books ${expandedTags.has(era) ? 'expanded' : ''}`}>
-                  <div className="era-books-grid">
-                    {eraBooks.map(book => renderBookCard(book))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : null}
+        )}
 
         <SelectionRectOverlay
           isDraggingSelect={isDraggingSelect}
@@ -703,26 +507,6 @@ const TagLibraryView: React.FC<TagLibraryViewProps> = ({ selectedTag, onBookSele
           onSuccess={handleUploadSuccess}
         />
       )}
-
-      {showBatchUploadModal && (
-        <BatchUploadModal
-          onClose={() => setShowBatchUploadModal(false)}
-          onSuccess={handleUploadSuccess}
-        />
-      )}
-
-      <QuarkUploadModal
-        show={showQuarkModal}
-        uploading={quarkUploading}
-        results={quarkUploadResults}
-        progress={quarkUploadProgress}
-        onClose={() => setShowQuarkModal(false)}
-        onUpload={() => handleUploadToQuark({ selectedTag, displayBooks })}
-        onCopyShareUrl={handleCopyShareUrl}
-        onCopyAllShareUrls={handleCopyAllShareUrls}
-        selectedTag={selectedTag}
-        displayBooks={displayBooks}
-      />
 
       <QuickTagModal
         isOpen={showQuickTagModal}

@@ -188,7 +188,7 @@
 }
 
 .cc-role-user {
-  background: rgba(255, 255, 255, 0.2);
+  background: hsla(0, 0%, 100%, 0.2);
   color: white;
 }
 
@@ -316,7 +316,8 @@
 
 .cc-send-btn {
   width: 36px;
-  height: 36px;
+  height: auto;
+  align-self: stretch;
   border-radius: 8px;
   background: var(--primary-500);
   color: white;
@@ -337,6 +338,27 @@
 .cc-send-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.cc-stop-btn {
+  width: 36px;
+  height: auto;
+  align-self: stretch;
+  border-radius: 8px;
+  background: var(--danger-500, #ef4444);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.cc-stop-btn:hover {
+  background: var(--danger-600, #dc2626);
 }
 
 /* 下拉菜单样式 */
@@ -360,7 +382,7 @@
   padding: 4px;
   min-width: 140px;
   z-index: 20;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
 }
 
 .cc-menu-item {
@@ -468,7 +490,7 @@
 
 .cc-history-item.active {
   border-color: var(--primary-500);
-  background: rgba(59, 130, 246, 0.1);
+  background: var(--primary-lighter);
 }
 
 .cc-history-item-left {
@@ -516,7 +538,7 @@
 
 .cc-history-delete:hover {
   color: var(--danger-500);
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--danger-lighter);
 }
 
 .cc-history-empty {
@@ -540,7 +562,7 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border-default);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
   padding: 4px;
   min-width: 160px;
   animation: cc-context-menu-in 0.15s ease-out;
@@ -583,4 +605,114 @@
   height: 1px;
   background: var(--border-subtle);
   margin: 4px 0;
+}
+
+/* ── Agent 工具调用卡片 ─────────────────────────────── */
+
+.cc-tool-calls {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cc-tool-call-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.cc-tool-call-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.cc-tool-call-header:hover {
+  background: var(--bg-hover);
+}
+
+.cc-tool-call-expand {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+
+.cc-tool-call-icon {
+  font-size: 14px;
+}
+
+.cc-tool-call-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.cc-tool-call-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.cc-tool-call-status-text {
+  font-weight: 400;
+}
+
+.cc-tool-spin {
+  animation: cc-spin 1s linear infinite;
+}
+
+@keyframes cc-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.cc-tool-call-body {
+  padding: 8px 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.cc-tool-call-section {
+  margin-bottom: 8px;
+}
+
+.cc-tool-call-section:last-child {
+  margin-bottom: 0;
+}
+
+.cc-tool-call-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.cc-tool-call-args,
+.cc-tool-call-result {
+  margin: 0;
+  padding: 6px 8px;
+  background: var(--bg-surface);
+  border-radius: 4px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.cc-tool-call-error {
+  color: var(--accent-red, #ef4444);
+  background: rgba(239, 68, 68, 0.08);
 }

@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException
-from app.config import api_config_manager, APIConfig
-from app.schemas import APIConfigCreate, APIConfigUpdate, APIConfigResponse
 import uuid
+
+from fastapi import APIRouter, HTTPException
+
+from app.config import APIConfig, api_config_manager
+from app.schemas import APIConfigCreate, APIConfigResponse, APIConfigUpdate
 
 router = APIRouter()
 

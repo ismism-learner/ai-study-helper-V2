@@ -9,10 +9,10 @@ ocr_bridge.py — WSL2环境下通过Windows侧Python调用AI Study Helper V2的
   python.exe ocr_bridge.py status
 """
 
-import urllib.request
 import json
-import sys
 import os
+import sys
+import urllib.request
 
 API_BASE = "http://localhost:8000/api/pdf-ocr"
 TIMEOUT = 600

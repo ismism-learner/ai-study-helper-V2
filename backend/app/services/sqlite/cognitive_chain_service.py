@@ -1,25 +1,26 @@
-import logging
 import json
-from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone
-from sqlalchemy.orm import Session
-from sqlalchemy import or_
+import logging
+from datetime import UTC, datetime, timezone
+from typing import Any, Dict, List, Optional
 
+from sqlalchemy import or_
+from sqlalchemy.orm import Session
+
+from app.config import settings_manager
 from app.models import (
+    BookDocument,
     CognitiveChain,
     CognitiveNode,
-    BookDocument,
-    KnowledgeNode,
     KnowledgeEdge,
+    KnowledgeNode,
 )
 from app.services.ai_service import ai_service
-from app.config import settings_manager
 
 logger = logging.getLogger(__name__)
 
 
 def _utcnow():
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class CognitiveChainService:
@@ -36,7 +37,7 @@ class CognitiveChainService:
         book_title: str = None,
         chapter_index: int = None,
         parent_knowledge_node_id: str = None,
-    ) -> Optional[KnowledgeNode]:
+    ) -> KnowledgeNode | None:
         existing = (
             self.db.query(KnowledgeNode).filter(KnowledgeNode.name == concept).first()
         )
@@ -65,7 +66,7 @@ class CognitiveChainService:
                         target_id=existing.id,
                         relation_type="EXPLAINS",
                         edge_type="EXPLAINS",
-                        description=f"解释概念",
+                        description="解释概念",
                         book_id=book_id,
                     )
                     self.db.add(edge)
@@ -91,7 +92,7 @@ class CognitiveChainService:
                 target_id=knowledge_node.id,
                 relation_type="EXPLAINS",
                 edge_type="EXPLAINS",
-                description=f"解释概念",
+                description="解释概念",
                 book_id=book_id,
             )
             self.db.add(edge)
@@ -114,7 +115,7 @@ class CognitiveChainService:
         book_title: str = None,
         chapter_index: int = None,
         source_knowledge_node_id: str = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         full_context = root_concept
         if context:
             full_context = root_concept + "\n\n参考内容：\n" + context
@@ -179,7 +180,7 @@ class CognitiveChainService:
         book_title: str = None,
         chapter_index: int = None,
         source_knowledge_node_id: str = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         chain = self.get_chain(chain_id)
         if not chain:
             raise ValueError(f"认知链不存在: {chain_id}")
@@ -240,21 +241,21 @@ class CognitiveChainService:
         logger.info(f"扩展认知链: {chain_id}, 新概念: {label}")
         return self._node_to_dict(new_node)
 
-    async def explain_concept(self, concept: str, context: str = "") -> Dict[str, Any]:
+    async def explain_concept(self, concept: str, context: str = "") -> dict[str, Any]:
         return await self._generate_concept_explanation(concept, context)
 
-    def get_chain(self, chain_id: str) -> Optional[CognitiveChain]:
+    def get_chain(self, chain_id: str) -> CognitiveChain | None:
         return (
             self.db.query(CognitiveChain).filter(CognitiveChain.id == chain_id).first()
         )
 
-    def get_chain_dict(self, chain_id: str) -> Optional[Dict[str, Any]]:
+    def get_chain_dict(self, chain_id: str) -> dict[str, Any] | None:
         chain = self.get_chain(chain_id)
         if not chain:
             return None
         return self._chain_to_dict(chain)
 
-    def get_chains_by_book(self, book_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_chains_by_book(self, book_id: str, limit: int = 50) -> list[dict[str, Any]]:
         chains = (
             self.db.query(CognitiveChain)
             .filter(CognitiveChain.book_id == book_id)
@@ -266,7 +267,7 @@ class CognitiveChainService:
 
     def get_chain_by_knowledge_node(
         self, knowledge_node_id: str
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         cognitive_node = (
             self.db.query(CognitiveNode)
             .filter(CognitiveNode.knowledge_node_id == knowledge_node_id)
@@ -282,7 +283,7 @@ class CognitiveChainService:
 
     def find_chains_by_concept(
         self, concept_name: str, limit: int = 10
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """按概念名查找包含该概念的认知链（用于知识图谱实体跳转）"""
         nodes = (
             self.db.query(CognitiveNode)
@@ -301,7 +302,7 @@ class CognitiveChainService:
                     chains.append(self._chain_to_dict(chain, include_nodes=False))
         return chains
 
-    def get_user_chains(self, user_id: str, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_user_chains(self, user_id: str, limit: int = 20) -> list[dict[str, Any]]:
         chains = (
             self.db.query(CognitiveChain)
             .order_by(CognitiveChain.created_at.desc())
@@ -322,7 +323,7 @@ class CognitiveChainService:
 
     async def _generate_concept_explanation(
         self, concept: str, context: str = ""
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         concept_user_prompt_template = settings_manager.kg_concept_user_prompt
         if context:
             prompt = concept_user_prompt_template.format(
@@ -411,7 +412,7 @@ class CognitiveChainService:
 
     def _chain_to_dict(
         self, chain: CognitiveChain, include_nodes: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         result = {
             "id": chain.id,
             "title": chain.title,
@@ -437,7 +438,7 @@ class CognitiveChainService:
 
         return result
 
-    def _node_to_dict(self, node: CognitiveNode) -> Dict[str, Any]:
+    def _node_to_dict(self, node: CognitiveNode) -> dict[str, Any]:
         return {
             "id": node.id,
             "chain_id": node.chain_id,
@@ -454,7 +455,7 @@ class CognitiveChainService:
             "created_at": node.created_at.isoformat() if node.created_at else None,
         }
 
-    def _build_edges(self, nodes: List[CognitiveNode]) -> List[Dict[str, Any]]:
+    def _build_edges(self, nodes: list[CognitiveNode]) -> list[dict[str, Any]]:
         edges = []
         for node in nodes:
             if node.parent_node_id:

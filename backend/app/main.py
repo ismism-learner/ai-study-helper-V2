@@ -1,36 +1,36 @@
+import asyncio
+import logging
+import os
+import threading
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.database import init_db, SessionLocal
+
+from app.database import SessionLocal, init_db
+from app.routers.activity import router as activity_router
+from app.routers.agent import router as agent_router
+from app.routers.api_configs import router as api_configs_router
+from app.routers.backup import router as backup_router
+from app.routers.chapter_notes import router as chapter_notes_router
+from app.routers.cognitive_chain import router as cognitive_chain_router
+from app.routers.dashboard import router as dashboard_router
+from app.routers.document_sources import router as document_sources_router
 from app.routers.documents import router as documents_router
+from app.routers.duplicates import router as duplicates_router
 from app.routers.folders import router as folders_router
-from app.routers.settings import router as settings_router
+from app.routers.knowledge_graph import router as knowledge_graph_router
 from app.routers.library import router as library_router
 from app.routers.ocr import router as ocr_router
-from app.routers.world_timeline import router as world_timeline_router
-from app.routers.quark import router as quark_router
-from app.routers.duplicates import router as duplicates_router
 from app.routers.pdf_ocr import router as pdf_ocr_router
-from app.routers.backup import router as backup_router
-from app.routers.dashboard import router as dashboard_router
+from app.routers.quark import router as quark_router
 from app.routers.quick_notes import router as quick_notes_router
-from app.routers.chapter_notes import router as chapter_notes_router
-from app.routers.tasks import router as tasks_router
-from app.routers.activity import router as activity_router
-from app.routers.visualization_nodes import router as visualization_nodes_router
-from app.routers.api_configs import router as api_configs_router
 from app.routers.rewrite import router as rewrite_router
-from app.routers.knowledge_graph import router as knowledge_graph_router
-from app.routers.cognitive_chain import router as cognitive_chain_router
-from app.services.document_sync_service import (
-    document_source_config,
-    DocumentSyncService,
-)
+from app.routers.settings import router as settings_router
+from app.routers.tasks import router as tasks_router
+from app.routers.visualization_nodes import router as visualization_nodes_router
+from app.routers.world_timeline import router as world_timeline_router
 from app.services.backup_service import backup_service
-import os
-import asyncio
-import threading
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -40,10 +40,11 @@ app = FastAPI(
     version="1.0.0",
 )
 
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3001,http://127.0.0.1:3001").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -67,13 +68,13 @@ app.include_router(quick_notes_router, prefix="/api", tags=["quick-notes"])
 app.include_router(chapter_notes_router, prefix="/api", tags=["chapter-notes"])
 app.include_router(tasks_router, prefix="/api/tasks", tags=["tasks"])
 app.include_router(activity_router, prefix="/api/activity", tags=["activity"])
-app.include_router(
-    visualization_nodes_router, prefix="/api", tags=["visualization-nodes"]
-)
+app.include_router(visualization_nodes_router, prefix="/api", tags=["visualization-nodes"])
 app.include_router(api_configs_router, prefix="/api", tags=["api-configs"])
 app.include_router(rewrite_router, prefix="/api", tags=["rewrite"])
 app.include_router(knowledge_graph_router, prefix="/api", tags=["knowledge-graph"])
+app.include_router(agent_router, prefix="/api", tags=["agent"])
 app.include_router(cognitive_chain_router, prefix="/api", tags=["cognitive-chains"])
+app.include_router(document_sources_router, prefix="/api", tags=["document-sources"])
 
 
 def preload_paddleocr():
@@ -82,26 +83,26 @@ def preload_paddleocr():
     start_time = time.time()
 
     print(f"\n{'=' * 80}")
-    print(f"[预加载] 开始预加载 PaddleOCR 模型...")
+    print("[预加载] 开始预加载 PaddleOCR 模型...")
     print(f"[预加载] 开始时间: {time.strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"{'=' * 80}")
 
     try:
         from app.services.paddleocr_service import paddleocr_service
 
-        print(f"[预加载] 调用 paddleocr_service.load_model_sync()...")
+        print("[预加载] 调用 paddleocr_service.load_model_sync()...")
         success = paddleocr_service.load_model_sync()
 
         total_time = time.time() - start_time
 
         if success:
             print(f"\n{'=' * 80}")
-            print(f"[预加载] ✅ PaddleOCR 模型预加载成功!")
+            print("[预加载] ✅ PaddleOCR 模型预加载成功!")
             print(f"[预加载] 总耗时: {total_time:.2f} 秒")
             print(f"{'=' * 80}\n")
         else:
             print(f"\n{'=' * 80}")
-            print(f"[预加载] ❌ PaddleOCR 模型预加载失败!")
+            print("[预加载] ❌ PaddleOCR 模型预加载失败!")
             print(f"[预加载] 耗时: {total_time:.2f} 秒")
             print(f"[预加载] 错误: {paddleocr_service._load_error}")
             print(f"{'=' * 80}\n")
@@ -109,7 +110,7 @@ def preload_paddleocr():
     except Exception as e:
         total_time = time.time() - start_time
         print(f"\n{'=' * 80}")
-        print(f"[预加载] ❌ 预加载过程发生异常!")
+        print("[预加载] ❌ 预加载过程发生异常!")
         print(f"[预加载] 错误: {e}")
         print(f"[预加载] 耗时: {total_time:.2f} 秒")
         print(f"{'=' * 80}\n")
@@ -137,9 +138,7 @@ async def startup_event():
         print("Data integrity check passed")
         print(f"  Documents: {integrity['current_stats'].get('documents', 0)}")
         print(f"  Books: {integrity['current_stats'].get('book_documents', 0)}")
-        print(
-            f"  Timeline events: {integrity['current_stats'].get('document_timeline_events', 0)}"
-        )
+        print(f"  Timeline events: {integrity['current_stats'].get('document_timeline_events', 0)}")
 
     print("Creating startup backup...")
     backup_result = backup_service.create_backup("startup")
@@ -155,21 +154,6 @@ async def startup_event():
     preload_thread = threading.Thread(target=preload_paddleocr, daemon=True)
     preload_thread.start()
 
-    sync_settings = document_source_config.get_sync_settings()
-    if sync_settings.sync_on_startup:
-        print("Auto-syncing document sources on startup...")
-        db = SessionLocal()
-        try:
-            sync_service = DocumentSyncService(db)
-            result = sync_service.sync_all_sources()
-            print(
-                f"Sync complete: {result['books_added']} books added, {result['documents_added']} documents added"
-            )
-        except Exception as e:
-            print(f"Auto-sync failed: {e}")
-        finally:
-            db.close()
-
 
 @app.get("/")
 async def root():
@@ -179,71 +163,3 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
-
-
-@app.get("/api/document-sources")
-async def get_document_sources():
-    sources = document_source_config.get_sources()
-    return {
-        "sources": [
-            {
-                "id": s.id,
-                "name": s.name,
-                "type": s.type,
-                "path": s.path,
-                "enabled": s.enabled,
-                "file_extensions": s.file_extensions,
-                "auto_sync_on_startup": s.auto_sync_on_startup,
-            }
-            for s in sources
-        ],
-        "sync_settings": {
-            "sync_on_startup": document_source_config.get_sync_settings().sync_on_startup,
-            "remove_orphans": document_source_config.get_sync_settings().remove_orphans,
-            "update_existing": document_source_config.get_sync_settings().update_existing,
-        },
-    }
-
-
-@app.post("/api/document-sources/sync")
-async def sync_document_sources():
-    from app.database import get_db
-
-    db = next(get_db())
-    try:
-        sync_service = DocumentSyncService(db)
-        result = sync_service.sync_all_sources()
-        return result
-    except Exception as e:
-        return {"error": str(e)}
-
-
-@app.put("/api/document-sources/{source_id}")
-async def update_document_source(source_id: str, updates: dict):
-    success = document_source_config.update_source(source_id, updates)
-    if success:
-        return {"success": True, "message": "Source updated"}
-    return {"success": False, "message": "Source not found"}
-
-
-@app.post("/api/document-sources")
-async def add_document_source(source_data: dict):
-    source = document_source_config.add_source(source_data)
-    return {
-        "success": True,
-        "source": {
-            "id": source.id,
-            "name": source.name,
-            "type": source.type,
-            "path": source.path,
-            "enabled": source.enabled,
-        },
-    }
-
-
-@app.delete("/api/document-sources/{source_id}")
-async def remove_document_source(source_id: str):
-    success = document_source_config.remove_source(source_id)
-    if success:
-        return {"success": True, "message": "Source removed"}
-    return {"success": False, "message": "Source not found"}

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const api = axios.create({
+const api = axios.create({
   baseURL: '/api',
 });
 
@@ -15,3 +15,6 @@ export const libraryApi = axios.create({
 export const libraryUploadApi = axios.create({
   baseURL: '/api/library',
 });
+
+export { api };
+export default api;

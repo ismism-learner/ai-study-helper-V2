@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+﻿import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { BookDocument, TimePeriod, BookTimePeriod } from '../types';
 
 interface TimelineVisualizationProps {
@@ -20,7 +20,7 @@ interface TimePeriodNode {
 }
 
 const COLORS = [
-  '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+  'var(--primary-500)', 'var(--danger-500)', 'var(--success-500)', 'var(--warning-500)', 'var(--accent-500)',
   '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
 ];
 
@@ -179,7 +179,7 @@ const TimelineVisualization: React.FC<TimelineVisualizationProps> = ({
                   y1={periodNode.y}
                   x2={timelineWidth}
                   y2={periodNode.y}
-                  stroke={isHighlighted ? '#3b82f6' : '#cbd5e1'}
+                  stroke={isHighlighted ? 'var(--primary-500)' : 'var(--border-default)'}
                   strokeWidth={isHighlighted ? 3 : 2}
                 />
                 <g
@@ -193,8 +193,8 @@ const TimelineVisualization: React.FC<TimelineVisualizationProps> = ({
                     width={timelineWidth - 40}
                     height={50}
                     rx={8}
-                    fill={isHighlighted ? '#eff6ff' : 'white'}
-                    stroke={isHighlighted ? '#3b82f6' : '#e2e8f0'}
+                    fill={isHighlighted ? 'var(--primary-light)' : 'white'}
+                    stroke={isHighlighted ? 'var(--primary-500)' : 'var(--border-subtle)'}
                     strokeWidth={isHighlighted ? 2 : 1}
                   />
                   <text
@@ -203,7 +203,7 @@ const TimelineVisualization: React.FC<TimelineVisualizationProps> = ({
                     textAnchor="middle"
                     fontSize={14}
                     fontWeight={600}
-                    fill={isHighlighted ? '#1e40af' : '#1e293b'}
+                    fill={isHighlighted ? '#1e40af' : 'var(--bg-base)'}
                   >
                     {periodNode.period.name}
                   </text>
@@ -250,7 +250,7 @@ const TimelineVisualization: React.FC<TimelineVisualizationProps> = ({
                   key={`${node.book.id}-${period.id}`}
                   d={path}
                   fill="none"
-                  stroke={isHighlighted || isPeriodHighlighted(period.id) ? node.color : '#cbd5e1'}
+                  stroke={isHighlighted || isPeriodHighlighted(period.id) ? node.color : 'var(--border-default)'}
                   strokeWidth={isHighlighted || isPeriodHighlighted(period.id) ? 3 : 1.5}
                   strokeOpacity={isHighlighted || isPeriodHighlighted(period.id) ? 1 : 0.3}
                 />
@@ -278,7 +278,7 @@ const TimelineVisualization: React.FC<TimelineVisualizationProps> = ({
                   height={80}
                   rx={8}
                   fill="white"
-                  stroke={isHighlighted ? node.color : '#e2e8f0'}
+                  stroke={isHighlighted ? node.color : 'var(--border-subtle)'}
                   strokeWidth={isHighlighted ? 3 : 1}
                   filter={isHighlighted ? 'url(#shadow)' : undefined}
                 />
@@ -339,11 +339,11 @@ const TimelineVisualization: React.FC<TimelineVisualizationProps> = ({
           <span>点击历史时期查看关联书籍</span>
         </div>
         <div className="legend-item">
-          <div className="legend-color" style={{ background: '#10b981' }}></div>
+          <div className="legend-color" style={{ background: 'var(--success-500)' }}></div>
           <span>点击书籍查看关联时期</span>
         </div>
         <div className="legend-item">
-          <div className="legend-color" style={{ background: '#f59e0b' }}></div>
+          <div className="legend-color" style={{ background: 'var(--warning-500)' }}></div>
           <span>双击书籍查看详情</span>
         </div>
       </div>

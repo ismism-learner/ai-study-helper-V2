@@ -1,10 +1,13 @@
-from openai import AsyncOpenAI
-from app.config import settings_manager, api_config_manager
-from app.services.document_processor import DocumentProcessor
-from typing import Optional, AsyncGenerator
 import asyncio
 import traceback
+from collections.abc import AsyncGenerator
+from typing import Optional
+
 import httpx
+from openai import AsyncOpenAI
+
+from app.config import api_config_manager, settings_manager
+from app.services.document_processor import DocumentProcessor
 
 
 def normalize_base_url(url: str) -> str:
@@ -23,13 +26,9 @@ async def retry_async(func, max_retries=5, base_delay=3, timeout=300):
     for attempt in range(max_retries):
         try:
             return await asyncio.wait_for(func(), timeout=timeout)
-        except asyncio.TimeoutError:
-            last_error = TimeoutError(
-                f"请求超时（{timeout}秒）。可能原因：模型响应慢、网络问题、或内容过长。"
-            )
-            print(
-                f"[retry_async] Attempt {attempt + 1}/{max_retries} timed out after {timeout}s"
-            )
+        except TimeoutError:
+            last_error = TimeoutError(f"请求超时（{timeout}秒）。可能原因：模型响应慢、网络问题、或内容过长。")
+            print(f"[retry_async] Attempt {attempt + 1}/{max_retries} timed out after {timeout}s")
 
             if attempt < max_retries - 1:
                 wait_time = base_delay * (2**attempt)
@@ -41,9 +40,7 @@ async def retry_async(func, max_retries=5, base_delay=3, timeout=300):
             last_error = e
             error_str = str(e).lower()
             error_type = type(e).__name__
-            print(
-                f"[retry_async] Attempt {attempt + 1}/{max_retries} failed: {error_type}: {str(e)}"
-            )
+            print(f"[retry_async] Attempt {attempt + 1}/{max_retries} failed: {error_type}: {str(e)}")
 
             is_retryable = any(
                 code in error_str
@@ -74,30 +71,18 @@ async def retry_async(func, max_retries=5, base_delay=3, timeout=300):
 
             if is_retryable and attempt < max_retries - 1:
                 wait_time = base_delay * (2**attempt)
-                print(
-                    f"[retry_async] Retryable error detected. Waiting {wait_time}s before retry..."
-                )
+                print(f"[retry_async] Retryable error detected. Waiting {wait_time}s before retry...")
                 await asyncio.sleep(wait_time)
                 continue
 
-            if (
-                "api key" in error_str
-                or "authentication" in error_str
-                or "unauthorized" in error_str
-            ):
-                raise ValueError(
-                    f"API认证失败：请检查API Key是否正确。错误详情：{str(e)}"
-                )
-            elif "model" in error_str and (
-                "not found" in error_str or "does not exist" in error_str
-            ):
+            if "api key" in error_str or "authentication" in error_str or "unauthorized" in error_str:
+                raise ValueError(f"API认证失败：请检查API Key是否正确。错误详情：{str(e)}")
+            elif "model" in error_str and ("not found" in error_str or "does not exist" in error_str):
                 raise ValueError(
                     f"模型不存在：请检查模型名称 '{settings_manager.model_name}' 是否正确。错误详情：{str(e)}"
                 )
             elif "context" in error_str and "length" in error_str:
-                raise ValueError(
-                    f"内容过长：输入内容超出模型上下文限制。请尝试缩短内容或使用支持更长上下文的模型。"
-                )
+                raise ValueError("内容过长：输入内容超出模型上下文限制。请尝试缩短内容或使用支持更长上下文的模型。")
 
             raise e
     if last_error:
@@ -133,7 +118,7 @@ class AIService:
             api_key = settings_manager.openai_api_key
             base_url = normalize_base_url(settings_manager.openai_api_base)
             model_name = settings_manager.model_name
-            print(f"[AIService] 使用默认设置")
+            print("[AIService] 使用默认设置")
 
         current_config = (base_url, api_key, model_name)
 
@@ -142,9 +127,7 @@ class AIService:
 
         if not api_key or not api_key.strip():
             self._api_key_valid = False
-            self._last_error = (
-                "API Key 未设置！请在设置中配置有效的 API Key 或添加API配置"
-            )
+            self._last_error = "API Key 未设置！请在设置中配置有效的 API Key 或添加API配置"
             raise ValueError(self._last_error)
 
         self.client = AsyncOpenAI(
@@ -211,22 +194,18 @@ class AIService:
         self,
         highlighted_text: str,
         full_content: str,
-        custom_prompt: Optional[str] = None,
+        custom_prompt: str | None = None,
     ) -> str:
         self._check_client()
         self.update_client()
-        context = DocumentProcessor.get_context_around_text(
-            full_content, highlighted_text
-        )
+        context = DocumentProcessor.get_context_around_text(full_content, highlighted_text)
 
         if custom_prompt:
             prompt = custom_prompt.replace("{highlighted_text}", highlighted_text)
             prompt = prompt.replace("{keyword}", highlighted_text)
             prompt = prompt.replace("{context}", context)
         else:
-            prompt = settings_manager.explain_prompt.replace(
-                "{keyword}", highlighted_text
-            )
+            prompt = settings_manager.explain_prompt.replace("{keyword}", highlighted_text)
             prompt = prompt.replace("{context}", context)
 
         print(f"[explain_highlight] Prompt length: {len(prompt)}")
@@ -270,9 +249,7 @@ class AIService:
 
         prompt_template = settings_manager.optimize_prompt
         if not prompt_template:
-            prompt_template = (
-                "请优化以下段落，将其转换为书面化表达并删除重复性内容：\n\n{paragraph}"
-            )
+            prompt_template = "请优化以下段落，将其转换为书面化表达并删除重复性内容：\n\n{paragraph}"
         prompt = prompt_template.replace("{paragraph}", paragraph)
 
         async def _call_api():
@@ -301,9 +278,7 @@ class AIService:
             traceback.print_exc()
             raise
 
-    async def optimize_paragraph_stream(
-        self, paragraph: str
-    ) -> AsyncGenerator[str, None]:
+    async def optimize_paragraph_stream(self, paragraph: str) -> AsyncGenerator[str, None]:
         self._check_client()
         self.update_client()
 
@@ -313,9 +288,7 @@ class AIService:
 
         prompt_template = settings_manager.optimize_prompt
         if not prompt_template:
-            prompt_template = (
-                "请优化以下段落，将其转换为书面化表达并删除重复性内容：\n\n{paragraph}"
-            )
+            prompt_template = "请优化以下段落，将其转换为书面化表达并删除重复性内容：\n\n{paragraph}"
         prompt = prompt_template.replace("{paragraph}", paragraph)
 
         try:
@@ -343,28 +316,18 @@ class AIService:
             print(f"optimize_paragraph_stream error: {type(e).__name__}: {str(e)}")
             traceback.print_exc()
 
-            if (
-                "api key" in error_str
-                or "authentication" in error_str
-                or "unauthorized" in error_str
-            ):
-                raise ValueError(
-                    f"API认证失败：请检查API Key是否正确。错误详情：{str(e)}"
-                )
-            elif "model" in error_str and (
-                "not found" in error_str or "does not exist" in error_str
-            ):
+            if "api key" in error_str or "authentication" in error_str or "unauthorized" in error_str:
+                raise ValueError(f"API认证失败：请检查API Key是否正确。错误详情：{str(e)}")
+            elif "model" in error_str and ("not found" in error_str or "does not exist" in error_str):
                 raise ValueError(
                     f"模型不存在：请检查模型名称 '{settings_manager.model_name}' 是否正确。错误详情：{str(e)}"
                 )
             elif "context" in error_str and "length" in error_str:
-                raise ValueError(f"内容过长：输入内容超出模型上下文限制。")
+                raise ValueError("内容过长：输入内容超出模型上下文限制。")
 
             raise
 
-    async def generate_text(
-        self, prompt: str, system_prompt: str = None, max_tokens: int = 131072
-    ) -> str:
+    async def generate_text(self, prompt: str, system_prompt: str = None, max_tokens: int = 131072) -> str:
         self._check_client()
         self.update_client()
         print(f"[generate_text] Prompt length: {len(prompt)}, max_tokens: {max_tokens}")
@@ -399,15 +362,11 @@ class AIService:
                     # 从reasoning中提取JSON
                     import re
 
-                    json_match = re.search(
-                        r"```json\s*(\{.*?\})\s*```", reasoning, re.DOTALL
-                    )
+                    json_match = re.search(r"```json\s*(\{.*?\})\s*```", reasoning, re.DOTALL)
                     if json_match:
                         content = json_match.group(1)
                     else:
-                        json_match = re.search(
-                            r'\{[^{}]*"label"[^{}]*\}', reasoning, re.DOTALL
-                        )
+                        json_match = re.search(r'\{[^{}]*"label"[^{}]*\}', reasoning, re.DOTALL)
                         if json_match:
                             content = json_match.group()
                         else:
@@ -420,9 +379,7 @@ class AIService:
             traceback.print_exc()
             raise
 
-    async def generate_text_stream(
-        self, prompt: str, system_prompt: str = None
-    ) -> AsyncGenerator[str, None]:
+    async def generate_text_stream(self, prompt: str, system_prompt: str = None) -> AsyncGenerator[str, None]:
         self._check_client()
         self.update_client()
         print(f"[generate_text_stream] Prompt length: {len(prompt)}")
@@ -457,28 +414,16 @@ class AIService:
             print(f"generate_text_stream error: {type(e).__name__}: {str(e)}")
             traceback.print_exc()
 
-            if (
-                "api key" in error_str
-                or "authentication" in error_str
-                or "unauthorized" in error_str
-            ):
-                raise ValueError(
-                    f"API认证失败：请检查API Key是否正确。错误详情：{str(e)}"
-                )
-            elif "model" in error_str and (
-                "not found" in error_str or "does not exist" in error_str
-            ):
-                raise ValueError(
-                    f"模型不存在：请检查模型名称是否正确。错误详情：{str(e)}"
-                )
+            if "api key" in error_str or "authentication" in error_str or "unauthorized" in error_str:
+                raise ValueError(f"API认证失败：请检查API Key是否正确。错误详情：{str(e)}")
+            elif "model" in error_str and ("not found" in error_str or "does not exist" in error_str):
+                raise ValueError(f"模型不存在：请检查模型名称是否正确。错误详情：{str(e)}")
             elif "context" in error_str and "length" in error_str:
-                raise ValueError(f"内容过长：输入内容超出模型上下文限制。")
+                raise ValueError("内容过长：输入内容超出模型上下文限制。")
 
             raise
 
-    async def generate_timeline_notes(
-        self, content: str, custom_prompt: Optional[str] = None
-    ) -> str:
+    async def generate_timeline_notes(self, content: str, custom_prompt: str | None = None) -> str:
         """
         从文档内容中提取时间事件并生成规范化格式的时间笔记
 
@@ -523,7 +468,7 @@ class AIService:
             raise
 
     async def generate_timeline_notes_stream(
-        self, content: str, custom_prompt: Optional[str] = None
+        self, content: str, custom_prompt: str | None = None
     ) -> AsyncGenerator[str, None]:
         """
         流式生成时间笔记
@@ -562,22 +507,14 @@ class AIService:
             print(f"generate_timeline_notes_stream error: {type(e).__name__}: {str(e)}")
             traceback.print_exc()
 
-            if (
-                "api key" in error_str
-                or "authentication" in error_str
-                or "unauthorized" in error_str
-            ):
-                raise ValueError(
-                    f"API认证失败：请检查API Key是否正确。错误详情：{str(e)}"
-                )
-            elif "model" in error_str and (
-                "not found" in error_str or "does not exist" in error_str
-            ):
+            if "api key" in error_str or "authentication" in error_str or "unauthorized" in error_str:
+                raise ValueError(f"API认证失败：请检查API Key是否正确。错误详情：{str(e)}")
+            elif "model" in error_str and ("not found" in error_str or "does not exist" in error_str):
                 raise ValueError(
                     f"模型不存在：请检查模型名称 '{settings_manager.model_name}' 是否正确。错误详情：{str(e)}"
                 )
             elif "context" in error_str and "length" in error_str:
-                raise ValueError(f"内容过长：输入内容超出模型上下文限制。")
+                raise ValueError("内容过长：输入内容超出模型上下文限制。")
 
             raise
 
@@ -668,9 +605,7 @@ class AIService:
                     # 提取JSON部分（去除可能的markdown代码块标记）
                     json_text = result_text
                     if "```json" in json_text:
-                        json_text = (
-                            json_text.split("```json")[1].split("```")[0].strip()
-                        )
+                        json_text = json_text.split("```json")[1].split("```")[0].strip()
                     elif "```" in json_text:
                         json_text = json_text.split("```")[1].split("```")[0].strip()
 
@@ -701,6 +636,191 @@ class AIService:
         except Exception as e:
             print(f"generate_note error: {type(e).__name__}: {str(e)}")
             traceback.print_exc()
+            raise
+
+    async def generate_with_tools(
+        self,
+        messages: list[dict],
+        tools: list[dict] | None = None,
+        temperature: float = 0.7,
+        max_tokens: int = 131072,
+    ) -> dict:
+        """
+        使用function calling生成回复
+
+        Args:
+            messages: 对话历史
+            tools: OpenAI function calling格式的工具定义列表
+            temperature: 温度
+            max_tokens: 最大token数
+
+        Returns:
+            dict with keys:
+            - "content": str | None - 文本回复内容
+            - "tool_calls": list | None - 工具调用列表（OpenAI格式）
+            - "finish_reason": str - 结束原因 ("stop", "tool_calls", etc.)
+        """
+        self._check_client()
+        self.update_client()
+
+        kwargs = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        if tools:
+            kwargs["tools"] = tools
+            kwargs["tool_choice"] = "auto"
+
+        async def _call_api():
+            response = await self.client.chat.completions.create(**kwargs)
+            return response
+
+        try:
+            response = await retry_async(_call_api, max_retries=3, base_delay=2)
+            if response and hasattr(response, "choices") and response.choices:
+                choice = response.choices[0]
+                message = choice.message
+                content = message.content
+                # Handle reasoning_content like existing methods
+                if not content and hasattr(message, "reasoning_content"):
+                    content = message.reasoning_content
+                tool_calls = None
+                if hasattr(message, "tool_calls") and message.tool_calls:
+                    tool_calls = [
+                        {
+                            "id": tc.id,
+                            "type": tc.type,
+                            "function": {
+                                "name": tc.function.name,
+                                "arguments": tc.function.arguments,
+                            },
+                        }
+                        for tc in message.tool_calls
+                    ]
+                return {
+                    "content": content,
+                    "tool_calls": tool_calls,
+                    "finish_reason": choice.finish_reason,
+                }
+            else:
+                raise ValueError(f"API响应格式异常: {type(response)}")
+        except Exception as e:
+            print(f"generate_with_tools error: {type(e).__name__}: {str(e)}")
+            traceback.print_exc()
+            raise
+
+    async def generate_with_tools_stream(
+        self,
+        messages: list[dict],
+        tools: list[dict] | None = None,
+        temperature: float = 0.7,
+    ) -> AsyncGenerator[dict, None]:
+        """
+        流式生成带工具调用的回复
+
+        Yields dict events:
+        - {"type": "text", "content": "..."} - 文本chunk
+        - {"type": "tool_call", "tool_call": {...}} - 完整的tool call（在流式模式下需要累积）
+        - {"type": "done", "finish_reason": "..."} - 完成
+        """
+        self._check_client()
+        self.update_client()
+
+        kwargs = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": temperature,
+            "stream": True,
+        }
+        if tools:
+            kwargs["tools"] = tools
+            kwargs["tool_choice"] = "auto"
+
+        try:
+            stream = await self.client.chat.completions.create(**kwargs)
+
+            # Accumulate tool calls across chunks
+            tool_calls_accumulator: dict[int, dict] = {}  # index -> {id, name, arguments}
+
+            async for chunk in stream:
+                if not chunk.choices or len(chunk.choices) == 0:
+                    continue
+
+                delta = chunk.choices[0].delta
+                finish_reason = chunk.choices[0].finish_reason
+
+                # Text content
+                if delta.content:
+                    yield {"type": "text", "content": delta.content}
+
+                # Tool calls (streaming - need to accumulate)
+                if hasattr(delta, "tool_calls") and delta.tool_calls:
+                    for tc_chunk in delta.tool_calls:
+                        idx = tc_chunk.index
+                        if idx not in tool_calls_accumulator:
+                            tool_calls_accumulator[idx] = {
+                                "id": "",
+                                "name": "",
+                                "arguments": "",
+                            }
+                        if tc_chunk.id:
+                            tool_calls_accumulator[idx]["id"] = tc_chunk.id
+                        if tc_chunk.function:
+                            if tc_chunk.function.name:
+                                tool_calls_accumulator[idx]["name"] += tc_chunk.function.name
+                            if tc_chunk.function.arguments:
+                                tool_calls_accumulator[idx]["arguments"] += tc_chunk.function.arguments
+
+                # When finish_reason is tool_calls, yield accumulated tool calls
+                if finish_reason == "tool_calls" and tool_calls_accumulator:
+                    for idx in sorted(tool_calls_accumulator.keys()):
+                        tc = tool_calls_accumulator[idx]
+                        yield {
+                            "type": "tool_call",
+                            "tool_call": {
+                                "id": tc["id"],
+                                "type": "function",
+                                "function": {
+                                    "name": tc["name"],
+                                    "arguments": tc["arguments"],
+                                },
+                            },
+                        }
+                    tool_calls_accumulator = {}
+
+                # Done
+                if finish_reason and finish_reason != "tool_calls":
+                    yield {"type": "done", "finish_reason": finish_reason}
+
+            # If we have accumulated tool calls but no finish_reason yet
+            if tool_calls_accumulator:
+                for idx in sorted(tool_calls_accumulator.keys()):
+                    tc = tool_calls_accumulator[idx]
+                    yield {
+                        "type": "tool_call",
+                        "tool_call": {
+                            "id": tc["id"],
+                            "type": "function",
+                            "function": {
+                                "name": tc["name"],
+                                "arguments": tc["arguments"],
+                            },
+                        },
+                    }
+
+        except Exception as e:
+            error_str = str(e).lower()
+            print(f"generate_with_tools_stream error: {type(e).__name__}: {str(e)}")
+            traceback.print_exc()
+
+            if "api key" in error_str or "authentication" in error_str or "unauthorized" in error_str:
+                raise ValueError(f"API认证失败：请检查API Key是否正确。错误详情：{str(e)}")
+            elif "model" in error_str and ("not found" in error_str or "does not exist" in error_str):
+                raise ValueError(f"模型不存在：请检查模型名称是否正确。错误详情：{str(e)}")
+            elif "context" in error_str and "length" in error_str:
+                raise ValueError("内容过长：输入内容超出模型上下文限制。")
             raise
 
 

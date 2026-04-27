@@ -1,21 +1,23 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
-from typing import List, Optional
-from pydantic import BaseModel
-from datetime import datetime, UTC
 import asyncio
-import tempfile
-import os
-import shutil
-import fitz
-import io
 import base64
-import re
 import hashlib
+import io
+import os
+import re
+import shutil
+import tempfile
+from datetime import UTC, datetime
+from typing import List, Optional
+
+import fitz
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from PIL import Image
+from pydantic import BaseModel
+from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload
+
 from app.database import get_db
-from app.models import Country, Category, TimePeriod, BookDocument, WorldTimelineEvent
+from app.models import BookDocument, Category, Country, TimePeriod, WorldTimelineEvent
 
 router = APIRouter()
 
@@ -54,18 +56,18 @@ def generate_safe_filename(original_filename: str, short_hash: str = None) -> st
 class CountryCreate(BaseModel):
     name: str
     code: str
-    region: Optional[str] = None
-    continent: Optional[str] = None
-    geojson_properties: Optional[dict] = None
+    region: str | None = None
+    continent: str | None = None
+    geojson_properties: dict | None = None
 
 
 class CountryResponse(BaseModel):
     id: str
     name: str
     code: str
-    region: Optional[str]
-    continent: Optional[str]
-    geojson_properties: Optional[dict]
+    region: str | None
+    continent: str | None
+    geojson_properties: dict | None
     book_count: int = 0
     created_at: datetime
     updated_at: datetime
@@ -76,13 +78,13 @@ class CountryResponse(BaseModel):
 
 class CategoryCreate(BaseModel):
     name: str
-    parent_id: Optional[str] = None
+    parent_id: str | None = None
 
 
 class CategoryResponse(BaseModel):
     id: str
     name: str
-    parent_id: Optional[str]
+    parent_id: str | None
     book_count: int = 0
     created_at: datetime
     updated_at: datetime
@@ -93,23 +95,23 @@ class CategoryResponse(BaseModel):
 
 class TimePeriodCreate(BaseModel):
     name: str
-    start_year: Optional[int] = None
-    end_year: Optional[int] = None
-    country_id: Optional[str] = None
-    parent_id: Optional[str] = None
-    description: Optional[str] = None
+    start_year: int | None = None
+    end_year: int | None = None
+    country_id: str | None = None
+    parent_id: str | None = None
+    description: str | None = None
 
 
 class TimePeriodResponse(BaseModel):
     id: str
     name: str
-    start_year: Optional[int] = None
-    end_year: Optional[int] = None
-    country_id: Optional[str] = None
-    parent_id: Optional[str] = None
-    description: Optional[str] = None
+    start_year: int | None = None
+    end_year: int | None = None
+    country_id: str | None = None
+    parent_id: str | None = None
+    description: str | None = None
     book_count: int = 0
-    children: List["TimePeriodResponse"] = []
+    children: list["TimePeriodResponse"] = []
     created_at: datetime
     updated_at: datetime
 
@@ -119,38 +121,38 @@ class TimePeriodResponse(BaseModel):
 
 class BookDocumentCreate(BaseModel):
     title: str
-    author: Optional[str] = None
-    description: Optional[str] = None
-    country_id: Optional[str] = None
-    category_id: Optional[str] = None
-    time_period_id: Optional[str] = None
-    author_era: Optional[str] = None
-    theme_year_start: Optional[int] = None
-    theme_year_end: Optional[int] = None
-    theme_year_status: Optional[str] = "暂未确定"
-    year_start: Optional[int] = None
-    year_end: Optional[int] = None
-    tags: Optional[List[str]] = None
-    metadata: Optional[dict] = None
-    content_region_id: Optional[str] = None
-    author_region_id: Optional[str] = None
-    content_era_start: Optional[int] = None
-    content_era_end: Optional[int] = None
-    author_birth_year: Optional[int] = None
-    author_death_year: Optional[int] = None
-    content_era_description: Optional[str] = None
-    author_era_description: Optional[str] = None
+    author: str | None = None
+    description: str | None = None
+    country_id: str | None = None
+    category_id: str | None = None
+    time_period_id: str | None = None
+    author_era: str | None = None
+    theme_year_start: int | None = None
+    theme_year_end: int | None = None
+    theme_year_status: str | None = "暂未确定"
+    year_start: int | None = None
+    year_end: int | None = None
+    tags: list[str] | None = None
+    metadata: dict | None = None
+    content_region_id: str | None = None
+    author_region_id: str | None = None
+    content_era_start: int | None = None
+    content_era_end: int | None = None
+    author_birth_year: int | None = None
+    author_death_year: int | None = None
+    content_era_description: str | None = None
+    author_era_description: str | None = None
 
 
 class BookTimePeriodResponse(BaseModel):
     id: str
     book_id: str
-    theme_year_start: Optional[int]
-    theme_year_end: Optional[int]
-    theme_year_status: Optional[str]
-    start_page: Optional[int]
-    end_page: Optional[int]
-    description: Optional[str]
+    theme_year_start: int | None
+    theme_year_end: int | None
+    theme_year_status: str | None
+    start_page: int | None
+    end_page: int | None
+    description: str | None
     created_at: datetime
     updated_at: datetime
 
@@ -161,50 +163,50 @@ class BookTimePeriodResponse(BaseModel):
 class BookDocumentResponse(BaseModel):
     id: str
     title: str
-    original_filename: Optional[str] = None
-    author: Optional[str]
-    description: Optional[str]
+    original_filename: str | None = None
+    author: str | None
+    description: str | None
     file_path: str
-    file_size: Optional[int]
-    cover_image: Optional[str]
-    thumbnail: Optional[str] = None
-    country_id: Optional[str]
-    category_id: Optional[str]
-    time_period_id: Optional[str]
-    author_era: Optional[str]
-    year_start: Optional[int]
-    year_end: Optional[int]
-    theme_year_start: Optional[int]
-    theme_year_end: Optional[int]
-    theme_year_status: Optional[str]
-    tags: Optional[List[str]]
-    extra_metadata: Optional[dict]
-    content_region_id: Optional[str]
-    author_region_id: Optional[str]
-    content_era_start: Optional[int]
-    content_era_end: Optional[int]
-    author_birth_year: Optional[int]
-    author_death_year: Optional[int]
-    content_era_description: Optional[str]
-    author_era_description: Optional[str]
-    file_hash_sha256: Optional[str] = None
-    content_hash_simhash: Optional[str] = None
-    page_count: Optional[int] = None
-    quark_share_url: Optional[str] = None
-    quark_file_id: Optional[str] = None
-    quark_upload_status: Optional[str] = None
-    quark_upload_time: Optional[datetime] = None
+    file_size: int | None
+    cover_image: str | None
+    thumbnail: str | None = None
+    country_id: str | None
+    category_id: str | None
+    time_period_id: str | None
+    author_era: str | None
+    year_start: int | None
+    year_end: int | None
+    theme_year_start: int | None
+    theme_year_end: int | None
+    theme_year_status: str | None
+    tags: list[str] | None
+    extra_metadata: dict | None
+    content_region_id: str | None
+    author_region_id: str | None
+    content_era_start: int | None
+    content_era_end: int | None
+    author_birth_year: int | None
+    author_death_year: int | None
+    content_era_description: str | None
+    author_era_description: str | None
+    file_hash_sha256: str | None = None
+    content_hash_simhash: str | None = None
+    page_count: int | None = None
+    quark_share_url: str | None = None
+    quark_file_id: str | None = None
+    quark_upload_status: str | None = None
+    quark_upload_time: datetime | None = None
     notes_count: int = 0
     last_read_page: int = 1
-    last_read_time: Optional[datetime] = None
+    last_read_time: datetime | None = None
     total_reading_seconds: int = 0
-    reading_speed_pages_per_hour: Optional[float] = None
-    time_periods: List[BookTimePeriodResponse] = []
-    country: Optional[CountryResponse] = None
-    category: Optional[CategoryResponse] = None
-    time_period: Optional[TimePeriodResponse] = None
-    content_region: Optional[CountryResponse] = None
-    author_region: Optional[CountryResponse] = None
+    reading_speed_pages_per_hour: float | None = None
+    time_periods: list[BookTimePeriodResponse] = []
+    country: CountryResponse | None = None
+    category: CategoryResponse | None = None
+    time_period: TimePeriodResponse | None = None
+    content_region: CountryResponse | None = None
+    author_region: CountryResponse | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -214,10 +216,10 @@ class BookDocumentResponse(BaseModel):
 
 class TimelineEntry(BaseModel):
     year: int
-    books: List[BookDocumentResponse]
+    books: list[BookDocumentResponse]
 
 
-@router.get("/countries", response_model=List[CountryResponse])
+@router.get("/countries", response_model=list[CountryResponse])
 def list_countries(db: Session = Depends(get_db)):
     countries = db.query(Country).all()
     country_ids = [c.id for c in countries]
@@ -351,7 +353,7 @@ def get_country_by_code(country_code: str, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/categories", response_model=List[CategoryResponse])
+@router.get("/categories", response_model=list[CategoryResponse])
 def list_categories(db: Session = Depends(get_db)):
     categories = db.query(Category).all()
     cat_ids = [c.id for c in categories]
@@ -392,8 +394,8 @@ def create_category(category: CategoryCreate, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/time-periods", response_model=List[TimePeriodResponse])
-def list_time_periods(country_id: Optional[str] = None, db: Session = Depends(get_db)):
+@router.get("/time-periods", response_model=list[TimePeriodResponse])
+def list_time_periods(country_id: str | None = None, db: Session = Depends(get_db)):
     query = db.query(TimePeriod)
     if country_id:
         query = query.filter(TimePeriod.country_id == country_id)
@@ -479,8 +481,8 @@ def extract_pdf_metadata(file_path: str) -> dict:
 
 def generate_epub_cover_internal(file_path: str) -> tuple:
     try:
-        import zipfile
         import xml.etree.ElementTree as ET
+        import zipfile
 
         with zipfile.ZipFile(file_path, "r") as epub:
             container_xml = epub.read("META-INF/container.xml")
@@ -623,35 +625,35 @@ def generate_pdf_cover_internal(file_path: str) -> tuple:
 async def upload_book(
     file: UploadFile = File(...),
     title: str = Form(...),
-    author: Optional[str] = Form(None),
-    description: Optional[str] = Form(None),
-    country_id: Optional[str] = Form(None),
-    category_id: Optional[str] = Form(None),
-    time_period_id: Optional[str] = Form(None),
-    author_era: Optional[str] = Form(None),
-    theme_year_start: Optional[int] = Form(None),
-    theme_year_end: Optional[int] = Form(None),
-    theme_year_status: Optional[str] = Form("暂未确定"),
-    year_start: Optional[int] = Form(None),
-    year_end: Optional[int] = Form(None),
-    tags: Optional[str] = Form(None),
-    content_region_id: Optional[str] = Form(None),
-    author_region_id: Optional[str] = Form(None),
-    content_era_start: Optional[int] = Form(None),
-    content_era_end: Optional[int] = Form(None),
-    author_birth_year: Optional[int] = Form(None),
-    author_death_year: Optional[int] = Form(None),
-    content_era_description: Optional[str] = Form(None),
-    author_era_description: Optional[str] = Form(None),
+    author: str | None = Form(None),
+    description: str | None = Form(None),
+    country_id: str | None = Form(None),
+    category_id: str | None = Form(None),
+    time_period_id: str | None = Form(None),
+    author_era: str | None = Form(None),
+    theme_year_start: int | None = Form(None),
+    theme_year_end: int | None = Form(None),
+    theme_year_status: str | None = Form("暂未确定"),
+    year_start: int | None = Form(None),
+    year_end: int | None = Form(None),
+    tags: str | None = Form(None),
+    content_region_id: str | None = Form(None),
+    author_region_id: str | None = Form(None),
+    content_era_start: int | None = Form(None),
+    content_era_end: int | None = Form(None),
+    author_birth_year: int | None = Form(None),
+    author_death_year: int | None = Form(None),
+    content_era_description: str | None = Form(None),
+    author_era_description: str | None = Form(None),
     db: Session = Depends(get_db),
 ):
-    print(f"\n=== 上传请求 ===")
+    print("\n=== 上传请求 ===")
     print(f"文件名: {file.filename}")
     print(f"标题: {title}")
     print(f"Content-Type: {file.content_type}")
 
     if not file.filename:
-        print(f"错误: 没有选择文件")
+        print("错误: 没有选择文件")
         raise HTTPException(status_code=400, detail="No file selected")
 
     file_ext = os.path.splitext(file.filename)[1].lower()
@@ -766,13 +768,13 @@ async def upload_book(
 async def upload_book_with_path(
     file: UploadFile = File(...),
     title: str = Form(...),
-    relative_path: Optional[str] = Form(None),
-    country_id: Optional[str] = Form(None),
-    author: Optional[str] = Form(None),
-    description: Optional[str] = Form(None),
-    category_id: Optional[str] = Form(None),
-    time_period_id: Optional[str] = Form(None),
-    tags: Optional[str] = Form(None),
+    relative_path: str | None = Form(None),
+    country_id: str | None = Form(None),
+    author: str | None = Form(None),
+    description: str | None = Form(None),
+    category_id: str | None = Form(None),
+    time_period_id: str | None = Form(None),
+    tags: str | None = Form(None),
     db: Session = Depends(get_db),
 ):
     """
@@ -781,7 +783,7 @@ async def upload_book_with_path(
     relative_path: 文件的相对路径，格式为 "文件夹名/子文件夹/文件名.pdf"
     系统会根据相对路径自动创建文件夹层级结构
     """
-    print(f"\n=== 上传请求（带路径）===")
+    print("\n=== 上传请求（带路径）===")
     print(f"文件名: {file.filename}")
     print(f"标题: {title}")
     print(f"相对路径: {relative_path}")
@@ -923,11 +925,11 @@ async def create_folder_structure_from_path(relative_path: str, db: Session) -> 
     return current_folder_id
 
 
-@router.post("/books/upload-batch", response_model=List[BookDocumentResponse])
+@router.post("/books/upload-batch", response_model=list[BookDocumentResponse])
 async def upload_books_batch(
-    files: List[UploadFile] = File(...),
-    country_id: Optional[str] = Form(None),
-    skip_duplicates: Optional[bool] = Form(True),
+    files: list[UploadFile] = File(...),
+    country_id: str | None = Form(None),
+    skip_duplicates: bool | None = Form(True),
     db: Session = Depends(get_db),
 ):
     from app.services.duplicate_detector import duplicate_detector
@@ -1048,7 +1050,7 @@ async def upload_books_batch(
             continue
 
     if duplicates_found:
-        print(f"\n=== 批量上传重复检测报告 ===")
+        print("\n=== 批量上传重复检测报告 ===")
         print(f"总上传文件数: {len(files)}")
         print(f"成功上传: {len(results)} 本")
         print(f"检测到重复: {len(duplicates_found)} 本")
@@ -1056,14 +1058,14 @@ async def upload_books_batch(
             print(
                 f"  - {dup['filename']} 与已存在的《{dup['existing_book_title']}》重复 ({dup['duplicate_type']})"
             )
-        print(f"===========================\n")
+        print("===========================\n")
 
     return results
 
 
 @router.post("/books/check-duplicates-batch")
 async def check_duplicates_batch(
-    files: List[UploadFile] = File(...), db: Session = Depends(get_db)
+    files: list[UploadFile] = File(...), db: Session = Depends(get_db)
 ):
     from app.services.duplicate_detector import duplicate_detector
 
@@ -1202,14 +1204,14 @@ async def check_duplicates_batch(
     return results
 
 
-@router.get("/books", response_model=List[BookDocumentResponse])
+@router.get("/books", response_model=list[BookDocumentResponse])
 def list_books(
-    country_id: Optional[str] = None,
-    category_id: Optional[str] = None,
-    time_period_id: Optional[str] = None,
-    year_from: Optional[int] = None,
-    year_to: Optional[int] = None,
-    search: Optional[str] = None,
+    country_id: str | None = None,
+    category_id: str | None = None,
+    time_period_id: str | None = None,
+    year_from: int | None = None,
+    year_to: int | None = None,
+    search: str | None = None,
     skip: int = 0,
     limit: int = 0,
     db: Session = Depends(get_db),
@@ -1324,7 +1326,7 @@ def quick_search_books(
 
 @router.post("/books/batch-tag")
 def batch_tag_books(
-    book_ids: List[str], tag: str, mode: str = "add", db: Session = Depends(get_db)
+    book_ids: list[str], tag: str, mode: str = "add", db: Session = Depends(get_db)
 ):
     """
     批量给书籍打标签
@@ -1757,7 +1759,7 @@ def delete_book_time_period(time_period_id: str, db: Session = Depends(get_db)):
     return {"message": "Time period deleted successfully"}
 
 
-@router.get("/countries/{country_id}/timeline", response_model=List[TimelineEntry])
+@router.get("/countries/{country_id}/timeline", response_model=list[TimelineEntry])
 def get_country_timeline(country_id: str, db: Session = Depends(get_db)):
     country = db.query(Country).filter(Country.id == country_id).first()
     if not country:
@@ -1793,7 +1795,7 @@ def get_country_timeline(country_id: str, db: Session = Depends(get_db)):
     return timeline
 
 
-@router.get("/countries/{country_id}/books", response_model=List[BookDocumentResponse])
+@router.get("/countries/{country_id}/books", response_model=list[BookDocumentResponse])
 def get_country_books(country_id: str, db: Session = Depends(get_db)):
     books = (
         db.query(BookDocument)
@@ -1975,8 +1977,8 @@ BOOK_EAGER_LOAD = [
 
 
 def _build_books_response_bulk(
-    books: List[BookDocument], db: Session, exclude_cover: bool = False
-) -> List[BookDocumentResponse]:
+    books: list[BookDocument], db: Session, exclude_cover: bool = False
+) -> list[BookDocumentResponse]:
     if not books:
         return []
     book_ids = [b.id for b in books]
@@ -2003,16 +2005,16 @@ class ScannedFile(BaseModel):
     file_path: str
     file_size: int
     parsed_title: str
-    parsed_author: Optional[str] = None
+    parsed_author: str | None = None
     already_exists: bool = False
-    existing_book_id: Optional[str] = None
+    existing_book_id: str | None = None
 
 
 class ScanResult(BaseModel):
     total_files: int
     new_files: int
     existing_files: int
-    files: List[ScannedFile]
+    files: list[ScannedFile]
 
 
 @router.get("/scan-folder", response_model=ScanResult)
@@ -2108,10 +2110,10 @@ def parse_filename(filename: str) -> tuple:
 
 
 class BatchImportRequest(BaseModel):
-    files: List[dict]
+    files: list[dict]
 
 
-@router.post("/batch-import", response_model=List[BookDocumentResponse])
+@router.post("/batch-import", response_model=list[BookDocumentResponse])
 def batch_import_files(request: BatchImportRequest, db: Session = Depends(get_db)):
     imported_books = []
 
@@ -2188,7 +2190,7 @@ def sync_existing_files(db: Session = Depends(get_db)):
 
 class ReadingProgressUpdate(BaseModel):
     current_page: int
-    reading_seconds: Optional[int] = 0
+    reading_seconds: int | None = 0
 
 
 @router.post("/books/{book_id}/reading-progress")

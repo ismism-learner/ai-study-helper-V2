@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, Depends
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
-from typing import Optional
 
 from app.database import get_db
 from app.services.sqlite import CognitiveChainService
@@ -16,11 +17,11 @@ def get_service(db=Depends(get_db)) -> CognitiveChainService:
 class CreateChainRequest(BaseModel):
     root_concept: str = Field(..., min_length=1)
     context: str = ""
-    user_id: Optional[str] = None
-    source_doc_id: Optional[str] = None
-    source_doc_title: Optional[str] = None
-    source_chapter_index: Optional[int] = None
-    source_knowledge_node_id: Optional[str] = None
+    user_id: str | None = None
+    source_doc_id: str | None = None
+    source_doc_title: str | None = None
+    source_chapter_index: int | None = None
+    source_knowledge_node_id: str | None = None
 
 
 class ExpandChainRequest(BaseModel):
@@ -28,10 +29,10 @@ class ExpandChainRequest(BaseModel):
     parent_node_id: str = Field(...)
     concept_to_explain: str = Field(..., min_length=1)
     context: str = ""
-    source_doc_id: Optional[str] = None
-    source_doc_title: Optional[str] = None
-    source_chapter_index: Optional[int] = None
-    source_knowledge_node_id: Optional[str] = None
+    source_doc_id: str | None = None
+    source_doc_title: str | None = None
+    source_chapter_index: int | None = None
+    source_knowledge_node_id: str | None = None
 
 
 class ExplainConceptRequest(BaseModel):

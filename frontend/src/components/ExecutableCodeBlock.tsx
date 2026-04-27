@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+﻿import React, { useRef, useEffect, useCallback } from 'react';
 import hljs from 'highlight.js';
 import { Play, Trash2 } from 'lucide-react';
 import { usePyodide } from '../hooks/usePyodide';
@@ -29,7 +29,7 @@ const styles = {
   },
   languageLabel: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: 'var(--text-muted)',
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
   },
@@ -39,7 +39,7 @@ const styles = {
     gap: 4,
     padding: '3px 10px',
     fontSize: 12,
-    color: '#e2e8f0',
+    color: 'var(--border-subtle)',
     background: 'rgba(139, 92, 246, 0.25)',
     border: '1px solid rgba(139, 92, 246, 0.4)',
     borderRadius: 4,
@@ -54,7 +54,7 @@ const styles = {
     cursor: 'not-allowed',
   },
   codeContainer: {
-    background: '#1e1b2e',
+    background: 'var(--bg-base)',
     padding: 16,
     overflowX: 'auto' as const,
     margin: 0,
@@ -80,7 +80,7 @@ const styles = {
   },
   outputLabel: {
     fontSize: 11,
-    color: '#64748b',
+    color: 'var(--text-muted)',
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
   },
@@ -90,14 +90,14 @@ const styles = {
     gap: 3,
     padding: '2px 8px',
     fontSize: 11,
-    color: '#94a3b8',
+    color: 'var(--text-muted)',
     background: 'rgba(255, 255, 255, 0.05)',
     border: '1px solid rgba(255, 255, 255, 0.1)',
     borderRadius: 3,
     cursor: 'pointer',
   },
   stdout: {
-    color: '#10b981',
+    color: 'var(--success-500)',
     fontFamily: "'Fira Code', 'Consolas', 'Monaco', monospace",
     fontSize: '0.82em',
     lineHeight: 1.5,
@@ -105,7 +105,7 @@ const styles = {
     wordBreak: 'break-word' as const,
   },
   stderr: {
-    color: '#ef4444',
+    color: 'var(--danger-500)',
     fontFamily: "'Fira Code', 'Consolas', 'Monaco', monospace",
     fontSize: '0.82em',
     lineHeight: 1.5,
@@ -119,7 +119,7 @@ const styles = {
     padding: '10px 14px',
     background: 'rgba(139, 92, 246, 0.06)',
     borderTop: '1px solid rgba(139, 92, 246, 0.15)',
-    color: '#94a3b8',
+    color: 'var(--text-muted)',
     fontSize: 13,
   },
 } as const;

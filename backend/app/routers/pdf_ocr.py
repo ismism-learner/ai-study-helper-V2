@@ -1,14 +1,15 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Body
+import asyncio
+import json
+import os
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, BackgroundTasks, Body, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
-import os
-import json
-import asyncio
-from pathlib import Path
 
-from app.services.pdf_ocr_service import pdf_ocr_service, PDFOCRResult
-from app.services.paddleocr_service import paddleocr_service, PaddleOCRResult
+from app.services.paddleocr_service import PaddleOCRResult, paddleocr_service
+from app.services.pdf_ocr_service import PDFOCRResult, pdf_ocr_service
 
 router = APIRouter()
 
@@ -25,8 +26,8 @@ class ProcessPDFOCRRequest(BaseModel):
 
 class PDFOCRResponse(BaseModel):
     success: bool
-    output_path: Optional[str] = None
-    error: Optional[str] = None
+    output_path: str | None = None
+    error: str | None = None
     pages_processed: int = 0
     had_ocr: bool = False
 
@@ -38,7 +39,7 @@ class CheckOCRStatusResponse(BaseModel):
 
 
 class AvailableLanguagesResponse(BaseModel):
-    languages: List[Dict[str, str]]
+    languages: list[dict[str, str]]
 
 
 OCR_STATUS_CACHE = {}
@@ -233,18 +234,18 @@ async def extract_code_blocks(file_path: str):
 
 class PaddleOCRResponse(BaseModel):
     success: bool
-    text_content: Optional[str] = None
-    error: Optional[str] = None
-    pages: Optional[List[Dict[str, Any]]] = None
-    code_blocks: Optional[List[Dict[str, Any]]] = None
-    ocr_results: Optional[List[Dict[str, Any]]] = None
+    text_content: str | None = None
+    error: str | None = None
+    pages: list[dict[str, Any]] | None = None
+    code_blocks: list[dict[str, Any]] | None = None
+    ocr_results: list[dict[str, Any]] | None = None
 
 
 class PaddleOCRStatusResponse(BaseModel):
     model_loaded: bool
     loading: bool = False
-    error: Optional[str] = None
-    device: Optional[str] = None
+    error: str | None = None
+    device: str | None = None
     gpu_available: bool = False
 
 
@@ -379,19 +380,19 @@ async def get_paddle_task_status(file_path: str):
 
 class SmartOCRRequest(BaseModel):
     file_path: str
-    output_path: Optional[str] = None
+    output_path: str | None = None
     start_page: int = 0
-    end_page: Optional[int] = None
+    end_page: int | None = None
 
 
 class SmartOCRResponse(BaseModel):
     success: bool
-    output_path: Optional[str] = None
-    error: Optional[str] = None
+    output_path: str | None = None
+    error: str | None = None
     had_ocr: bool = False
     pages_processed: int = 0
-    message: Optional[str] = None
-    text_content: Optional[str] = None
+    message: str | None = None
+    text_content: str | None = None
 
 
 @router.post("/paddle/smart-process", response_model=SmartOCRResponse)
@@ -430,9 +431,9 @@ async def smart_process_pdf(request: SmartOCRRequest):
 )
 async def create_searchable_pdf(
     file_path: str,
-    output_path: Optional[str] = None,
+    output_path: str | None = None,
     start_page: int = 0,
-    end_page: Optional[int] = None,
+    end_page: int | None = None,
 ):
     resolved_path = resolve_file_path(file_path)
 
@@ -470,9 +471,9 @@ SMART_STATUS_CACHE = {}
 async def smart_process_pdf_async(
     file_path: str,
     background_tasks: BackgroundTasks,
-    output_path: Optional[str] = None,
+    output_path: str | None = None,
     start_page: int = 0,
-    end_page: Optional[int] = None,
+    end_page: int | None = None,
 ):
     resolved_path = resolve_file_path(file_path)
 
@@ -539,7 +540,7 @@ IN_PLACE_STATUS_CACHE = {}
     "/paddle/make-searchable/{file_path:path}", response_model=SmartOCRResponse
 )
 async def make_pdf_searchable_in_place(
-    file_path: str, start_page: int = 0, end_page: Optional[int] = None
+    file_path: str, start_page: int = 0, end_page: int | None = None
 ):
     resolved_path = resolve_file_path(file_path)
 
@@ -566,7 +567,7 @@ async def make_pdf_searchable_in_place_async(
     file_path: str,
     background_tasks: BackgroundTasks,
     start_page: int = 0,
-    end_page: Optional[int] = None,
+    end_page: int | None = None,
 ):
     resolved_path = resolve_file_path(file_path)
 
@@ -664,11 +665,11 @@ async def extract_text_from_pdf_async(
     file_path: str,
     background_tasks: BackgroundTasks,
     start_page: int = 0,
-    end_page: Optional[int] = None,
+    end_page: int | None = None,
     concurrency: int = 1,
 ):
     print(f"\n{'=' * 60}")
-    print(f"[OCR API] 收到 OCR 请求")
+    print("[OCR API] 收到 OCR 请求")
     print(f"[OCR API] 原始文件路径: {file_path}")
     print(f"[OCR API] start_page: {start_page}, end_page: {end_page}")
     print(f"[OCR API] concurrency: {concurrency}")
@@ -683,7 +684,7 @@ async def extract_text_from_pdf_async(
     print(f"[OCR API] 文件存在: {os.path.exists(resolved_path)}")
 
     if not os.path.exists(resolved_path):
-        print(f"[OCR API] 错误: PDF 文件不存在")
+        print("[OCR API] 错误: PDF 文件不存在")
         raise HTTPException(status_code=404, detail=f"PDF 文件不存在: {file_path}")
 
     cache_key = os.path.abspath(resolved_path)
@@ -700,7 +701,7 @@ async def extract_text_from_pdf_async(
             print(
                 f"[OCR API] ⚠️ 检测到重复任务，当前状态: {existing_status.get('status')}"
             )
-            print(f"[OCR API] 返回现有任务状态，不启动新任务")
+            print("[OCR API] 返回现有任务状态，不启动新任务")
             return {
                 "message": "OCR 任务已在运行中",
                 "file_path": file_path,
@@ -710,7 +711,7 @@ async def extract_text_from_pdf_async(
                 "total_pages": existing_status.get("total_pages", 0),
             }
 
-    print(f"[OCR API] 启动后台任务...")
+    print("[OCR API] 启动后台任务...")
 
     EXTRACT_TEXT_STATUS_CACHE[cache_key] = {
         "status": "initializing",
@@ -724,13 +725,13 @@ async def extract_text_from_pdf_async(
 
     async def process_task():
         try:
-            print(f"\n[OCR TASK] ========== 后台任务开始 ==========")
+            print("\n[OCR TASK] ========== 后台任务开始 ==========")
             print(f"[OCR TASK] 文件: {cache_key}")
             print(f"[OCR TASK] 并行数: {concurrency}")
 
             EXTRACT_TEXT_STATUS_CACHE[cache_key]["status"] = "loading_model"
             EXTRACT_TEXT_STATUS_CACHE[cache_key]["message"] = "正在加载 OCR 模型..."
-            print(f"[OCR TASK] 状态: loading_model")
+            print("[OCR TASK] 状态: loading_model")
 
             async def progress_callback(
                 progress: int, current_page: int, total_pages: int
@@ -751,7 +752,7 @@ async def extract_text_from_pdf_async(
                 EXTRACT_TEXT_STATUS_CACHE[cache_key]["progress"] = progress
                 EXTRACT_TEXT_STATUS_CACHE[cache_key]["message"] = message
 
-            print(f"[OCR TASK] 调用 paddleocr_service.extract_text_from_pdf...")
+            print("[OCR TASK] 调用 paddleocr_service.extract_text_from_pdf...")
             result = await paddleocr_service.extract_text_from_pdf(
                 resolved_path,
                 start_page=start_page,
@@ -761,7 +762,7 @@ async def extract_text_from_pdf_async(
                 concurrency=concurrency,
             )
 
-            print(f"\n[OCR TASK] ========== 处理结果 ==========")
+            print("\n[OCR TASK] ========== 处理结果 ==========")
             print(f"[OCR TASK] success: {result.get('success')}")
             print(f"[OCR TASK] pages_processed: {result.get('pages_processed')}")
             print(
@@ -784,7 +785,7 @@ async def extract_text_from_pdf_async(
             }
 
         except Exception as e:
-            print(f"\n[OCR TASK] ========== 处理异常 ==========")
+            print("\n[OCR TASK] ========== 处理异常 ==========")
             print(f"[OCR TASK] 错误: {e}")
             import traceback
 
@@ -820,7 +821,7 @@ async def get_extract_text_status(file_path: str):
         if os.path.exists(text_file_path):
             # 从文件读取最新的OCR文本（用户可能已编辑）
             try:
-                with open(text_file_path, "r", encoding="utf-8") as f:
+                with open(text_file_path, encoding="utf-8") as f:
                     text_content = f.read()
                 return {
                     "status": "completed",
@@ -857,7 +858,7 @@ async def get_extract_text_status(file_path: str):
         text_file_path = f"{base}_ocr_text.txt"
         if os.path.exists(text_file_path):
             try:
-                with open(text_file_path, "r", encoding="utf-8") as f:
+                with open(text_file_path, encoding="utf-8") as f:
                     status["text_content"] = f.read()
                     status["text_file_path"] = text_file_path
             except Exception as e:
@@ -868,7 +869,7 @@ async def get_extract_text_status(file_path: str):
 
 @router.get("/paddle/ocr-text/{file_path:path}")
 async def get_ocr_text_file(file_path: str):
-    print(f"\n[GET OCR] ========== 获取OCR文本 ==========")
+    print("\n[GET OCR] ========== 获取OCR文本 ==========")
     print(f"[GET OCR] 原始 file_path: {file_path}")
     resolved_path = resolve_file_path(file_path)
     print(f"[GET OCR] 解析后路径: {resolved_path}")
@@ -879,12 +880,12 @@ async def get_ocr_text_file(file_path: str):
     print(f"[GET OCR] 文件存在: {os.path.exists(text_file_path)}")
 
     if not os.path.exists(text_file_path):
-        print(f"[GET OCR] ❌ OCR文本文件不存在")
+        print("[GET OCR] ❌ OCR文本文件不存在")
         raise HTTPException(
             status_code=404, detail="OCR 文字文件不存在，请先进行 OCR 处理"
         )
 
-    print(f"[GET OCR] ✅ 返回OCR文本文件")
+    print("[GET OCR] ✅ 返回OCR文本文件")
     return FileResponse(
         text_file_path,
         media_type="text/plain; charset=utf-8",
@@ -899,7 +900,7 @@ async def get_ocr_text_file(file_path: str):
 
 @router.get("/paddle/has-ocr-text/{file_path:path}")
 async def check_has_ocr_text(file_path: str):
-    print(f"\n[HAS OCR] ========== 检查OCR文本 ==========")
+    print("\n[HAS OCR] ========== 检查OCR文本 ==========")
     print(f"[HAS OCR] 原始 file_path: {file_path}")
     resolved_path = resolve_file_path(file_path)
     print(f"[HAS OCR] 解析后路径: {resolved_path}")
@@ -983,7 +984,7 @@ async def get_ocr_progress(file_path: str):
     if os.path.exists(progress_file):
         import json
 
-        with open(progress_file, "r", encoding="utf-8") as f:
+        with open(progress_file, encoding="utf-8") as f:
             return json.load(f)
 
     return {"last_processed_page": 0, "total_pages": 0, "has_progress": False}
@@ -991,7 +992,7 @@ async def get_ocr_progress(file_path: str):
 
 @router.post("/paddle/save-ocr-text/{file_path:path}")
 async def save_ocr_text(file_path: str, text_content: str = Body("", embed=True)):
-    print(f"\n[SAVE OCR] ========== 保存OCR文本 ==========")
+    print("\n[SAVE OCR] ========== 保存OCR文本 ==========")
     print(f"[SAVE OCR] 原始 file_path: {file_path}")
     resolved_path = resolve_file_path(file_path)
     print(f"[SAVE OCR] 解析后路径: {resolved_path}")
@@ -1006,7 +1007,7 @@ async def save_ocr_text(file_path: str, text_content: str = Body("", embed=True)
         with open(text_file_path, "w", encoding="utf-8") as f:
             f.write(text_content)
 
-        print(f"[SAVE OCR] ✅ 保存成功")
+        print("[SAVE OCR] ✅ 保存成功")
         return {
             "success": True,
             "message": "OCR文字已保存",

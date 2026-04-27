@@ -2,7 +2,7 @@ export const tagLibraryStyles = `
   .spin { animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .country-content.sel-mode {
+  .tag-library-scroll.sel-mode {
     user-select: none;
     cursor: crosshair;
   }
@@ -537,12 +537,24 @@ export const tagLibraryStyles = `
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 10px 16px;
+    padding: 8px 16px;
     background: var(--bg-light, #f9fafb);
     border-bottom: 1px solid var(--border-color, #e5e7eb);
     position: sticky;
     top: 0;
     z-index: 10;
+    max-height: none;
+    overflow: visible;
+    transition: max-height 0.25s ease;
+  }
+
+  .tag-tabs-bar.collapsed {
+    max-height: 46px;
+    overflow: hidden;
+  }
+
+  .tag-library-scroll {
+    padding: 0;
   }
 
   .tag-tab {
@@ -572,6 +584,25 @@ export const tagLibraryStyles = `
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
   }
 
+  .tag-bar-expand-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 12px;
+    font-size: 11px;
+    color: var(--primary-color, #3b82f6);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .tag-bar-expand-btn:hover {
+    background: rgba(59, 130, 246, 0.08);
+  }
+
   .tab-count {
     font-size: 10px;
     opacity: 0.8;
@@ -586,7 +617,7 @@ export const tagLibraryStyles = `
   }
 
   .tag-content-area {
-    padding: 12px 16px;
+    padding: 12px 0 16px 16px;
     min-height: 200px;
   }
 

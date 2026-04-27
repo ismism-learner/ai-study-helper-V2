@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Calendar, Save, X, Plus, Edit3, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { worldTimelineApi, optimizeApi } from '../api';
 import { WorldTimelineEvent, UpdateTimelineEventRequest } from '../types';
@@ -281,8 +281,8 @@ color: 'var(--text-primary)',
 
         {error && (
           <div style={{
-            background: '#f8d7da',
-            color: '#721c24',
+            background: 'var(--danger-light)',
+            color: 'var(--danger-500)',
             padding: '10px',
             borderRadius: '4px',
             marginBottom: '16px',
@@ -293,7 +293,7 @@ color: 'var(--text-primary)',
         )}
 
         <div className="form-group" style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: '#cbd5e1' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: 'var(--border-default)' }}>
             事件标题 *
           </label>
           <input
@@ -314,7 +314,7 @@ color: 'var(--text-primary)',
         </div>
 
         <div className="form-group" style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: '#cbd5e1' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: 'var(--border-default)' }}>
             事件描述
           </label>
           <textarea
@@ -340,7 +340,7 @@ color: 'var(--text-primary)',
             style={{
               marginTop: '8px',
               padding: '8px 16px',
-              background: isGenerating ? '#9ca3af' : 'var(--accent-500)',
+              background: isGenerating ? 'var(--text-muted)' : 'var(--accent-500)',
               color: 'white',
               border: 'none',
               borderRadius: '4px',
@@ -372,7 +372,7 @@ color: 'var(--text-primary)',
         </div>
 
         <div className="form-group" style={{ marginBottom: '16px' }}>
-          <label style={{ marginBottom: '6px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px', color: '#cbd5e1' }}>
+          <label style={{ marginBottom: '6px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--border-default)' }}>
             <Calendar size={16} />
             日期 *
           </label>
@@ -436,7 +436,7 @@ background: 'rgba(255, 255, 255, 0.1)',
         </div>
 
         <div className="form-group" style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: '#cbd5e1' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: 'var(--border-default)' }}>
             页码
           </label>
           <input
@@ -458,7 +458,7 @@ background: 'rgba(255, 255, 255, 0.1)',
         </div>
 
         <div className="form-group" style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: '#cbd5e1' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500', color: 'var(--border-default)' }}>
             标签
           </label>
           <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
@@ -530,7 +530,7 @@ background: 'rgba(255, 255, 255, 0.1)',
                 style={{
                   width: '100%',
                   padding: '6px 10px',
-                  background: '#f3f4f6',
+                  background: 'var(--bg-muted)',
                   border: '1px solid #d1d5db',
                   borderRadius: '4px',
                   fontSize: '12px',
@@ -538,7 +538,7 @@ background: 'rgba(255, 255, 255, 0.1)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  color: '#374151'
+                  color: 'var(--text-primary)'
                 }}
               >
                 <span>快速选择历史标签 ({historyTags.length}个可用)</span>

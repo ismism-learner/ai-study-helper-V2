@@ -1,5 +1,7 @@
 :root {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  --font-serif: 'Noto Serif CJK SC', 'Source Han Serif CN', 'SimSun', serif;
   line-height: 1.6;
   font-weight: 400;
   font-synthesis: none;
@@ -186,12 +188,12 @@
   --glass-blur: 12px;
   
   /* 渐变色 - 按钮和标题使用 */
-  --gradient-primary: linear-gradient(135deg, var(--primary-500), var(--primary-600));
-  --gradient-primary-hover: linear-gradient(135deg, var(--primary-400), var(--primary-500));
-  --gradient-accent: linear-gradient(135deg, var(--accent-500), var(--accent-600));
-  --gradient-success: linear-gradient(135deg, var(--success-500), var(--success-400));
-  --gradient-danger: linear-gradient(135deg, var(--danger-500), var(--danger-600));
-  --gradient-warning: linear-gradient(135deg, var(--warning-500), var(--warning-400));
+  --gradient-primary: var(--primary-500);
+  --gradient-primary-hover: var(--primary-400);
+  --gradient-accent: var(--accent-500);
+  --gradient-success: var(--success-500);
+  --gradient-danger: var(--danger-500);
+  --gradient-warning: var(--warning-500);
   
   /* 节点画布专用变量 */
   --node-bg-formula: hsl(270, 50%, 15%);
@@ -327,12 +329,12 @@
   --glass-border: hsla(258, 40%, 55%, 0.15);
   --glass-blur: 16px;
 
-  --gradient-primary: linear-gradient(135deg, hsl(258, 40%, 55%), hsl(270, 50%, 50%));
-  --gradient-primary-hover: linear-gradient(135deg, hsl(258, 45%, 60%), hsl(270, 55%, 55%));
-  --gradient-accent: linear-gradient(135deg, hsl(270, 50%, 50%), hsl(280, 55%, 45%));
-  --gradient-success: linear-gradient(135deg, hsl(142, 71%, 45%), hsl(142, 71%, 55%));
-  --gradient-danger: linear-gradient(135deg, hsl(0, 84%, 60%), hsl(0, 84%, 54%));
-  --gradient-warning: linear-gradient(135deg, hsl(38, 96%, 51%), hsl(38, 96%, 60%));
+  --gradient-primary: hsl(258, 40%, 55%);
+  --gradient-primary-hover: hsl(258, 45%, 60%);
+  --gradient-accent: hsl(270, 50%, 50%);
+  --gradient-success: hsl(142, 71%, 45%);
+  --gradient-danger: hsl(0, 84%, 60%);
+  --gradient-warning: hsl(38, 96%, 51%);
 
   --shadow-glow: 0 0 20px hsla(258, 40%, 55%, 0.3);
 }
@@ -503,29 +505,9 @@ body {
   border: 1px solid rgba(148, 163, 184, 0.15);
 }
 
-.gradient-border {
-  position: relative;
-  background: var(--bg-surface);
-  border-radius: var(--radius-lg);
-}
+/* gradient-border removed */
 
-.gradient-border::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  padding: 1px;
-  border-radius: inherit;
-  background: linear-gradient(135deg, var(--primary-500), var(--accent-500));
-  -webkit-mask: 
-    linear-gradient(#fff 0 0) content-box, 
-    linear-gradient(#fff 0 0);
-  mask: 
-    linear-gradient(#fff 0 0) content-box, 
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
+/* gradient-border::before removed */
 
 .hover-lift {
   transition: transform var(--transition-normal), box-shadow var(--transition-normal);

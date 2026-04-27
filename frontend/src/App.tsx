@@ -15,7 +15,7 @@ const CreateDocumentModal = lazy(() => import('./components/CreateDocumentModal'
 const BatchUploadModal = lazy(() => import('./components/BatchUploadModal'));
 const SettingsModal = lazy(() => import('./components/SettingsModal'));
 import LibraryView from './components/LibraryView';
-import { FileText, Edit3, BookOpen, Settings, Upload, ChevronDown, GripVertical, Library, FileQuestion, ChevronRight, Cloud, MessageCircle, Network } from 'lucide-react';
+import { FileText, Edit3, BookOpen, Settings, Upload, ChevronDown, GripVertical, Library, FileQuestion, ChevronLeft, ChevronRight, Cloud, MessageCircle, Network } from 'lucide-react';
 const QuarkUploadModal = lazy(() => import('./components/QuarkUploadModal'));
 
 type LibraryViewType = 'map' | 'tagLibrary' | 'documents' | 'timeline' | 'bookReader';
@@ -80,8 +80,10 @@ function App() {
   const {
     sidebarWidth,
     isResizing,
+    isCollapsed,
     sidebarRef,
     handleMouseDown,
+    toggleCollapse,
   } = useSidebarResize(280);
 
   const philosophyMatches = useMemo(() => {
@@ -178,18 +180,16 @@ function App() {
 
   return (
     <div className="app-container">
-      <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', background: 'var(--bg-white)', borderBottom: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)', marginBottom: 0, position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          {mainView === 'library' && (
-            <BookOpen size={20} style={{ color: 'var(--primary-color)' }} />
-          )}
-          <h1 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>{mainView === 'library' ? '书籍与文档管理' : '交互式文档增强系统'}</h1>
+      <div className="app-header">
+        <div className="app-header-left">
+          <img src="/favicon.png" alt="Logo" className="app-logo" />
+          <h1 className="app-title">AI学习助手</h1>
           {mainView === 'documents' && activeDocument && (
-            <span style={{ fontSize: '14px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '400px' }}>{activeDocument.title}</span>
+            <span className="app-doc-title">{activeDocument.title}</span>
           )}
           {mainView === 'library' && renderLibraryBreadcrumbs()}
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="app-header-right">
           <div className="view-switcher">
             <button
               className={`view-switch-btn ${mainView === 'library' ? 'active' : ''}`}
@@ -209,21 +209,17 @@ function App() {
             </button>
           </div>
           {mainView === 'documents' && (
-            <>
-              <button
-                className="btn btn-secondary"
-                onClick={() => setShowBatchUploadModal(true)}
-                style={{ padding: '6px 12px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '4px' }}
-              >
-                <Upload size={14} />
-                批量上传
-              </button>
-            </>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowBatchUploadModal(true)}
+            >
+              <Upload size={14} />
+              批量上传
+            </button>
           )}
           <button
             className="btn btn-primary"
             onClick={() => setShowQuarkModal(true)}
-            style={{ padding: '6px 12px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '4px' }}
           >
             <Cloud size={14} />
             夸克网盘
@@ -231,7 +227,6 @@ function App() {
           <button
             className="btn btn-secondary"
             onClick={() => setShowSettingsModal(true)}
-            style={{ padding: '6px 12px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '4px' }}
           >
             <Settings size={14} />
             设置
@@ -241,33 +236,61 @@ function App() {
 
       <div className="app-body">
         {mainView === 'documents' && (
-          <div 
-            ref={sidebarRef}
-            className="sidebar-wrapper"
-            style={{ width: sidebarWidth }}
-          >
-            <Sidebar
-              documents={documents}
-              folders={folders}
-              activeDocumentId={activeDocument?.id || null}
-              selectedFolderId={selectedFolderId}
-              onSelectFolder={handleSelectFolder}
-              onSelectDocument={handleSelectDocument}
-              onBatchUpload={() => setShowBatchUploadModal(true)}
-              onDeleteDocument={handleDeleteDocument}
-              onFoldersChange={loadFolders}
-              onDocumentsChange={() => loadDocuments(selectedFolderId)}
-            />
-            <div
-              className={`sidebar-resize-handle ${isResizing ? 'resizing' : ''}`}
-              onMouseDown={handleMouseDown}
-            >
-              <GripVertical size={14} />
-            </div>
-          </div>
+          <>
+            {!isCollapsed ? (
+              <div 
+                ref={sidebarRef}
+                className="sidebar-wrapper"
+                style={{ width: sidebarWidth }}
+              >
+                <div className="sidebar-header">
+                  <span className="sidebar-header-label">
+                    文档列表
+                  </span>
+                  <button
+                    onClick={toggleCollapse}
+                    title="折叠侧边栏"
+                    className="sidebar-collapse-btn"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                </div>
+                <Sidebar
+                  documents={documents}
+                  folders={folders}
+                  activeDocumentId={activeDocument?.id || null}
+                  selectedFolderId={selectedFolderId}
+                  onSelectFolder={handleSelectFolder}
+                  onSelectDocument={handleSelectDocument}
+                  onBatchUpload={() => setShowBatchUploadModal(true)}
+                  onDeleteDocument={handleDeleteDocument}
+                  onFoldersChange={loadFolders}
+                  onDocumentsChange={() => loadDocuments(selectedFolderId)}
+                />
+                <div
+                  className={`sidebar-resize-handle ${isResizing ? 'resizing' : ''}`}
+                  onMouseDown={handleMouseDown}
+                >
+                  <GripVertical size={14} />
+                </div>
+              </div>
+            ) : (
+              <div className="sidebar-collapsed"
+                onClick={toggleCollapse}
+                title="展开侧边栏"
+              >
+                <div className="sidebar-collapsed-icon">
+                  <FileText size={16} />
+                </div>
+                <div className="sidebar-collapsed-label">
+                  文档列表
+                </div>
+              </div>
+            )}
+          </>
         )}
 
-        <div className={`main-content ${mainView === 'library' ? 'full-width' : ''}`}>
+        <div className={`main-content ${mainView === 'library' || mainView === 'documents' ? 'full-width' : ''}`}>
           {mainView === 'library' ? (
             <LibraryView
               currentView={libraryView}
@@ -402,6 +425,7 @@ function App() {
 
                 {/* 第3栏：知识图谱 */}
                 <KnowledgeGraphPanel
+                  bookTitle={activeDocument.title}
                   onNodeClick={(node) => {
                     if (node) {
                       console.log('选中节点:', node.name);
@@ -412,22 +436,13 @@ function App() {
             </div>
           </>
         ) : (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '60%',
-              color: '#6c757d',
-            }}
-          >
-            <FileText size={80} style={{ marginBottom: 20, opacity: 0.3 }} />
+          <div className="empty-state">
+            <FileText size={80} className="empty-state-icon" />
             <h2>欢迎使用交互式文档增强系统</h2>
-            <p style={{ marginTop: 10 }}>
+            <p style={{ marginTop: 10, color: 'var(--text-secondary)' }}>
               点击左侧边栏的 + 按钮创建您的第一个文档
             </p>
-            <p style={{ marginTop: 5, fontSize: 12 }}>
+            <p style={{ marginTop: 5, fontSize: 12, color: 'var(--text-secondary)' }}>
               点击右上角"批量上传"可一次上传多个文件
             </p>
           </div>

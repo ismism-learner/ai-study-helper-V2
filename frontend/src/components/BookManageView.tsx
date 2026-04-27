@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { BookDocument, TimePeriod, Country } from '../types';
 import { bookApi, timePeriodApi, countryApi, quarkApi } from '../api';
 import { 
@@ -1182,7 +1182,7 @@ const BookManageView: React.FC<BookManageViewProps> = ({ country, onBack, onBook
                     </p>
                   </div>
 
-                  <div style={{ background: '#f8f9fa', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+                  <div style={{ background: 'var(--bg-muted)', padding: 12, borderRadius: 8, marginBottom: 16 }}>
                     <h4 style={{ margin: '0 0 8px 0', fontSize: 14 }}>上传说明：</h4>
                     <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: '#666' }}>
                       <li>书籍将按标签分类上传到「我的电子图书馆/标签名」文件夹</li>
@@ -1201,8 +1201,8 @@ const BookManageView: React.FC<BookManageViewProps> = ({ country, onBack, onBook
                         padding: 12, 
                         marginBottom: 8, 
                         borderRadius: 8,
-                        background: result.success ? '#d4edda' : '#f8d7da',
-                        border: `1px solid ${result.success ? '#c3e6cb' : '#f5c6cb'}`
+                        background: result.success ? 'var(--success-light)' : 'var(--danger-light)',
+                        border: `1px solid ${result.success ? 'var(--success-border)' : 'var(--danger-border)'}`
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -1211,7 +1211,7 @@ const BookManageView: React.FC<BookManageViewProps> = ({ country, onBack, onBook
                         ) : (
                           <XCircle size={16} color="#721c24" />
                         )}
-                        <span style={{ fontWeight: 500, color: result.success ? '#155724' : '#721c24' }}>
+                        <span style={{ fontWeight: 500, color: result.success ? 'var(--success-500)' : 'var(--danger-500)' }}>
                           {result.book_title}
                         </span>
                       </div>
@@ -1222,7 +1222,7 @@ const BookManageView: React.FC<BookManageViewProps> = ({ country, onBack, onBook
                             href={result.share_url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            style={{ color: '#0066cc', fontSize: 12 }}
+                            style={{ color: 'var(--primary-500)', fontSize: 12 }}
                           >
                             {result.share_url}
                             <ExternalLink size={10} style={{ marginLeft: 4, verticalAlign: 'middle' }} />
@@ -1244,7 +1244,7 @@ const BookManageView: React.FC<BookManageViewProps> = ({ country, onBack, onBook
                       )}
                       
                       {!result.success && (
-                        <div style={{ fontSize: 12, color: '#721c24', marginTop: 4 }}>
+                        <div style={{ fontSize: 12, color: 'var(--danger-500)', marginTop: 4 }}>
                           {result.message}
                         </div>
                       )}

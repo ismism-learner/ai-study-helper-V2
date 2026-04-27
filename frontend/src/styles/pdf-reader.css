@@ -399,7 +399,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   color: white;
   border-radius: 12px 12px 0 0;
   cursor: move;
@@ -875,7 +875,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   color: white;
 }
 
@@ -998,7 +998,7 @@
 
 .pdf-ocr-modal-content .progress-bar {
   height: 100%;
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -1229,7 +1229,7 @@
 }
 
 .pdf-ocr-modal-footer .btn-primary {
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   color: white;
 }
 
@@ -1284,7 +1284,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   color: white;
   flex-shrink: 0;
 }
@@ -1394,8 +1394,7 @@
 .ocr-text-content pre {
   white-space: pre-wrap;
   word-wrap: break-word;
-  font-family: 'Microsoft YaHei', 'PingFang SC', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 14px;
+  font-family: var(--font-serif);
   line-height: 1.8;
   color: var(--text-primary, #e2e8f0);
   margin: 0;
@@ -1708,7 +1707,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   color: white;
   font-size: 13px;
   font-weight: 600;
@@ -1917,10 +1916,9 @@
   background: var(--bg-surface, #0f172a);
   color: var(--text-primary, var(--text-primary));
   border: none;
-  outline: none;
   resize: none;
-  font-family: "Microsoft YaHei", "PingFang SC", -apple-system, sans-serif;
-  font-size: 14px;
+  outline: none;
+  font-family: var(--font-serif);
   line-height: 1.8;
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -1942,6 +1940,44 @@
 
 .ocr-header-actions .save-btn:hover {
   background: rgba(16, 185, 129, 0.25);
+}
+
+.ocr-font-size-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 4px;
+}
+
+.font-size-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  font-family: var(--font-body);
+}
+
+.font-size-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.font-size-value {
+  font-size: 12px;
+  color: var(--text-muted);
+  min-width: 20px;
+  text-align: center;
+  font-family: var(--font-body);
 }
 
 .edit-mode-hint {
@@ -2037,8 +2073,7 @@
   border: none;
   outline: none;
   resize: none;
-  font-family: "Microsoft YaHei", "PingFang SC", -apple-system, sans-serif;
-  font-size: 14px;
+  font-family: var(--font-serif);
   line-height: 1.8;
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -2101,7 +2136,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 16px;
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   color: white;
   flex-shrink: 0;
   gap: 8px;
@@ -2178,7 +2213,7 @@
 }
 
 .chapter-note-markdown {
-  font-family: "Microsoft YaHei", "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-serif);
   line-height: 1.8;
   color: var(--text-primary);
 }

@@ -1,15 +1,19 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
-from datetime import datetime, timedelta, UTC
-from typing import List, Dict, Any
 from collections import defaultdict
+from datetime import UTC, datetime, timedelta
+from typing import Any, Dict, List
+
+from fastapi import APIRouter, Depends
+from sqlalchemy import and_, func
+from sqlalchemy.orm import Session
+
 from app.database import get_db
 from app.models import (
-    Document,
     BookDocument,
+    ChapterNote,
     Country,
+    Document,
     DocumentTimelineEvent,
+    QuickNote,
     WorldTimelineEvent,
 )
 
@@ -175,16 +179,39 @@ def get_activity_heatmap(db: Session = Depends(get_db)):
     today = datetime.now(UTC).date()
     one_year_ago = today - timedelta(days=365)
 
-    events = (
-        db.query(DocumentTimelineEvent)
+    daily_counts = defaultdict(int)
+
+    doc_events = (
+        db.query(DocumentTimelineEvent.created_at)
         .filter(DocumentTimelineEvent.created_at >= one_year_ago)
         .all()
     )
+    for (dt,) in doc_events:
+        daily_counts[dt.date().isoformat()] += 1
 
-    daily_counts = defaultdict(int)
-    for event in events:
-        date_key = event.created_at.date().isoformat()
-        daily_counts[date_key] += 1
+    world_events = (
+        db.query(WorldTimelineEvent.created_at)
+        .filter(WorldTimelineEvent.created_at >= one_year_ago)
+        .all()
+    )
+    for (dt,) in world_events:
+        daily_counts[dt.date().isoformat()] += 1
+
+    quick_notes = (
+        db.query(QuickNote.created_at)
+        .filter(QuickNote.created_at >= one_year_ago)
+        .all()
+    )
+    for (dt,) in quick_notes:
+        daily_counts[dt.date().isoformat()] += 1
+
+    chapter_notes = (
+        db.query(ChapterNote.created_at)
+        .filter(ChapterNote.created_at >= one_year_ago)
+        .all()
+    )
+    for (dt,) in chapter_notes:
+        daily_counts[dt.date().isoformat()] += 1
 
     result = []
     current_date = one_year_ago

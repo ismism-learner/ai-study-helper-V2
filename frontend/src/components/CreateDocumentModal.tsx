@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { CreateDocumentRequest } from '../types';
 import { Upload, FileText, X, Check } from 'lucide-react';
 import { documentApi } from '../api';
@@ -199,7 +199,7 @@ const CreateDocumentModal: React.FC<CreateDocumentModalProps> = ({
                 borderRadius: 12,
                 padding: 40,
                 textAlign: 'center',
-                background: dragOver ? '#f8f9fa' : 'white',
+                background: dragOver ? 'var(--bg-muted)' : 'white',
                 transition: 'all 0.2s ease',
                 cursor: 'pointer',
               }}
@@ -211,11 +211,11 @@ const CreateDocumentModal: React.FC<CreateDocumentModalProps> = ({
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
             >
-              <Upload size={48} style={{ color: '#6c757d', marginBottom: 16 }} />
-              <p style={{ fontSize: 16, color: '#495057', marginBottom: 8 }}>
+              <Upload size={48} style={{ color: 'var(--text-muted)', marginBottom: 16 }} />
+              <p style={{ fontSize: 16, color: 'var(--text-primary)', marginBottom: 8 }}>
                 拖拽文件到此处，或点击选择文件
               </p>
-              <p style={{ fontSize: 12, color: '#6c757d' }}>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                 支持 .md, .markdown, .docx 格式（支持多选批量上传）
               </p>
             </div>
@@ -237,18 +237,18 @@ const CreateDocumentModal: React.FC<CreateDocumentModalProps> = ({
                   alignItems: 'center',
                   marginBottom: 12 
                 }}>
-                  <h4 style={{ margin: 0, fontSize: 14, color: '#495057' }}>
+                  <h4 style={{ margin: 0, fontSize: 14, color: 'var(--text-primary)' }}>
                     待上传文件 ({files.length})
                   </h4>
                   <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
                     {successFiles.length > 0 && (
-                      <span style={{ color: '#28a745', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ color: 'var(--success-500)', display: 'flex', alignItems: 'center', gap: 4 }}>
                         <Check size={14} />
                         {successFiles.length} 成功
                       </span>
                     )}
                     {errorFiles.length > 0 && (
-                      <span style={{ color: '#dc3545', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ color: 'var(--danger-500)', display: 'flex', alignItems: 'center', gap: 4 }}>
                         <X size={14} />
                         {errorFiles.length} 失败
                       </span>
@@ -270,14 +270,14 @@ const CreateDocumentModal: React.FC<CreateDocumentModalProps> = ({
                         display: 'flex', 
                         alignItems: 'center', 
                         padding: '8px 12px',
-                        background: fileItem.status === 'success' ? '#d4edda' : 
-                                   fileItem.status === 'error' ? '#f8d7da' : 'white',
+                        background: fileItem.status === 'success' ? 'var(--success-light)' : 
+                                   fileItem.status === 'error' ? 'var(--danger-light)' : 'white',
                         borderRadius: 6,
                         marginBottom: 4,
                         gap: 12
                       }}
                     >
-                      <FileText size={18} style={{ color: '#6c757d' }} />
+                      <FileText size={18} style={{ color: 'var(--text-muted)' }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ 
                           fontSize: 13, 
@@ -288,7 +288,7 @@ const CreateDocumentModal: React.FC<CreateDocumentModalProps> = ({
                         }}>
                           {fileItem.file.name}
                         </div>
-                        <div style={{ fontSize: 11, color: '#6c757d' }}>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                           {(fileItem.file.size / 1024).toFixed(1)} KB
                         </div>
                       </div>
@@ -305,7 +305,7 @@ const CreateDocumentModal: React.FC<CreateDocumentModalProps> = ({
                               border: 'none',
                               cursor: 'pointer',
                               padding: 4,
-                              color: '#6c757d',
+                              color: 'var(--text-muted)',
                               display: 'flex',
                               alignItems: 'center',
                             }}
@@ -317,10 +317,10 @@ const CreateDocumentModal: React.FC<CreateDocumentModalProps> = ({
                           <LoadingBook size={16} />
                         )}
                         {fileItem.status === 'success' && (
-                          <Check size={16} style={{ color: '#28a745' }} />
+                          <Check size={16} style={{ color: 'var(--success-500)' }} />
                         )}
                         {fileItem.status === 'error' && (
-                          <span style={{ fontSize: 11, color: '#dc3545' }} title={fileItem.error}>
+                          <span style={{ fontSize: 11, color: 'var(--danger-500)' }} title={fileItem.error}>
                             失败
                           </span>
                         )}
@@ -333,20 +333,20 @@ const CreateDocumentModal: React.FC<CreateDocumentModalProps> = ({
                   <div style={{ marginTop: 12 }}>
                     <div style={{ 
                       height: 6, 
-                      background: '#e9ecef', 
+                      background: 'var(--border-default)', 
                       borderRadius: 3,
                       overflow: 'hidden'
                     }}>
                       <div 
                         style={{ 
                           height: '100%', 
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          background: 'var(--accent-500)',
                           width: `${uploadProgress}%`,
                           transition: 'width 0.3s ease'
                         }} 
                       />
                     </div>
-                    <div style={{ fontSize: 12, color: '#6c757d', marginTop: 4, textAlign: 'center' }}>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, textAlign: 'center' }}>
                       上传中... {Math.round(uploadProgress)}%
                     </div>
                   </div>

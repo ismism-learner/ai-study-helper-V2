@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+﻿import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Document, Folder } from '../types';
 import { FileText, Trash2, Upload, Clock, Highlighter, Move, FolderOpen, X, Check, Home, FileText as FileTextIcon, Square, CheckSquare, Calendar, Sparkles } from 'lucide-react';
 import FolderManager from './FolderManager';
@@ -811,7 +811,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <Check 
                           size={10} 
                           style={{ 
-                            color: hasTimelineNotes ? 'var(--accent-500)' : '#10b981' 
+                            color: hasTimelineNotes ? 'var(--accent-500)' : 'var(--success-500)' 
                           }} 
                         />
                       )}
@@ -953,10 +953,10 @@ const Sidebar: React.FC<SidebarProps> = ({
               {/* 进度信息 */}
               <div className="batch-progress-info">
                 <div className="progress-stats">
-                  <span className="stat completed" style={{ color: '#059669' }}>
+                  <span className="stat completed" style={{ color: 'var(--success-600)' }}>
                     <Check size={14} /> 已归档: {batchGenerate.archivedDocs.size}
                   </span>
-                  <span className="stat completed" style={{ color: '#eab308' }}>
+                  <span className="stat completed" style={{ color: 'var(--warning-500)' }}>
                     <Check size={14} /> 已完成: {batchGenerate.completedDocs.size - batchGenerate.archivedDocs.size}
                   </span>
                   <span className="stat processing">
@@ -985,7 +985,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div className="progress-text">
                   {batchGenerate.archivedDocs.size + batchGenerate.failedDocs.size} / {batchGenerate.documents.length} 个文档
                   {batchGenerate.totalBatches > 0 && ` (批次 ${batchGenerate.currentBatch}/${batchGenerate.totalBatches})`}
-                  {batchGenerate.isCancelled && <span style={{ color: '#ef4444', marginLeft: 8 }}>已取消</span>}
+                  {batchGenerate.isCancelled && <span style={{ color: 'var(--danger-500)', marginLeft: 8 }}>已取消</span>}
                 </div>
               </div>
               
@@ -1006,18 +1006,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                       style={{ 
                         padding: 12,
                         marginBottom: 8,
-                        background: isProcessing ? '#f0f9ff' : isArchived ? '#ecfdf5' : isCompleted ? '#fefce8' : isFailed ? '#fef2f2' : '#f8f9fa',
+                        background: isProcessing ? 'var(--primary-light)' : isArchived ? 'var(--success-light)' : isCompleted ? 'var(--warning-light)' : isFailed ? 'var(--danger-light)' : 'var(--bg-muted)',
                         borderRadius: 6,
-                        border: `1px solid ${isProcessing ? '#bae6fd' : isArchived ? '#a7f3d0' : isCompleted ? '#fef08a' : isFailed ? '#fecaca' : '#e9ecef'}`
+                        border: `1px solid ${isProcessing ? 'var(--primary-border)' : isArchived ? 'var(--success-border)' : isCompleted ? 'var(--warning-border)' : isFailed ? 'var(--danger-border)' : 'var(--border-default)'}`
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isProcessing && streamState?.streamingContent ? 8 : 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <div className="doc-status-icon">
-                            {isArchived && <Check size={14} style={{ color: '#059669' }} />}
-                            {isCompleted && !isArchived && <Check size={14} style={{ color: '#eab308' }} />}
+                            {isArchived && <Check size={14} style={{ color: 'var(--success-600)' }} />}
+                            {isCompleted && !isArchived && <Check size={14} style={{ color: 'var(--warning-500)' }} />}
                             {isProcessing && <LoadingBook size={14} />}
-                            {isFailed && <X size={14} style={{ color: '#ef4444' }} />}
+                            {isFailed && <X size={14} style={{ color: 'var(--danger-500)' }} />}
                             {!isCompleted && !isArchived && !isProcessing && !isFailed && <FileText size={14} />}
                           </div>
                           <span className="doc-title" style={{ fontWeight: 500 }}>{doc.title}</span>
@@ -1029,26 +1029,26 @@ const Sidebar: React.FC<SidebarProps> = ({
                               alignItems: 'center',
                               gap: 4,
                               fontSize: 11,
-                              color: '#10b981'
+                              color: 'var(--success-500)'
                             }}>
                               <span style={{
                                 width: 6,
                                 height: 6,
                                 borderRadius: '50%',
-                                background: '#10b981',
+                                background: 'var(--success-500)',
                                 animation: 'pulse 1s infinite'
                               }} />
                               流式生成中
                             </span>
                           )}
                           {isArchived && (
-                            <span style={{ fontSize: 11, color: '#059669' }}>✓ 已归档</span>
+                            <span style={{ fontSize: 11, color: 'var(--success-600)' }}>✓ 已归档</span>
                           )}
                           {isCompleted && !isArchived && (
-                            <span style={{ fontSize: 11, color: '#eab308' }}>⏳ 验证中...</span>
+                            <span style={{ fontSize: 11, color: 'var(--warning-500)' }}>⏳ 验证中...</span>
                           )}
                           {isFailed && (
-                            <span style={{ fontSize: 11, color: '#ef4444' }}>✗ 失败</span>
+                            <span style={{ fontSize: 11, color: 'var(--danger-500)' }}>✗ 失败</span>
                           )}
                           {streamState?.streamingContent && (
                             <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
@@ -1061,7 +1061,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       {/* 流式内容预览 */}
                       {isProcessing && streamState?.streamingContent && (
                         <div style={{
-                          background: '#fff',
+                          background: 'var(--bg-base)',
                           borderRadius: 4,
                           padding: 8,
                           marginTop: 8,
@@ -1069,7 +1069,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                           overflow: 'auto',
                           fontSize: 11,
                           lineHeight: 1.5,
-                          color: '#374151',
+                          color: 'var(--text-primary)',
                           border: '1px solid #e5e7eb'
                         }}>
                           <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
@@ -1081,7 +1081,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       
                       {/* 错误信息 */}
                       {isFailed && errorMsg && (
-                        <div style={{ marginTop: 4, fontSize: 11, color: '#ef4444' }}>
+                        <div style={{ marginTop: 4, fontSize: 11, color: 'var(--danger-500)' }}>
                           {errorMsg}
                         </div>
                       )}

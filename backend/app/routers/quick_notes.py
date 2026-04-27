@@ -1,19 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy import func
-from typing import List, Optional
-from datetime import datetime, UTC
 import json
+from datetime import UTC, datetime
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import QuickNote, Document
+from app.models import Document, QuickNote
 from app.schemas import (
-    QuickNoteCreate,
-    QuickNoteUpdate,
-    QuickNoteResponse,
+    QuickNoteAIResult,
     QuickNoteBatchProcessRequest,
     QuickNoteBatchProcessResponse,
-    QuickNoteAIResult,
+    QuickNoteCreate,
+    QuickNoteResponse,
+    QuickNoteUpdate,
 )
 from app.services.ai_service import ai_service
 
@@ -38,13 +39,13 @@ async def create_quick_note(note: QuickNoteCreate, db: Session = Depends(get_db)
     return db_note
 
 
-@router.get("/quick-notes", response_model=List[QuickNoteResponse])
+@router.get("/quick-notes", response_model=list[QuickNoteResponse])
 def list_quick_notes(
-    is_processed: Optional[int] = None,
-    group_id: Optional[str] = None,
-    source_document_id: Optional[str] = None,
-    source_page: Optional[int] = None,
-    search: Optional[str] = None,
+    is_processed: int | None = None,
+    group_id: str | None = None,
+    source_document_id: str | None = None,
+    source_page: int | None = None,
+    search: str | None = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -148,7 +149,7 @@ def delete_quick_note(note_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/quick-notes/batch-delete")
-def batch_delete_quick_notes(note_ids: List[str], db: Session = Depends(get_db)):
+def batch_delete_quick_notes(note_ids: list[str], db: Session = Depends(get_db)):
     deleted = (
         db.query(QuickNote)
         .filter(QuickNote.id.in_(note_ids))
@@ -276,7 +277,7 @@ async def convert_quick_note_to_document(note_id: str, db: Session = Depends(get
 
 @router.post("/quick-notes/create-group")
 def create_quick_note_group(
-    group_name: str, note_ids: Optional[List[str]] = None, db: Session = Depends(get_db)
+    group_name: str, note_ids: list[str] | None = None, db: Session = Depends(get_db)
 ):
     import uuid
 
@@ -294,8 +295,8 @@ def create_quick_note_group(
 @router.put("/quick-notes/{note_id}/move-to-group")
 def move_quick_note_to_group(
     note_id: str,
-    group_id: Optional[str] = None,
-    group_name: Optional[str] = None,
+    group_id: str | None = None,
+    group_name: str | None = None,
     db: Session = Depends(get_db),
 ):
     note = db.query(QuickNote).filter(QuickNote.id == note_id).first()

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect, lazy, Suspense } from 'react';
+﻿import React, { useState, useRef, useCallback, useEffect, lazy, Suspense } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -194,10 +194,10 @@ const ChapterNoteViewer: React.FC<ChapterNoteViewerProps> = ({
         components={{
           h1: ({ children }) => <h1 style={{ fontSize: '1.5em', borderBottom: '1px solid var(--border-color)', paddingBottom: 8, marginBottom: 16, color: 'var(--text-primary)' }}>{children}</h1>,
           h2: ({ children }) => <h2 style={{ fontSize: '1.3em', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 6, marginBottom: 12, marginTop: 24, color: 'var(--text-primary)' }}>{children}</h2>,
-          h3: ({ children }) => <h3 style={{ fontSize: '1.1em', marginBottom: 8, marginTop: 16, color: '#cbd5e1' }}>{children}</h3>,
-          p: ({ children }) => <p style={{ lineHeight: 1.8, marginBottom: 12, color: '#cbd5e1' }}>{children}</p>,
-          ul: ({ children }) => <ul style={{ paddingLeft: 20, marginBottom: 12, color: '#cbd5e1' }}>{children}</ul>,
-          ol: ({ children }) => <ol style={{ paddingLeft: 20, marginBottom: 12, color: '#cbd5e1' }}>{children}</ol>,
+          h3: ({ children }) => <h3 style={{ fontSize: '1.1em', marginBottom: 8, marginTop: 16, color: 'var(--border-default)' }}>{children}</h3>,
+          p: ({ children }) => <p style={{ lineHeight: 1.8, marginBottom: 12, color: 'var(--border-default)' }}>{children}</p>,
+          ul: ({ children }) => <ul style={{ paddingLeft: 20, marginBottom: 12, color: 'var(--border-default)' }}>{children}</ul>,
+          ol: ({ children }) => <ol style={{ paddingLeft: 20, marginBottom: 12, color: 'var(--border-default)' }}>{children}</ol>,
           li: ({ children }) => <li style={{ marginBottom: 4, lineHeight: 1.7 }}>{children}</li>,
           blockquote: ({ children }) => <blockquote style={{ borderLeft: '3px solid var(--accent-500)', paddingLeft: 16, margin: '12px 0', color: 'var(--text-secondary)', fontStyle: 'italic' }}>{children}</blockquote>,
           code: ({ className, children, ...props }) => {
@@ -250,7 +250,7 @@ const ChapterNoteViewer: React.FC<ChapterNoteViewerProps> = ({
             // Default: render as normal code block
             return (
               <pre style={{
-                background: '#1e1b2e',
+                background: 'var(--bg-base)',
                 border: '1px solid rgba(139, 92, 246, 0.2)',
                 borderRadius: 8,
                 padding: 16,
@@ -272,7 +272,7 @@ const ChapterNoteViewer: React.FC<ChapterNoteViewerProps> = ({
             <th style={{ border: '1px solid var(--border-color)', padding: '8px 12px', background: 'rgba(139, 92, 246, 0.1)', color: 'var(--text-primary)', textAlign: 'left' }}>{children}</th>
           ),
           td: ({ children }) => (
-            <td style={{ border: '1px solid var(--border-color)', padding: '8px 12px', color: '#cbd5e1' }}>{children}</td>
+            <td style={{ border: '1px solid var(--border-color)', padding: '8px 12px', color: 'var(--border-default)' }}>{children}</td>
           ),
           strong: ({ children }) => <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{children}</strong>,
           em: ({ children }) => <em style={{ color: '#a78bfa' }}>{children}</em>,
@@ -460,7 +460,7 @@ style={{
 
             {viewMode === 'original' && (
               <div className="chapter-note-original-view" style={{ padding: 20, overflowY: 'auto', height: '100%' }}>
-                <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 13, lineHeight: 1.8, color: '#cbd5e1', fontFamily: 'inherit' }}>
+                <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 13, lineHeight: 1.8, color: 'var(--border-default)', fontFamily: 'inherit' }}>
                   {originalText}
                 </pre>
               </div>
@@ -488,9 +488,9 @@ style={{
                   }}
                 >
                   <div style={{ display: 'flex', gap: 2 }}>
-<div style={{ width: 4, height: 4, borderRadius: '50%', background: isDraggingSplit ? '#fff' : 'var(--text-muted)' }} />
-                     <div style={{ width: 4, height: 4, borderRadius: '50%', background: isDraggingSplit ? '#fff' : 'var(--text-muted)' }} />
-                     <div style={{ width: 4, height: 4, borderRadius: '50%', background: isDraggingSplit ? '#fff' : 'var(--text-muted)' }} />
+<div style={{ width: 4, height: 4, borderRadius: '50%', background: isDraggingSplit ? 'var(--bg-base)' : 'var(--text-muted)' }} />
+                     <div style={{ width: 4, height: 4, borderRadius: '50%', background: isDraggingSplit ? 'var(--bg-base)' : 'var(--text-muted)' }} />
+                     <div style={{ width: 4, height: 4, borderRadius: '50%', background: isDraggingSplit ? 'var(--bg-base)' : 'var(--text-muted)' }} />
                   </div>
                 </div>
                 <div style={{ flex: 1 - splitRatio, overflowY: 'auto', padding: 20 }}>

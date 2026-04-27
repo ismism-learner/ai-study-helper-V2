@@ -1,18 +1,20 @@
+import uuid
+from datetime import UTC, datetime, timezone
+
 from sqlalchemy import (
+    JSON,
     Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
     Integer,
     String,
     Text,
-    DateTime,
-    ForeignKey,
-    JSON,
-    Float,
-    Index,
 )
 from sqlalchemy.orm import relationship
-from datetime import datetime, timezone
+
 from app.database import Base
-import uuid
 
 
 def generate_uuid():
@@ -20,7 +22,7 @@ def generate_uuid():
 
 
 def _utcnow():
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class Folder(Base):
@@ -39,6 +41,9 @@ class Folder(Base):
 
 class ActivityLog(Base):
     __tablename__ = "activity_logs"
+    __table_args__ = (
+        Index("ix_activity_action_created", "action_type", "created_at"),
+    )
 
     id = Column(String, primary_key=True, default=generate_uuid)
     action_type = Column(String, nullable=False, index=True)
@@ -56,6 +61,7 @@ class Document(Base):
     __table_args__ = (
         Index("ix_documents_archive_status", "archive_status"),
         Index("ix_documents_doc_type", "doc_type"),
+        Index("ix_documents_folder_archive", "folder_id", "archive_status"),
     )
 
     id = Column(String, primary_key=True, default=generate_uuid)
@@ -170,6 +176,9 @@ class TimePeriod(Base):
 
 class BookDocument(Base):
     __tablename__ = "book_documents"
+    __table_args__ = (
+        Index("ix_book_country_years", "country_id", "year_start", "year_end"),
+    )
 
     id = Column(String, primary_key=True, default=generate_uuid)
     title = Column(String, nullable=False)
@@ -262,6 +271,9 @@ class BookTimePeriod(Base):
 
 class WorldTimelineEvent(Base):
     __tablename__ = "world_timeline_events"
+    __table_args__ = (
+        Index("ix_world_timeline_book_date", "book_id", "event_date"),
+    )
 
     id = Column(String, primary_key=True, default=generate_uuid)
     book_id = Column(
@@ -282,6 +294,9 @@ class WorldTimelineEvent(Base):
 
 class DocumentTimelineEvent(Base):
     __tablename__ = "document_timeline_events"
+    __table_args__ = (
+        Index("ix_doc_timeline_doc_date", "document_id", "event_date"),
+    )
 
     id = Column(String, primary_key=True, default=generate_uuid)
     document_id = Column(String, ForeignKey("documents.id"), nullable=False, index=True)
@@ -305,6 +320,9 @@ class DocumentTimelineEvent(Base):
 
 class QuickNote(Base):
     __tablename__ = "quick_notes"
+    __table_args__ = (
+        Index("ix_quick_notes_group_processed", "group_id", "is_processed"),
+    )
 
     id = Column(String, primary_key=True, default=generate_uuid)
     content = Column(Text, nullable=False)
@@ -337,6 +355,9 @@ class QuickNote(Base):
 
 class ChapterNote(Base):
     __tablename__ = "chapter_notes"
+    __table_args__ = (
+        Index("ix_chapter_notes_book_status", "book_id", "status"),
+    )
 
     id = Column(String, primary_key=True, default=generate_uuid)
     book_id = Column(String, ForeignKey("book_documents.id"), nullable=True, index=True)
@@ -357,6 +378,9 @@ class ChapterNote(Base):
 
 class Task(Base):
     __tablename__ = "tasks"
+    __table_args__ = (
+        Index("ix_tasks_completed_due", "completed", "due_date"),
+    )
 
     id = Column(String, primary_key=True, default=generate_uuid)
     title = Column(String, nullable=False)
@@ -425,6 +449,9 @@ class KnowledgeNode(Base):
     """知识图谱节点"""
 
     __tablename__ = "knowledge_nodes"
+    __table_args__ = (
+        Index("ix_knowledge_node_book_type", "book_id", "entity_type"),
+    )
 
     id = Column(String, primary_key=True, default=generate_uuid)
     name = Column(String, nullable=False, index=True)
@@ -509,6 +536,9 @@ class CognitiveNode(Base):
     """认知链节点"""
 
     __tablename__ = "cognitive_nodes"
+    __table_args__ = (
+        Index("ix_cognitive_node_chain_parent", "chain_id", "parent_node_id"),
+    )
 
     id = Column(String, primary_key=True, default=generate_uuid)
     chain_id = Column(

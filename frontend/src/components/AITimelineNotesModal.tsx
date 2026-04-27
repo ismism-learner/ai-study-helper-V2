@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Sparkles, Calendar, Check, Save, X, Tag, Plus, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { worldTimelineApi } from '../api';
 import LoadingBook from './LoadingBook';
@@ -296,8 +296,8 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
 
         {saveError && (
           <div style={{
-            background: '#fef2f2',
-            color: '#dc2626',
+            background: 'var(--danger-light)',
+            color: 'var(--danger-600)',
             padding: '12px 16px',
             borderRadius: '8px',
             margin: '0 20px 16px',
@@ -309,8 +309,8 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
 
         {tagFeedback && (
           <div style={{
-            background: '#ecfdf5',
-            color: '#059669',
+            background: 'var(--success-light)',
+            color: 'var(--success-600)',
             padding: '12px 16px',
             borderRadius: '8px',
             margin: '0 20px 16px',
@@ -383,7 +383,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {selectedTags.map((tag, index) => (
                   <span key={index} style={{
-                    background: '#e0e7ff',
+                    background: 'var(--primary-light)',
                     padding: '4px 10px',
                     borderRadius: '12px',
                     fontSize: '13px',
@@ -420,7 +420,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                     style={{
                       width: '100%',
                       padding: '10px 14px',
-                      background: historyTagDropdownOpen ? '#f8fafc' : 'white',
+                      background: historyTagDropdownOpen ? 'var(--bg-muted)' : 'white',
                       border: '1px solid #e5e7eb',
                       borderRadius: '6px',
                       cursor: 'pointer',
@@ -428,7 +428,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       fontSize: '13px',
-                      color: '#374151',
+                      color: 'var(--text-primary)',
                       transition: 'all 0.2s ease'
                     }}
                   >
@@ -539,11 +539,11 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                                     gap: '6px',
                                     padding: '8px 10px',
                                     background: isSelected ? 'var(--accent-500)' : 'white',
-                                    border: '1px solid ' + (isSelected ? 'var(--accent-600)' : '#e5e7eb'),
+                                    border: '1px solid ' + (isSelected ? 'var(--accent-600)' : 'var(--border-default)'),
                                     borderRadius: '6px',
                                     cursor: isSelected ? 'default' : 'pointer',
                                     fontSize: '12px',
-                                    color: isSelected ? 'white' : '#374151',
+                                    color: isSelected ? 'white' : 'var(--text-primary)',
                                     transition: 'all 0.15s ease',
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden',
@@ -566,7 +566,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                         <div style={{
                           padding: '10px 12px',
                           borderTop: '1px solid #e5e7eb',
-                          background: '#f8fafc',
+                          background: 'var(--bg-muted)',
                           borderRadius: '0 0 8px 8px'
                         }}>
                           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px' }}>
@@ -685,7 +685,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                       style={{
                         padding: '6px 12px',
                         background: showTagPanel ? 'var(--accent-500)' : 'var(--bg-hover)',
-                        color: showTagPanel ? 'white' : '#374151',
+                        color: showTagPanel ? 'white' : 'var(--text-primary)',
                         border: 'none',
                         borderRadius: '4px',
                         cursor: 'pointer',
@@ -704,7 +704,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                     style={{
                       padding: '6px 12px',
                       background: selectedEvents.size === aiGeneratedEvents.length ? 'var(--success-500)' : 'var(--bg-hover)',
-                      color: selectedEvents.size === aiGeneratedEvents.length ? 'white' : '#374151',
+                      color: selectedEvents.size === aiGeneratedEvents.length ? 'white' : 'var(--text-primary)',
                       border: 'none',
                       borderRadius: '4px',
                       cursor: 'pointer',
@@ -722,7 +722,7 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
 
               {showTagPanel && selectedEvents.size > 0 && (
                 <div style={{
-                  background: '#f8fafc',
+                  background: 'var(--bg-muted)',
                   border: '1px solid #e5e7eb',
                   borderRadius: '8px',
                   padding: '12px',
@@ -785,8 +785,8 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
                             key={tag}
                             onClick={() => handleAddHistoryTagToSelected(tag)}
                             style={{
-                              background: '#fff',
-                              color: '#374151',
+                              background: 'var(--bg-base)',
+                              color: 'var(--text-primary)',
                               border: '1px solid #d1d5db',
                               borderRadius: '12px',
                               padding: '2px 8px',
@@ -943,8 +943,8 @@ const AITimelineNotesModal: React.FC<AITimelineNotesModalProps> = ({
             onClick={onClose}
             style={{
               padding: '10px 20px',
-              background: '#f3f4f6',
-              color: '#374151',
+              background: 'var(--bg-muted)',
+              color: 'var(--text-primary)',
               border: '1px solid #d1d5db',
               borderRadius: '6px',
               cursor: 'pointer',

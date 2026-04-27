@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { dashboardApi, bookApi, taskApi, Task, activityApi, Activity } from '../api';
-import { BarChart3, BookOpen, Clock, Play, Library, Plus, Bell, Settings, ChevronRight, CheckSquare, Square, X, Calendar, Trash2, Upload, FileText, Tag, Archive, ClipboardList, Share2, CheckCircle } from 'lucide-react';
+import { BarChart3, BookOpen, Plus, ChevronRight, CheckSquare, Square, X, Calendar, Trash2, Upload, FileText, Tag, Archive, ClipboardList, CheckCircle, Library } from 'lucide-react';
 import { BookDocument } from '../types';
 import LoadingBook from './LoadingBook';
+import '../styles/dashboard.css';
 
 interface OverviewData {
   total_documents: number;
@@ -42,6 +43,8 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ onBookSelect }) => {
   const [newTaskDate, setNewTaskDate] = useState('');
   const [activities, setActivities] = useState<Activity[]>([]);
 
+  const ENTITY_COLORS = ['#818cf8', '#34d399', '#f472b6', '#fbbf24', '#38bdf8'];
+
   useEffect(() => {
     loadDashboardData();
   }, []);
@@ -53,7 +56,7 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ onBookSelect }) => {
         dashboardApi.getOverview(),
         dashboardApi.getArchiveStatus(),
         dashboardApi.getActivityHeatmap(),
-        bookApi.getRecentlyRead(5),
+        bookApi.getRecentlyRead(10),
         bookApi.getReadingStats(),
         dashboardApi.getUnarchivedTags(),
       ]);
@@ -94,11 +97,11 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ onBookSelect }) => {
 
   const getActivityIcon = (actionType: string) => {
     switch (actionType) {
-      case 'upload': return <Upload size={14} style={{ color: 'var(--accent-500)' }} />;
-      case 'note': return <FileText size={14} style={{ color: 'var(--success-500)' }} />;
-      case 'tag': return <Tag size={14} style={{ color: 'var(--accent-500)' }} />;
-      case 'archive': return <Archive size={14} style={{ color: 'var(--warning-500)' }} />;
-      default: return <FileText size={14} style={{ color: 'var(--text-muted)' }} />;
+      case 'upload': return <Upload size={14} className="icon-accent" />;
+      case 'note': return <FileText size={14} className="icon-success" />;
+      case 'tag': return <Tag size={14} className="icon-accent" />;
+      case 'archive': return <Archive size={14} className="icon-warning" />;
+      default: return <FileText size={14} className="icon-muted" />;
     }
   };
 
@@ -170,19 +173,50 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ onBookSelect }) => {
     }
   };
 
+  const getRecentActivity = () => {
+    const today = new Date();
+    const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+    const days: { day: string; active: boolean }[] = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const active = recentlyRead.some(book => {
+        if (!book.last_read_time) return false;
+        return new Date(book.last_read_time).toISOString().split('T')[0] === dateStr;
+      });
+      
+      days.push({
+        day: dayNames[date.getDay()],
+        active,
+      });
+    }
+    
+    return days;
+  };
+
   const getHeatmapColor = (count: number, maxCount: number) => {
-    if (count === 0) return 'var(--bg-surface)';
-    if (maxCount === 0) return 'var(--bg-surface)';
+    if (count === 0 || maxCount === 0) return 'transparent';
     const intensity = Math.min(count / Math.max(maxCount, 1), 1);
-    const colors = ['#0d3b66', '#0e4f7a', '#0f6390', '#1078a8', '#119cc0'];
-    const index = Math.min(Math.floor(intensity * colors.length), colors.length - 1);
-    return colors[index];
+    const alpha = Math.max(0.12, intensity);
+    return `color-mix(in srgb, var(--primary-500) ${Math.round(alpha * 100)}%, transparent)`;
+  };
+
+  const getHeatmapBorder = (count: number, maxCount: number) => {
+    if (count === 0 || maxCount === 0) return '1px solid var(--border-default)';
+    const intensity = Math.min(count / Math.max(maxCount, 1), 1);
+    const alpha = Math.max(0.12, intensity);
+    const mixColor = `color-mix(in srgb, var(--primary-500) ${Math.round(alpha * 100)}%, transparent)`;
+    return `1px solid ${mixColor}`;
   };
 
   const renderHeatmap = () => {
     if (heatmapData.length === 0) return null;
 
     const maxCount = Math.max(...heatmapData.map(d => d.count), 1);
+    const todayStr = new Date().toISOString().split('T')[0];
     const weeks: HeatmapData[][] = [];
     let currentWeek: HeatmapData[] = [];
 
@@ -206,67 +240,57 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ onBookSelect }) => {
 
     const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
     
-    const monthLabels: { weekIndex: number; month: number }[] = [];
+    const monthLabels: (string | null)[] = [];
     let lastMonth = -1;
     
-    weeks.forEach((week, weekIndex) => {
+    weeks.forEach((week) => {
       const firstValidDay = week.find(d => d.date);
       if (firstValidDay) {
         const month = new Date(firstValidDay.date).getMonth();
         if (month !== lastMonth) {
-          monthLabels.push({ weekIndex, month });
+          monthLabels.push(months[month]);
           lastMonth = month;
+        } else {
+          monthLabels.push(null);
         }
+      } else {
+        monthLabels.push(null);
       }
     });
 
     return (
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-        <div style={{ flex: 1, overflowX: 'auto' }}>
-          <div style={{ position: 'relative', height: '16px', marginBottom: '6px' }}>
-            {monthLabels.map(({ weekIndex, month }) => (
+      <div className="heatmap-layout">
+        <div className="heatmap-scroll">
+          <div className="heatmap-months">
+            {monthLabels.map((label, i) => (
               <span
-                key={`month-${weekIndex}`}
-                style={{
-                  position: 'absolute',
-                  left: `${weekIndex * 14}px`,
-                  fontSize: '11px',
-                  color: 'var(--text-muted)',
-                  whiteSpace: 'nowrap',
-                }}
+                key={i}
+                className="heatmap-month-label"
               >
-                {months[month]}
+                {label || ''}
               </span>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: '3px' }}>
+          <div className="heatmap-grid">
             {weeks.map((week, weekIndex) => (
-              <div key={weekIndex} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                {week.map((day, dayIndex) => (
-                  <div
-                    key={dayIndex}
-                    title={day.date ? `${day.date}: ${day.count} 条笔记` : ''}
-                    style={{
-                      width: '12px',
-                      height: '12px',
-                      backgroundColor: day.date ? getHeatmapColor(day.count, maxCount) : 'transparent',
-                      borderRadius: '2px',
-                      border: day.date && day.count > 0 ? 'none' : '1px solid var(--border-default)',
-                    }}
-                  />
-                ))}
+              <div key={weekIndex} className="heatmap-week">
+                {week.map((day, dayIndex) => {
+                    const isToday = day.date === todayStr;
+                    return (
+                      <div
+                        key={dayIndex}
+                        title={day.date ? `${day.date}: ${day.count} 条笔记` : ''}
+                        className={`heatmap-day${isToday ? ' heatmap-day-today' : ''}`}
+                        style={{
+                          backgroundColor: day.date ? getHeatmapColor(day.count, maxCount) : 'transparent',
+                          border: day.date ? getHeatmapBorder(day.count, maxCount) : '1px solid var(--border-default)',
+                        }}
+                      />
+                    );
+                  })}
               </div>
             ))}
           </div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', marginLeft: '8px' }}>
-          <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>少</span>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            {[0, 0.25, 0.5, 0.75, 1].map((v, i) => (
-              <div key={i} style={{ width: '11px', height: '11px', backgroundColor: getHeatmapColor(Math.ceil(v * maxCount), maxCount), borderRadius: '2px' }} />
-            ))}
-          </div>
-          <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>多</span>
         </div>
       </div>
     );
@@ -274,7 +298,7 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ onBookSelect }) => {
 
   if (loading) {
     return (
-      <div className="dashboard-panel" style={{ outline: 'none', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)' }}>
+      <div className="dashboard-panel loading-panel">
         <LoadingBook size={32} />
       </div>
     );
@@ -284,434 +308,258 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ onBookSelect }) => {
     ? Math.round((archiveStatus.archived / (archiveStatus.archived + archiveStatus.unarchived)) * 100) 
     : 0;
 
-  const totalNotesThisYear = heatmapData.reduce((sum, d) => sum + d.count, 0);
-
   return (
-    <div className="dashboard-panel" style={{ outline: 'none', height: '100%', display: 'flex', flexDirection: 'column', color: 'var(--text-primary)' }}>
-      <style>{`
-        .dash-card {
-          background: linear-gradient(145deg, #1e293b 0%, #162032 100%);
-          border: 1px solid rgba(71, 85, 105, 0.4);
-          border-radius: 12px;
-          padding: 16px;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        }
-        .dash-card-title {
-          font-size: 13px;
-          font-weight: 600;
-          color: #94a3b8;
-          margin-bottom: 12px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .dash-book-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 12px;
-          border-radius: 10px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          border: 1px solid transparent;
-          background: rgba(30, 41, 59, 0.5);
-        }
-        .dash-book-item:hover {
-          background: rgba(51, 65, 85, 0.6);
-          border-color: rgba(99, 102, 241, 0.3);
-          transform: translateX(4px);
-        }
-        .dash-stat-number {
-          font-size: 28px;
-          font-weight: 700;
-          line-height: 1;
-        }
-        .dash-stat-label {
-          font-size: 11px;
-          color: #64748b;
-          margin-top: 4px;
-        }
-        .dash-toggle-btn {
-          padding: 4px 10px;
-          font-size: 11px;
-          border-radius: 6px;
-          border: 1px solid #334155;
-          background: transparent;
-          color: #94a3b8;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .dash-toggle-btn.active {
-          background: rgba(99, 102, 241, 0.2);
-          border-color: rgba(99, 102, 241, 0.5);
-          color: #818cf8;
-        }
-        .dash-progress-ring {
-          position: relative;
-          width: 120px;
-          height: 120px;
-        }
-        .dash-progress-ring svg {
-          transform: rotate(-90deg);
-        }
-        .dash-progress-text {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          text-align: center;
-        }
-        .dash-task-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 6px 0;
-          font-size: 12px;
-          color: #94a3b8;
-          cursor: pointer;
-          transition: color 0.2s;
-        }
-        .dash-task-item:hover {
-          color: #e2e8f0;
-        }
-        .dash-activity-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 8px;
-          padding: 8px 0;
-          border-bottom: 1px solid rgba(51, 65, 85, 0.3);
-          font-size: 11px;
-        }
-        .dash-activity-item:last-child {
-          border-bottom: none;
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .spinning {
-          animation: spin 1s linear infinite;
-        }
-      `}</style>
+    <div className="dashboard-panel">
+      <div className="dashboard-grid">
+        <div className="dashboard-main">
+          <div className="dashboard-top-row">
+            <div className="dash-card overview-card">
+              <div className="dash-card-title">
+                <BarChart3 size={15} />
+                数据概览
+              </div>
+              
+              <div className="ov-grid">
+                <div className="ov-cell">
+                  <div className="ov-number">{readingStats ? readingStats.total_reading_hours.toFixed(1) : '0'}</div>
+                  <div className="ov-number-unit">h</div>
+                  <div className="ov-label">累计阅读</div>
+                </div>
+                <div className="ov-cell">
+                  <div className="ov-number">{readingStats?.books_with_progress || 0}</div>
+                  <div className="ov-number-unit">本</div>
+                  <div className="ov-label">阅读中</div>
+                </div>
+                <div className="ov-cell">
+                  <div className="ov-number">{readingStats?.average_reading_speed || 0}</div>
+                  <div className="ov-number-unit">p/h</div>
+                  <div className="ov-label">阅读速度</div>
+                </div>
+                <div className="ov-cell">
+                  <div className="ov-number">{archivePercent}</div>
+                  <div className="ov-number-unit">%</div>
+                  <div className="ov-label">归档率</div>
+                </div>
+              </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexShrink: 0 }}>
-        <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <BarChart3 size={18} />
-          图书馆大厅
-        </h2>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', borderRadius: '6px', transition: 'background 0.2s' }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-          >
-            <Plus size={18} />
-          </button>
-          <button style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', borderRadius: '6px' }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-          >
-            <Bell size={18} />
-          </button>
-          <button style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', borderRadius: '6px' }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-          >
-            <Settings size={18} />
-          </button>
-        </div>
-      </div>
+              {recentlyRead.length > 0 && (
+                <div className="ov-week">
+                  <div className="ov-week-title">近7天活跃度</div>
+                  <div className="ov-week-row">
+                    {getRecentActivity().map((d, i) => (
+                      <div key={i} className={`ov-week-day${d.active ? ' active' : ''}`}>
+                        <div className="ov-week-dot" />
+                        <span className="ov-week-name">{d.day}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '16px', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '16px' }}>
-            <div className="dash-card" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div className="dash-card progress-card">
+              <div className="dash-card-title">
+                <Library size={15} />
+                归档进度
+              </div>
+              <div className="pr-ring-wrap">
+                <div className="dash-progress-ring">
+                  <svg width="160" height="160" viewBox="0 0 160 160">
+                    <circle cx="80" cy="80" r="65" className="dash-progress-ring-bg" />
+                    <circle 
+                      cx="80" cy="80" r="65" className="dash-progress-ring-fill"
+                      strokeDasharray={`${2 * Math.PI * 65 * archivePercent / 100} ${2 * Math.PI * 65}`}
+                    />
+                  </svg>
+                  <div className="dash-progress-text">
+                    <div className="dash-progress-number">{archivePercent}%</div>
+                    <div className="dash-progress-label">已归档</div>
+                  </div>
+                </div>
+              </div>
+              <div className="dash-progress-legend">
+                <span className="dash-progress-legend-item">
+                  <span className="dash-progress-legend-dot dash-progress-legend-dot-success" />
+                  已归档 <strong style={{ color: 'var(--success-500)' }}>{archiveStatus?.archived || 0}</strong>
+                </span>
+                <span className="dash-progress-legend-item">
+                  <span className="dash-progress-legend-dot dash-progress-legend-dot-warning" />
+                  未归档 <strong style={{ color: 'var(--warning-500)' }}>{archiveStatus?.unarchived || 0}</strong>
+                </span>
+              </div>
+            </div>
+
+            <div className="dash-card reading-card">
               <div className="dash-card-title">
                 <BookOpen size={15} />
                 继续阅读
               </div>
               {recentlyRead.length === 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: 'var(--text-muted)', gap: '8px' }}>
-                  <BookOpen size={40} style={{ opacity: 0.3 }} />
-                  <span style={{ fontSize: '13px' }}>暂无阅读记录</span>
-                  <span style={{ fontSize: '11px' }}>打开一本书开始阅读吧</span>
+                <div className="dash-empty-state">
+                  <BookOpen size={40} className="dash-empty-icon" />
+                  <span className="dash-empty-text">暂无阅读记录</span>
+                  <span className="dash-empty-hint">打开一本书开始阅读吧</span>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, overflow: 'auto' }}>
-                  {recentlyRead.slice(0, 3).map((book, idx) => (
-                    <div
-                      key={book.id}
-                      onClick={() => onBookSelect?.(book)}
-                      className="dash-book-item"
-                    >
-                      <div style={{
-                        width: idx === 0 ? '52px' : '44px',
-                        height: idx === 0 ? '72px' : '60px',
-                        borderRadius: '6px',
-                        overflow: 'hidden',
-                        flexShrink: 0,
-                        background: book.thumbnail ? 'transparent' : 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                      }}>
-                        {book.thumbnail ? (
-                          <img src={book.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                          <BookOpen size={idx === 0 ? 22 : 16} style={{ color: 'white' }} />
-                        )}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: idx === 0 ? '14px' : '12px', fontWeight: '500', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {book.title}
+                <div className="shelf-scroll" onWheel={(e) => { e.currentTarget.scrollLeft += e.deltaY; }}>
+                  <div className="shelf-track">
+                    {[...recentlyRead]
+                      .sort((a, b) => {
+                        const ta = a.last_read_time || a.updated_at;
+                        const tb = b.last_read_time || b.updated_at;
+                        return tb.localeCompare(ta);
+                      })
+                      .slice(0, 10)
+                      .map((book) => (
+                      <div
+                        key={book.id}
+                        onClick={() => onBookSelect?.(book)}
+                        className="shelf-book"
+                        title={`${book.title} - ${book.last_read_page || 1}/${book.page_count || '?'}`}
+                      >
+                        <div className="shelf-cover"
+                          style={{ background: book.thumbnail ? 'transparent' : 'var(--accent-500)' }}>
+                          {book.thumbnail ? (
+                            <img src={book.thumbnail} alt="" className="shelf-cover-img" />
+                          ) : (
+                            <BookOpen size={22} className="dash-book-cover-icon" />
+                          )}
                         </div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>
-                          {book.author || '未知作者'}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' }}>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>第 {book.last_read_page} / {book.page_count || '?'} 页</span>
-                          <Play size={14} style={{ color: 'var(--accent-500)' }} />
-                        </div>
-                        {idx === 0 && (
-                          <div style={{
-                            marginTop: '6px',
-                            height: '3px',
-                            background: 'rgba(129, 140, 248, 0.2)',
-                            borderRadius: '2px',
-                            overflow: 'hidden'
-                          }}>
-                            <div style={{
-                              height: '100%',
-                              width: `${Math.min(((book.last_read_page || 1) / (book.page_count || 1)) * 100, 100)}%`,
-                              background: 'linear-gradient(90deg, #818cf8, #a78bfa)',
-                              borderRadius: '2px'
-                            }} />
+                        <div className="shelf-info">
+                          <div className="shelf-title">{book.title}</div>
+                          <div className="shelf-author">{book.author || '未知作者'}</div>
+                          <div className="shelf-progress-bar">
+                            <div className="shelf-progress-fill" style={{ width: `${Math.min(((book.last_read_page || 1) / (book.page_count || 1)) * 100, 100)}%` }} />
                           </div>
-                        )}
+                          <div className="shelf-progress-text">
+                            {book.last_read_page || 1}/{book.page_count || '?'}
+                          </div>
+                        </div>
                       </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="dash-card category-card">
+              <div className="dash-card-title">
+                <Tag size={15} />
+                藏书分类
+              </div>
+              {unarchivedTags.length === 0 ? (
+                <div className="dash-empty-state" style={{ padding: '24px 0' }}>
+                  <CheckCircle size={24} className="dash-empty-icon" />
+                  <span className="dash-empty-text" style={{ fontSize: '12px' }}>所有标签均已归档</span>
+                </div>
+              ) : (
+                <div className="cat-list">
+                  {unarchivedTags.map((item, i) => (
+                    <div key={i} className="cat-item">
+                      <span className="cat-dot" style={{ background: ENTITY_COLORS[i % 5] }} />
+                      <span className="cat-name">{item.name}</span>
+                      <span className="cat-count">{item.count}本</span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-
-            <div className="dash-card">
-              <div className="dash-card-title">
-                <Clock size={15} />
-                阅读统计
-                <span style={{ marginLeft: 'auto', display: 'flex', gap: '4px' }}>
-                  <button style={{ width: '20px', height: '20px', borderRadius: '50%', border: '1px solid var(--border-default)', background: 'transparent', color: 'var(--text-secondary)', fontSize: '10px', cursor: 'pointer' }}>●</button>
-                  <button style={{ width: '20px', height: '20px', borderRadius: '50%', border: '1px solid var(--border-default)', background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)', fontSize: '10px', cursor: 'pointer' }}>○</button>
-                </span>
-              </div>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div className="dash-stat-number" style={{ color: 'var(--primary-500)' }}>{readingStats?.total_reading_hours || 0}<span style={{ fontSize: '14px' }}>.{String(readingStats?.total_reading_hours || 0).split('.')[1]?.padEnd(1,'0')||'1'}</span></div>
-                  <div className="dash-stat-label">小时</div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div className="dash-stat-number" style={{ color: 'var(--success-500)' }}>{readingStats?.books_with_progress || 0}</div>
-                  <div className="dash-stat-label">阅读中</div>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '50px', marginBottom: '12px', padding: '0 4px' }}>
-                {[0.3, 0.8, 0.45, 0.9, 0.55, 0.35, 0.7].map((v, i) => (
-                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', gap: '3px' }}>
-                    <div style={{
-                      width: '100%',
-                      maxWidth: '28px',
-                      height: `${v * 100}%`,
-                      background: i % 3 === 0 ? '#818cf8' : 'rgba(129, 140, 248, 0.3)',
-                      borderRadius: '3px 3px 0 0',
-                      minHeight: '4px',
-                    }} />
-                    <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{['0.1','0.0'][i % 2]} 小时</span>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ textAlign: 'center', paddingTop: '10px', borderTop: '1px solid rgba(51, 65, 85, 0.4)' }}>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>今日/本周/本月</span>
-              </div>
-            </div>
           </div>
 
-          <div className="dash-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <div className="dash-card-title" style={{ marginBottom: 0 }}>
+          <div className="dash-card heatmap-card">
+            <div className="dash-heatmap-header">
+              <div className="dash-card-title dash-card-title-nomargin">
                 笔记活动热力图
               </div>
-              <div style={{ display: 'flex', gap: '4px' }}>
+              <div className="dash-heatmap-toggle">
                 <button className={`dash-toggle-btn ${heatmapView === 'day' ? 'active' : ''}`} onClick={() => setHeatmapView('day')}>日视图</button>
                 <button className={`dash-toggle-btn ${heatmapView === 'week' ? 'active' : ''}`} onClick={() => setHeatmapView('week')}>周视图</button>
               </div>
             </div>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'auto' }}>
+            <div className="dash-heatmap-container">
               {renderHeatmap()}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(51, 65, 85, 0.3)', fontSize: '11px', color: 'var(--text-muted)' }}>
-              <span>少</span>
-              <div style={{ display: 'flex', gap: '3px' }}>
-                <span>稀疏</span>
-                <span>密集</span>
-                <span>频繁</span>
-              </div>
-              <span>多</span>
-            </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>
-              过去一年共记录 <span style={{ color: 'var(--primary-500)' }}>{totalNotesThisYear}</span> 条笔记（最高{Math.max(...heatmapData.map(d=>d.count))}条/天）
-            </div>
           </div>
 
-          <div className="dash-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <div className="dash-card-title" style={{ marginBottom: 0 }}>
-                ❄ 知识图谱摘要
-              </div>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <button className="dash-toggle-btn">日视图</button>
-                <button className="dash-toggle-btn">周视图</button>
-              </div>
-            </div>
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '150px' }}>
-              <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-                <Share2 size={40} strokeWidth={1} style={{ marginBottom: '8px', opacity: 0.5 }} />
-                <div style={{ fontSize: '13px' }}>知识图谱可视化</div>
-                <div style={{ fontSize: '11px', marginTop: '4px' }}>展示概念关联与主题分布</div>
-              </div>
-            </div>
           </div>
-        </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflow: 'auto' }}>
+        <div className="dashboard-sidebar">
           <div className="dash-card">
-            <div className="dash-card-title">归档进度</div>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
-              <div className="dash-progress-ring">
-                <svg width="120" height="120" viewBox="0 0 120 120">
-                  <circle cx="60" cy="60" r="50" fill="none" stroke="var(--bg-surface)" strokeWidth="10" />
-                  <circle 
-                    cx="60" cy="60" r="50" fill="none" stroke="var(--success-500)" strokeWidth="10"
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 50 * archivePercent / 100} ${2 * Math.PI * 50}`}
-                    style={{ filter: 'drop-shadow(0 0 6px rgba(16, 185, 129, 0.4))' }}
-                  />
-                </svg>
-                <div className="dash-progress-text">
-                  <div style={{ fontSize: '32px', fontWeight: '700', color: 'var(--success-500)', lineHeight: 1 }}>{archivePercent}%</div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>已归档</div>
-                </div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', fontSize: '11px', marginBottom: '12px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: 'var(--success-500)' }} />
-                已归档 <strong style={{ color: 'var(--success-500)' }}>{archiveStatus?.archived || 0}</strong>
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: 'var(--warning-500)' }} />
-                未归档 <strong style={{ color: 'var(--warning-500)' }}>{archiveStatus?.unarchived || 0}</strong>
-              </span>
-            </div>
-            
-            <div style={{ borderTop: '1px solid rgba(51, 65, 85, 0.4)', paddingTop: '10px' }}>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Library size={12} /> {unarchivedTags.length} 个标签未归档
-              </div>
-              {unarchivedTags.length === 0 ? (
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '8px 0' }}>
-                  所有标签下的书籍都已归档 <CheckCircle size={12} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: '4px' }} />
-                </div>
-              ) : (
-                unarchivedTags.map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 0', fontSize: '11px', color: 'var(--text-muted)' }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: ['#818cf8', '#34d399', '#f472b6', '#fbbf24', '#38bdf8'][i % 5] }} />
-                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}：{item.count} 本</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="dash-card">
-            <div className="dash-card-title" style={{ justifyContent: 'space-between' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><ClipboardList size={14} /> 近期任务与待办</span>
+            <div className="dash-card-title dash-card-title-between">
+              <span className="dash-card-title-inner"><ClipboardList size={14} /> 近期任务与待办</span>
               <button 
                 onClick={() => setShowAddTask(!showAddTask)}
-                style={{ background: 'rgba(99, 102, 241, 0.2)', border: '1px solid rgba(99, 102, 241, 0.3)', borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', color: 'var(--accent-500)', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                className="dash-add-task-btn"
               >
                 <Plus size={12} /> 添加
               </button>
             </div>
             
             {showAddTask && (
-              <div style={{ marginBottom: '12px', padding: '10px', background: 'rgba(30, 41, 59, 0.5)', borderRadius: '8px', border: '1px solid rgba(51, 65, 85, 0.4)' }}>
+              <div className="dash-add-task-form">
                 <input
                   type="text"
                   placeholder="任务内容..."
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
-                  style={{ width: '100%', background: 'transparent', border: '1px solid var(--border-default)', borderRadius: '6px', padding: '8px 10px', color: 'var(--text-primary)', fontSize: '12px', marginBottom: '8px', outline: 'none' }}
+                  className="dash-add-task-input"
                 />
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <Calendar size={14} style={{ color: 'var(--text-muted)' }} />
-                   <input
-                     type="date"
-                     value={newTaskDate}
-                     onChange={(e) => setNewTaskDate(e.target.value)}
-                    style={{ flex: 1, background: 'transparent', border: '1px solid var(--border-default)', borderRadius: '6px', padding: '6px 8px', color: 'var(--text-primary)', fontSize: '11px', outline: 'none' }}
-                   />
-                   <button
-                     onClick={handleAddTask}
-                     disabled={!newTaskTitle.trim() || !newTaskDate}
-                    style={{ background: newTaskTitle.trim() && newTaskDate ? 'var(--accent-500)' : 'var(--border-default)', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: newTaskTitle.trim() && newTaskDate ? 'pointer' : 'not-allowed', color: 'white', fontSize: '11px' }}
-                   >
-                     确定
-                   </button>
-                   <button
-                     onClick={() => { setShowAddTask(false); setNewTaskTitle(''); setNewTaskDate(''); }}
-                    style={{ background: 'transparent', border: '1px solid var(--border-default)', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: 'var(--text-muted)' }}
-                   >
+                <div className="dash-add-task-row">
+                  <Calendar size={14} className="icon-muted" />
+                  <input
+                    type="date"
+                    value={newTaskDate}
+                    onChange={(e) => setNewTaskDate(e.target.value)}
+                    className="dash-add-task-date"
+                  />
+                  <button
+                    onClick={handleAddTask}
+                    disabled={!newTaskTitle.trim() || !newTaskDate}
+                    className={`dash-add-task-submit ${newTaskTitle.trim() && newTaskDate ? 'enabled' : 'disabled'}`}
+                  >
+                    确定
+                  </button>
+                  <button
+                    onClick={() => { setShowAddTask(false); setNewTaskTitle(''); setNewTaskDate(''); }}
+                    className="dash-add-task-cancel"
+                  >
                     <X size={12} />
                   </button>
                 </div>
               </div>
             )}
             
-            <div style={{ maxHeight: '200px', overflow: 'auto' }}>
+            <div className="dash-task-scroll">
               {tasks.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '12px' }}>
+                <div className="dash-empty-text-centered">
                   暂无待办任务，点击上方"添加"创建新任务
                 </div>
               ) : (
                 tasks.map((task) => {
                   const dueInfo = formatDueDate(task.due_date);
                   return (
-                    <div key={task.id} className="dash-task-item" style={{ position: 'relative', paddingRight: '28px' }}>
-                      <div 
-                        style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}
+                    <div key={task.id} className="dash-task-item">
+                      <div className="dash-task-checkbox"
                         onClick={() => handleToggleTask(task.id, task.completed)}
                       >
                         {task.completed === 1 ? (
-                          <CheckSquare size={14} style={{ color: 'var(--success-500)', flexShrink: 0 }} />
+                          <CheckSquare size={14} className="dash-task-checkbox-completed" />
                         ) : (
-                          <Square size={14} style={{ color: dueInfo.urgent ? 'var(--danger-500)' : 'var(--text-muted)', flexShrink: 0 }} />
+                          <Square size={14} className={dueInfo.urgent ? 'dash-task-checkbox-urgent' : 'dash-task-checkbox-pending'} />
                         )}
-                        <span style={{ textDecoration: task.completed === 1 ? 'line-through' : 'none', opacity: task.completed === 1 ? 0.5 : 1, flex: 1 }}>
-                          {task.title}
-                        </span>
-                        <span style={{ fontSize: '10px', color: dueInfo.color, whiteSpace: 'nowrap' }}>
-                          {dueInfo.text}
-                        </span>
                       </div>
+                      <span onClick={() => handleToggleTask(task.id, task.completed)}
+                        className={`dash-task-title ${task.completed === 1 ? 'dash-task-title-completed' : ''}`}
+                      >
+                        {task.title}
+                      </span>
+                      <span className="dash-task-due" style={{ color: dueInfo.color }}>
+                        {dueInfo.text}
+                      </span>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
-                        style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px', opacity: 0.5 }}
-                        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.5'}
+                        className="dash-task-delete-btn"
+                        title="删除任务"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -720,16 +568,16 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ onBookSelect }) => {
                 })
               )}
             </div>
-            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(51, 65, 85, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+            <div className="dash-task-footer">
+              <span className="dash-task-footer-text">
                 {tasks.filter(t => t.completed === 0).length} 项待完成
                 {tasks.filter(t => getDaysRemaining(t.due_date) < 0 && t.completed === 0).length > 0 && (
-                  <span style={{ color: 'var(--danger-500)', marginLeft: '8px' }}>
+                  <span className="dash-task-overdue">
                     {tasks.filter(t => getDaysRemaining(t.due_date) < 0 && t.completed === 0).length} 项已过期
                   </span>
                 )}
               </span>
-              <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />
+              <ChevronRight size={14} className="icon-muted" />
             </div>
           </div>
 
@@ -737,18 +585,16 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ onBookSelect }) => {
             <div className="dash-card-title">系统动态</div>
             <div>
               {activities.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '12px' }}>
-                  暂无活动记录
+                <div className="dash-empty-text-centered">
+                   暂无活动记录
                 </div>
               ) : (
                 activities.map((activity) => (
                   <div key={activity.id} className="dash-activity-item">
                     {getActivityIcon(activity.action_type)}
-                    <div style={{ flex: 1 }}>
+                    <div>
                       <div>{activity.description}</div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: '10px', marginTop: '2px' }}>
-                        {formatActivityTime(activity.created_at)}
-                      </div>
+                      <div className="dash-activity-time">{formatActivityTime(activity.created_at)}</div>
                     </div>
                   </div>
                 ))
@@ -761,4 +607,4 @@ const DashboardPanel: React.FC<DashboardPanelProps> = ({ onBookSelect }) => {
   );
 };
 
-export default React.memo(DashboardPanel);
+export default DashboardPanel;

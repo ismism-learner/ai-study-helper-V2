@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+﻿import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Minimize2, Maximize2, Check, AlertCircle } from 'lucide-react';
 import LoadingBook from './LoadingBook';
 
@@ -107,7 +107,7 @@ const DraggableProgressWindow: React.FC<DraggableProgressWindowProps> = ({
       <div
         onMouseDown={handleMouseDown}
         style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: 'var(--accent-500)',
           padding: '12px 16px',
           display: 'flex',
           alignItems: 'center',
@@ -177,29 +177,29 @@ const DraggableProgressWindow: React.FC<DraggableProgressWindowProps> = ({
             </div>
             <div style={{ 
               height: '6px', 
-              background: '#e5e7eb', 
+              background: 'var(--border-default)', 
               borderRadius: '3px',
               overflow: 'hidden' 
             }}>
               <div 
                 style={{ 
                   height: '100%', 
-                  background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+                  background: 'var(--accent-500)',
                   width: `${(progress.current / progress.total) * 100}%`,
                   transition: 'width 0.3s ease',
                 }} 
               />
             </div>
             <div style={{ display: 'flex', gap: '12px', marginTop: '8px', fontSize: '12px' }}>
-              <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ color: 'var(--success-500)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Check size={12} /> 成功: {successCount}
               </span>
               {noEventsCount > 0 && (
-                <span style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ color: 'var(--warning-500)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <AlertCircle size={12} /> 无事件: {noEventsCount}
                 </span>
               )}
-              <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ color: 'var(--danger-500)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <AlertCircle size={12} /> 失败: {errorCount}
               </span>
               {processingCount > 0 && (
@@ -225,11 +225,11 @@ const DraggableProgressWindow: React.FC<DraggableProgressWindowProps> = ({
                   padding: '8px',
                   borderRadius: '6px',
                   marginBottom: '4px',
-                  background: item.status === 'processing' ? '#eff6ff' 
-                    : item.status === 'success' ? '#ecfdf5'
-                    : item.status === 'error' ? '#fef2f2'
-                    : item.status === 'no_events' ? '#fffbeb'
-                    : '#f9fafb',
+                  background: item.status === 'processing' ? 'var(--primary-light)' 
+                    : item.status === 'success' ? 'var(--success-light)'
+                    : item.status === 'error' ? 'var(--danger-light)'
+                    : item.status === 'no_events' ? 'var(--warning-light)'
+                    : 'var(--bg-muted)',
                   fontSize: '12px',
                 }}
               >
@@ -240,11 +240,11 @@ const DraggableProgressWindow: React.FC<DraggableProgressWindowProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: item.status === 'processing' ? '#3b82f6'
-                    : item.status === 'success' ? '#10b981'
-                    : item.status === 'error' ? '#ef4444'
-                    : item.status === 'no_events' ? '#f59e0b'
-                    : '#e5e7eb',
+                  background: item.status === 'processing' ? 'var(--primary-500)'
+                    : item.status === 'success' ? 'var(--success-500)'
+                    : item.status === 'error' ? 'var(--danger-500)'
+                    : item.status === 'no_events' ? 'var(--warning-500)'
+                    : 'var(--border-default)',
                   color: 'white',
                   flexShrink: 0,
                 }}>
@@ -263,17 +263,17 @@ const DraggableProgressWindow: React.FC<DraggableProgressWindowProps> = ({
                     {item.title}
                   </div>
                   {item.status === 'success' && item.eventCount !== undefined && (
-                    <div style={{ color: '#10b981', fontSize: '11px' }}>
+                    <div style={{ color: 'var(--success-500)', fontSize: '11px' }}>
                       识别到 {item.eventCount} 个时间事件
                     </div>
                   )}
                   {item.status === 'no_events' && (
-                    <div style={{ color: '#f59e0b', fontSize: '11px' }}>
+                    <div style={{ color: 'var(--warning-500)', fontSize: '11px' }}>
                       未识别到时间事件
                     </div>
                   )}
                   {item.status === 'error' && item.error && (
-                    <div style={{ color: '#ef4444', fontSize: '11px' }}>
+                    <div style={{ color: 'var(--danger-500)', fontSize: '11px' }}>
                       {item.error}
                     </div>
                   )}
@@ -296,7 +296,7 @@ const DraggableProgressWindow: React.FC<DraggableProgressWindowProps> = ({
                     onClick={onContinue}
                     style={{
                       padding: '6px 12px',
-                      background: '#10b981',
+                      background: 'var(--success-500)',
                       color: 'white',
                       border: 'none',
                       borderRadius: '6px',
@@ -312,7 +312,7 @@ const DraggableProgressWindow: React.FC<DraggableProgressWindowProps> = ({
                     onClick={onPause}
                     style={{
                       padding: '6px 12px',
-                      background: '#f59e0b',
+                      background: 'var(--warning-500)',
                       color: 'white',
                       border: 'none',
                       borderRadius: '6px',
@@ -328,7 +328,7 @@ const DraggableProgressWindow: React.FC<DraggableProgressWindowProps> = ({
                   onClick={onStop}
                   style={{
                     padding: '6px 12px',
-                    background: '#ef4444',
+                    background: 'var(--danger-500)',
                     color: 'white',
                     border: 'none',
                     borderRadius: '6px',
@@ -364,9 +364,9 @@ const DraggableProgressWindow: React.FC<DraggableProgressWindowProps> = ({
       {isMinimized && (
         <div style={{ padding: '8px 16px', fontSize: '12px', color: 'var(--text-muted)' }}>
           <span>进度: {progress.current}/{progress.total}</span>
-          <span style={{ marginLeft: '12px', color: '#10b981' }}>✓{successCount}</span>
-          {noEventsCount > 0 && <span style={{ marginLeft: '8px', color: '#f59e0b' }}>○{noEventsCount}</span>}
-          {errorCount > 0 && <span style={{ marginLeft: '8px', color: '#ef4444' }}>✗{errorCount}</span>}
+          <span style={{ marginLeft: '12px', color: 'var(--success-500)' }}>✓{successCount}</span>
+          {noEventsCount > 0 && <span style={{ marginLeft: '8px', color: 'var(--warning-500)' }}>○{noEventsCount}</span>}
+          {errorCount > 0 && <span style={{ marginLeft: '8px', color: 'var(--danger-500)' }}>✗{errorCount}</span>}
         </div>
       )}
 

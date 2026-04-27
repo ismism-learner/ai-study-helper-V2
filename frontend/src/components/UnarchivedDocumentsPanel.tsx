@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { Document, Country, TimePeriod } from '../types';
 import { documentApi, countryApi, timePeriodApi } from '../api';
 import {
@@ -458,7 +458,7 @@ const UnarchivedDocumentsPanel: React.FC<UnarchivedDocumentsPanelProps> = ({
                           <>
                             {doc.content_year_start || '?'} - {doc.content_year_end || '?'}
                             {doc.content_country_id && (
-                              <span style={{ marginLeft: 8, color: '#667eea' }}>
+                              <span style={{ marginLeft: 8, color: 'var(--primary-500)' }}>
                                 ({getCountryName(doc.content_country_id)})
                               </span>
                             )}

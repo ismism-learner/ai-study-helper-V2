@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from typing import Optional, List
-from datetime import datetime, UTC
 import os
 import re
+from datetime import UTC, datetime
+from typing import List, Optional
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import BookDocument
@@ -20,52 +21,52 @@ class QuarkCookieRequest(BaseModel):
 class QuarkConfigResponse(BaseModel):
     has_cookie: bool
     cli_available: bool
-    cookie_preview: Optional[str] = None
+    cookie_preview: str | None = None
 
 
 class QuarkTestResponse(BaseModel):
     success: bool
     message: str
-    user_info: Optional[dict] = None
+    user_info: dict | None = None
 
 
 class QuarkUploadRequest(BaseModel):
     book_id: str
-    remote_folder: Optional[str] = "/我的电子图书馆"
-    create_share: Optional[bool] = True
-    share_expire: Optional[int] = 0
+    remote_folder: str | None = "/我的电子图书馆"
+    create_share: bool | None = True
+    share_expire: int | None = 0
 
 
 class QuarkUploadResponse(BaseModel):
     success: bool
     message: str
     book_id: str
-    share_url: Optional[str] = None
-    share_password: Optional[str] = None
-    file_id: Optional[str] = None
+    share_url: str | None = None
+    share_password: str | None = None
+    file_id: str | None = None
 
 
 class QuarkUploadByTagRequest(BaseModel):
     tag: str
-    secondary_tag: Optional[str] = None
-    book_ids: Optional[List[str]] = None
-    country_id: Optional[str] = None
-    remote_folder: Optional[str] = "/我的电子图书馆"
-    share_expire: Optional[int] = 0
+    secondary_tag: str | None = None
+    book_ids: list[str] | None = None
+    country_id: str | None = None
+    remote_folder: str | None = "/我的电子图书馆"
+    share_expire: int | None = 0
 
 
 class QuarkUploadByTagResponse(BaseModel):
     success: bool
     message: str
     tag: str
-    secondary_tag: Optional[str] = None
+    secondary_tag: str | None = None
     folder_path: str
-    share_url: Optional[str] = None
-    share_password: Optional[str] = None
+    share_url: str | None = None
+    share_password: str | None = None
     uploaded_count: int
     failed_count: int
     skipped_count: int = 0
-    results: List[dict]
+    results: list[dict]
 
 
 @router.get("/config", response_model=QuarkConfigResponse)
@@ -374,10 +375,10 @@ def upload_by_tag_to_quark(
 
 @router.post("/upload-batch")
 def upload_batch_to_quark(
-    book_ids: List[str],
-    remote_folder: Optional[str] = "/我的电子图书馆",
-    create_share: Optional[bool] = True,
-    share_expire: Optional[int] = 0,
+    book_ids: list[str],
+    remote_folder: str | None = "/我的电子图书馆",
+    create_share: bool | None = True,
+    share_expire: int | None = 0,
     db: Session = Depends(get_db),
 ):
     results = []
@@ -467,8 +468,8 @@ def get_book_quark_status(book_id: str, db: Session = Depends(get_db)):
 @router.post("/books/{book_id}/refresh-share")
 def refresh_share_link(
     book_id: str,
-    remote_folder: Optional[str] = "/我的电子图书馆",
-    expire: Optional[int] = 0,
+    remote_folder: str | None = "/我的电子图书馆",
+    expire: int | None = 0,
     db: Session = Depends(get_db),
 ):
     book = db.query(BookDocument).filter(BookDocument.id == book_id).first()
@@ -500,7 +501,7 @@ def refresh_share_link(
 
 
 @router.get("/tags/summary")
-def get_tags_summary(country_id: Optional[str] = None, db: Session = Depends(get_db)):
+def get_tags_summary(country_id: str | None = None, db: Session = Depends(get_db)):
     query = db.query(BookDocument)
 
     if country_id:

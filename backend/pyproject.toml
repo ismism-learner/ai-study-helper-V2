@@ -1,0 +1,32 @@
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I", "N", "UP", "B", "SIM", "ARG", "PTH", "PD"]
+
+# 允许的规则例外
+ignore = [
+    "E501",   # 行长已在 line-length 中控制
+    "E402",   # 模块级导入顺序（config.py 中有条件导入）
+    "F401",   # __init__.py 中的未使用导入
+    "B008",   # 函数参数中的可变默认值
+    "B904",   # raise ... from e 要求（向后兼容）
+    "ARG001", # 未使用的函数参数（FastAPI 路由签名）
+    "ARG002", # 同上
+    "PD002",  # 使用 .values() 而不是直接遍历字典
+    "PTH",    # pathlib 规则（代码库使用 os.path）
+    "N802",   # 函数名中的大写字母
+    "N803",   # 参数名中的大写字母
+    "N806",   # 变量名中的大写字母
+    "SIM108", # 单行 if-else
+    "SIM115", # 文件打开上下文管理器
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"

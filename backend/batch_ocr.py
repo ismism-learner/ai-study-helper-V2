@@ -9,12 +9,13 @@ batch_ocr.py — 批量OCR扫描件PDF，结果保存到文本文件
   python.exe batch_ocr.py "C:\\path\\to\\book.pdf" "C:\\path\\to\\book_ocr.txt" 0 50
 """
 
-import sys
-import time
-import fitz
-import tempfile
-import os
 import json
+import os
+import sys
+import tempfile
+import time
+
+import fitz
 
 
 def get_already_ocrd_pages(output_path):
@@ -23,7 +24,7 @@ def get_already_ocrd_pages(output_path):
     if not os.path.exists(output_path):
         return done
     try:
-        with open(output_path, "r", encoding="utf-8") as f:
+        with open(output_path, encoding="utf-8") as f:
             for line in f:
                 if line.startswith("<!-- PAGE "):
                     try:

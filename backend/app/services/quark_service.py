@@ -1,9 +1,9 @@
-import subprocess
 import json
 import os
 import shutil
-from typing import Optional, Tuple
+import subprocess
 from pathlib import Path
+from typing import Optional, Tuple
 
 
 class QuarkConfig:
@@ -15,7 +15,7 @@ class QuarkConfig:
     def get_config(self) -> dict:
         if self.config_file.exists():
             try:
-                with open(self.config_file, "r", encoding="utf-8") as f:
+                with open(self.config_file, encoding="utf-8") as f:
                     return json.load(f)
             except Exception:
                 pass
@@ -30,7 +30,7 @@ class QuarkConfig:
         config["Quark"]["access_tokens"] = [cookie]
         self.save_config(config)
 
-    def get_cookie(self) -> Optional[str]:
+    def get_cookie(self) -> str | None:
         config = self.get_config()
         tokens = config.get("Quark", {}).get("access_tokens", [])
         return tokens[0] if tokens else None
@@ -48,7 +48,7 @@ class QuarkService:
         self.config = QuarkConfig()
         self.cli_path = self._find_cli()
 
-    def _find_cli(self) -> Optional[str]:
+    def _find_cli(self) -> str | None:
         possible_names = [
             "kuake.exe",
             "kuake",
@@ -72,7 +72,7 @@ class QuarkService:
     def is_available(self) -> bool:
         return self.cli_path is not None
 
-    def _run_command(self, args: list, timeout: int = 300) -> Tuple[bool, str, str]:
+    def _run_command(self, args: list, timeout: int = 300) -> tuple[bool, str, str]:
         if not self.cli_path:
             return False, "", "Quake CLI not found. Please download it first."
 
@@ -95,7 +95,7 @@ class QuarkService:
         except Exception as e:
             return False, "", str(e)
 
-    def test_connection(self) -> Tuple[bool, str]:
+    def test_connection(self) -> tuple[bool, str]:
         success, stdout, stderr = self._run_command(["user"])
         if success:
             return True, stdout
@@ -103,7 +103,7 @@ class QuarkService:
 
     def upload_file(
         self, local_path: str, remote_path: str, parallel: int = 4
-    ) -> Tuple[bool, dict]:
+    ) -> tuple[bool, dict]:
         if not os.path.exists(local_path):
             return False, {"error": "Local file not found"}
 
@@ -146,8 +146,8 @@ class QuarkService:
         return success, result
 
     def create_share_link(
-        self, file_path: str, expire_days: int = 0, password: Optional[str] = None
-    ) -> Tuple[bool, dict]:
+        self, file_path: str, expire_days: int = 0, password: str | None = None
+    ) -> tuple[bool, dict]:
         passcode = password if password else "false"
         args = ["share", file_path, str(expire_days), passcode]
 
@@ -203,7 +203,7 @@ class QuarkService:
 
         return success, result
 
-    def ensure_remote_folder(self, folder_path: str) -> Tuple[bool, str]:
+    def ensure_remote_folder(self, folder_path: str) -> tuple[bool, str]:
         parts = [p for p in folder_path.split("/") if p]
 
         current_path = "/"

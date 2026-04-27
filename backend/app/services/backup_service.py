@@ -1,13 +1,13 @@
+import json
+import logging
 import os
 import shutil
-import json
 import sqlite3
-import logging
-from datetime import datetime
-from typing import Dict, List, Optional, Any
-from pathlib import Path
 import threading
 import time
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class BackupService:
         self._scheduler_thread = None
         self._running = False
 
-    def create_backup(self, reason: str = "manual") -> Dict[str, Any]:
+    def create_backup(self, reason: str = "manual") -> dict[str, Any]:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_name = f"interactive_docs_{timestamp}_{reason}.db"
         backup_path = os.path.join(BACKUP_DIR, backup_name)
@@ -70,7 +70,7 @@ class BackupService:
 
         return result
 
-    def _get_db_stats(self, db_path: str) -> Dict[str, int]:
+    def _get_db_stats(self, db_path: str) -> dict[str, int]:
         stats = {}
         try:
             conn = sqlite3.connect(db_path)
@@ -120,14 +120,14 @@ class BackupService:
             logger.error(f"Failed to cleanup old backups: {e}")
 
     def _save_backup_manifest(
-        self, backup_name: str, reason: str, stats: Dict[str, int]
+        self, backup_name: str, reason: str, stats: dict[str, int]
     ):
         manifest_path = os.path.join(BACKUP_DIR, "backup_manifest.json")
 
         manifest = {"backups": []}
         if os.path.exists(manifest_path):
             try:
-                with open(manifest_path, "r", encoding="utf-8") as f:
+                with open(manifest_path, encoding="utf-8") as f:
                     manifest = json.load(f)
             except Exception:
                 pass
@@ -146,13 +146,13 @@ class BackupService:
         with open(manifest_path, "w", encoding="utf-8") as f:
             json.dump(manifest, f, ensure_ascii=False, indent=2)
 
-    def list_backups(self) -> List[Dict[str, Any]]:
+    def list_backups(self) -> list[dict[str, Any]]:
         backups = []
 
         try:
             manifest_path = os.path.join(BACKUP_DIR, "backup_manifest.json")
             if os.path.exists(manifest_path):
-                with open(manifest_path, "r", encoding="utf-8") as f:
+                with open(manifest_path, encoding="utf-8") as f:
                     manifest = json.load(f)
                     backups = manifest.get("backups", [])
 
@@ -182,7 +182,7 @@ class BackupService:
 
         return backups
 
-    def restore_backup(self, backup_name: str) -> Dict[str, Any]:
+    def restore_backup(self, backup_name: str) -> dict[str, Any]:
         backup_path = os.path.join(BACKUP_DIR, backup_name)
 
         result = {
@@ -218,7 +218,7 @@ class BackupService:
 
         return result
 
-    def check_data_integrity(self) -> Dict[str, Any]:
+    def check_data_integrity(self) -> dict[str, Any]:
         result = {
             "healthy": True,
             "current_stats": {},
@@ -277,7 +277,7 @@ class BackupService:
 
         return result
 
-    def emergency_recovery(self) -> Dict[str, Any]:
+    def emergency_recovery(self) -> dict[str, Any]:
         result = {"success": False, "action": None, "details": {}, "error": None}
 
         try:

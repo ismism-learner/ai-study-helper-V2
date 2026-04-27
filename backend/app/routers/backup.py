@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
-from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
 import os
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, BackgroundTasks, HTTPException
+from pydantic import BaseModel
 
 from app.services.backup_service import backup_service
 
@@ -10,44 +11,44 @@ router = APIRouter()
 
 class BackupInfo(BaseModel):
     name: str
-    path: Optional[str] = None
+    path: str | None = None
     reason: str
     timestamp: str
-    stats: Dict[str, int]
+    stats: dict[str, int]
 
 
 class BackupResponse(BaseModel):
     success: bool
-    backup_path: Optional[str] = None
-    timestamp: Optional[str] = None
-    reason: Optional[str] = None
-    stats: Dict[str, int] = {}
-    error: Optional[str] = None
+    backup_path: str | None = None
+    timestamp: str | None = None
+    reason: str | None = None
+    stats: dict[str, int] = {}
+    error: str | None = None
 
 
 class RestoreResponse(BaseModel):
     success: bool
-    backup_name: Optional[str] = None
-    restored_stats: Dict[str, int] = {}
-    previous_stats: Dict[str, int] = {}
-    error: Optional[str] = None
+    backup_name: str | None = None
+    restored_stats: dict[str, int] = {}
+    previous_stats: dict[str, int] = {}
+    error: str | None = None
 
 
 class IntegrityResponse(BaseModel):
     healthy: bool
-    current_stats: Dict[str, int] = {}
-    warnings: List[str] = []
-    recommendations: List[str] = []
+    current_stats: dict[str, int] = {}
+    warnings: list[str] = []
+    recommendations: list[str] = []
 
 
 class EmergencyRecoveryResponse(BaseModel):
     success: bool
-    action: Optional[str] = None
-    details: Dict[str, Any] = {}
-    error: Optional[str] = None
+    action: str | None = None
+    details: dict[str, Any] = {}
+    error: str | None = None
 
 
-@router.get("/list", response_model=List[BackupInfo])
+@router.get("/list", response_model=list[BackupInfo])
 async def list_backups():
     backups = backup_service.list_backups()
     return [BackupInfo(**b) for b in backups]

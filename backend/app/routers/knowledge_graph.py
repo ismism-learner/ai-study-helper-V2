@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, Depends
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from typing import Optional, List
 
 from app.database import get_db
 from app.services.sqlite import KnowledgeGraphService
@@ -14,7 +15,7 @@ def get_service(db=Depends(get_db)) -> KnowledgeGraphService:
 
 class SearchRequest(BaseModel):
     keyword: str = Field(..., min_length=1)
-    entity_type: Optional[str] = None
+    entity_type: str | None = None
     limit: int = Field(20, ge=1, le=100)
 
 
@@ -22,7 +23,7 @@ class QuickSummaryRequest(BaseModel):
     text: str = Field(..., min_length=10)
     book_id: str
     book_title: str
-    chapter_index: Optional[int] = None
+    chapter_index: int | None = None
     text_position: int
 
 
@@ -30,7 +31,7 @@ class DetailedQuestionRequest(BaseModel):
     text: str = Field(..., min_length=10)
     book_id: str
     book_title: str
-    chapter_index: Optional[int] = None
+    chapter_index: int | None = None
     text_position: int
 
 
@@ -48,7 +49,7 @@ async def kg_health_check():
 
 @router.get("/graph-data")
 async def get_graph_data(
-    book_title: Optional[str] = None,
+    book_title: str | None = None,
     service: KnowledgeGraphService = Depends(get_service),
 ):
     try:
@@ -80,9 +81,7 @@ async def get_statistics(service: KnowledgeGraphService = Depends(get_service)):
 
 
 @router.post("/search")
-async def search_entities(
-    request: SearchRequest, service: KnowledgeGraphService = Depends(get_service)
-):
+async def search_entities(request: SearchRequest, service: KnowledgeGraphService = Depends(get_service)):
     try:
         results = service.search_nodes(
             keyword=request.keyword,
@@ -95,9 +94,7 @@ async def search_entities(
 
 
 @router.delete("/nodes/{node_id}")
-async def delete_node(
-    node_id: str, service: KnowledgeGraphService = Depends(get_service)
-):
+async def delete_node(node_id: str, service: KnowledgeGraphService = Depends(get_service)):
     try:
         success = service.delete_node(node_id)
         if not success:
@@ -110,8 +107,8 @@ async def delete_node(
 
 
 class UpdateNodeRequest(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
 
 
 @router.put("/nodes/{node_id}")
@@ -121,9 +118,7 @@ async def update_node(
     service: KnowledgeGraphService = Depends(get_service),
 ):
     try:
-        node = service.update_node(
-            node_id, name=request.name, description=request.description
-        )
+        node = service.update_node(node_id, name=request.name, description=request.description)
         if not node:
             raise HTTPException(status_code=404, detail="节点不存在")
         return {
@@ -150,12 +145,10 @@ async def clear_all(service: KnowledgeGraphService = Depends(get_service)):
 
 
 @router.post("/quick-summary")
-async def create_quick_summary(
-    request: QuickSummaryRequest, service: KnowledgeGraphService = Depends(get_service)
-):
+async def create_quick_summary(request: QuickSummaryRequest, service: KnowledgeGraphService = Depends(get_service)):
     try:
-        from app.services.ai_service import ai_service
         from app.config import settings_manager
+        from app.services.ai_service import ai_service
 
         prompt = settings_manager.quick_summary_prompt
         full_prompt = f"{prompt}\n\n【文本内容】\n{request.text}"
@@ -214,8 +207,8 @@ async def create_detailed_question(
     service: KnowledgeGraphService = Depends(get_service),
 ):
     try:
-        from app.services.ai_service import ai_service
         from app.config import settings_manager
+        from app.services.ai_service import ai_service
 
         prompt = settings_manager.kg_concept_prompt
         full_prompt = f"{prompt}\n\n【文本内容】\n{request.text}"
@@ -267,3 +260,29 @@ async def create_detailed_question(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"创建详细提问失败: {str(e)}")
+
+
+class DeleteEdgeRequest(BaseModel):
+    edge_id: str
+
+
+@router.delete("/edges/{edge_id}")
+async def delete_edge(edge_id: str, service: KnowledgeGraphService = Depends(get_service)):
+    try:
+        success = service.delete_edge(edge_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="关系不存在")
+        return {"success": True, "message": "关系已删除"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"删除关系失败: {str(e)}")
+
+
+@router.delete("/clear-by-book/{book_id}")
+async def clear_by_book(book_id: str, service: KnowledgeGraphService = Depends(get_service)):
+    try:
+        result = service.clear_by_book(book_id)
+        return {"success": True, **result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"清除书籍知识图谱数据失败: {str(e)}")

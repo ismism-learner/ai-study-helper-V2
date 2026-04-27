@@ -203,7 +203,7 @@ const ResizablePanels: React.FC<ResizablePanelsProps> = ({
       const containerWidth = containerRef.current.offsetWidth;
       const panelCount = panels.length;
       const avgPanelWidth = containerWidth / panelCount;
-      const swapThreshold = avgPanelWidth * 0.04;
+      const swapThreshold = avgPanelWidth * 0.7;
 
       // Swap with left neighbor
       if (dx < -swapThreshold && reorderIndex > 0) {

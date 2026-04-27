@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useId } from 'react';
+﻿import React, { useRef, useEffect, useState, useId } from 'react';
 
 // Minimal type declarations for JSXGraph CDN global
 // Only declare what we actually use — avoids depending on broken jsxgraph .d.ts
@@ -122,13 +122,13 @@ const JSXGraphBlock: React.FC<JSXGraphBlockProps> = ({ config }) => {
       <div style={{
         height: 400,
         width: '100%',
-        background: '#1e1b2e',
+        background: 'var(--bg-base)',
         border: '1px solid rgba(139, 92, 246, 0.2)',
         borderRadius: 8,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#f87171',
+        color: 'var(--danger-400)',
         fontSize: 14,
         padding: 16,
         boxSizing: 'border-box',
@@ -151,13 +151,13 @@ const JSXGraphBlock: React.FC<JSXGraphBlockProps> = ({ config }) => {
           right: 0,
           bottom: 0,
           height: 400,
-          background: '#1e1b2e',
+          background: 'var(--bg-base)',
           border: '1px solid rgba(139, 92, 246, 0.2)',
           borderRadius: 8,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#94a3b8',
+          color: 'var(--text-muted)',
           fontSize: 14,
           zIndex: 1,
         }}>
@@ -166,7 +166,7 @@ const JSXGraphBlock: React.FC<JSXGraphBlockProps> = ({ config }) => {
               width: 24,
               height: 24,
               border: '2px solid rgba(139, 92, 246, 0.3)',
-              borderTopColor: '#8b5cf6',
+              borderTopColor: 'var(--accent-500)',
               borderRadius: '50%',
               animation: 'jsxgraph-spin 0.8s linear infinite',
               margin: '0 auto 12px',
@@ -180,12 +180,12 @@ const JSXGraphBlock: React.FC<JSXGraphBlockProps> = ({ config }) => {
         style={{
           height: 400,
           width: '100%',
-          background: '#1e1b2e',
+          background: 'var(--bg-base)',
           border: '1px solid rgba(139, 92, 246, 0.2)',
           borderRadius: 8,
           overflow: 'hidden',
           // JSXGraph dark theme overrides
-          color: '#cbd5e1',
+          color: 'var(--border-default)',
         }}
       />
       <style>{`

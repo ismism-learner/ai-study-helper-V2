@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BookDocument, Document } from '../types';
 import { bookApi, documentApi, worldTimelineApi } from '../api';
 import { Clock, Tag, BookOpen, Calendar, X, FileText, ChevronDown, ChevronUp, Search, Download } from 'lucide-react';
@@ -32,10 +32,10 @@ interface TagColors {
 }
 
 const PRESET_COLORS: { name: string; bg: string; text: string; border: string; light: string }[] = [
-  { name: '红色', bg: '#ef4444', text: '#ffffff', border: '#dc2626', light: '#fef2f2' },
+  { name: '红色', bg: 'var(--danger-500)', text: '#ffffff', border: '#dc2626', light: '#fef2f2' },
   { name: '橙色', bg: '#f97316', text: '#ffffff', border: '#ea580c', light: '#fff7ed' },
   { name: '黄色', bg: '#eab308', text: '#ffffff', border: '#ca8a04', light: '#fefce8' },
-  { name: '绿色', bg: '#22c55e', text: '#ffffff', border: '#16a34a', light: '#f0fdf4' },
+  { name: '绿色', bg: 'var(--success-500)', text: '#ffffff', border: '#16a34a', light: '#f0fdf4' },
   { name: '青色', bg: '#06b6d4', text: '#ffffff', border: '#0891b2', light: '#ecfeff' },
   { name: '蓝色', bg: '#3b82f6', text: '#ffffff', border: '#2563eb', light: '#eff6ff' },
   { name: '紫色', bg: '#8b5cf6', text: '#ffffff', border: '#7c3aed', light: '#f5f3ff' },
@@ -60,10 +60,10 @@ const generateColorFromString = (str: string): TagColors => {
   }
   const hue = Math.abs(hash % 360);
   return {
-    bg: `hsl(${hue}, 70%, 50%)`,
-    text: '#ffffff',
-    border: `hsl(${hue}, 70%, 40%)`,
-    light: `hsl(${hue}, 70%, 95%)`
+    bg: `hsl(${hue}, 55%, 32%)`,
+    text: `hsl(${hue}, 30%, 18%)`,
+    border: `hsl(${hue}, 45%, 48%)`,
+    light: `hsl(${hue}, 30%, 92%)`
   };
 };
 
@@ -500,8 +500,8 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
           event.tags.forEach(tag => {
             const tagSpan = document.createElement('span');
             const colors = getTagColors(tag);
-            tagSpan.style.background = colors.light;
-            tagSpan.style.color = colors.bg;
+            tagSpan.style.background = colors.bg;
+            tagSpan.style.color = '#ffffff';
             tagSpan.style.border = `1px solid ${colors.border}`;
             tagSpan.style.borderRadius = '12px';
             tagSpan.style.padding = '3px 10px';
@@ -558,7 +558,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
           onClick={() => handleEventClick(event)}
           style={{ borderLeft: `3px solid ${colors.bg}` }}
         >
-          <div className="event-date-badge" style={{ background: colors.light, color: colors.bg }}>
+          <div className="event-date-badge" style={{ background: colors.bg, color: '#ffffff' }}>
             <Calendar size={12} />
             <span>{getDateLabel(event)}</span>
           </div>
@@ -584,8 +584,8 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
                     key={i} 
                     className="tag-item"
                     style={{ 
-                      background: tagColor.light, 
-                      color: tagColor.bg,
+                      background: tagColor.bg, 
+                      color: '#ffffff',
                       border: `1px solid ${tagColor.border}`
                     }}
                   >
@@ -623,11 +623,11 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
             {groupedByYear.map(([year, yearEvents]) => (
               <div key={year} className="year-card" style={{ borderTop: `3px solid ${colors.bg}` }}>
                 <div className="year-card-header" style={{ background: colors.light }}>
-                  <div className="year-number" style={{ color: colors.bg }}>
+                  <div className="year-number" style={{ color: colors.text }}>
                     <Calendar size={16} />
                     <span>{year}</span>
                   </div>
-                  <span className="year-count" style={{ color: colors.bg }}>{yearEvents.length} 个事件</span>
+                  <span className="year-count" style={{ color: colors.text }}>{yearEvents.length} 个事件</span>
                 </div>
                 <div className="year-card-body">
                   {yearEvents.map((event, index) => 
@@ -656,7 +656,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
                   alignItems: 'center',
                   gap: '4px',
                   padding: '6px 12px',
-                  background: '#22c55e',
+                  background: 'var(--success-500)',
                   border: 'none',
                   borderRadius: '4px',
                   color: 'white',
@@ -677,7 +677,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
                     alignItems: 'center',
                     gap: '4px',
                     padding: '4px 8px',
-                    background: '#ef4444',
+                    background: 'var(--danger-500)',
                     border: 'none',
                     borderRadius: '4px',
                     color: 'white',
@@ -837,12 +837,12 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
                               alignItems: 'center',
                               gap: '6px',
                               padding: '8px 10px',
-                              background: isSelected ? colors.bg : 'white',
-                              border: `1px solid ${isSelected ? colors.border : colors.border}`,
+                              background: isSelected ? colors.bg : 'var(--bg-surface)',
+                              border: `1px solid ${colors.border}`,
                               borderRadius: '6px',
                               cursor: 'pointer',
                               fontSize: '12px',
-                              color: isSelected ? colors.text : colors.bg,
+                              color: isSelected ? '#ffffff' : 'var(--text-primary)',
                               transition: 'all 0.15s ease',
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
@@ -886,7 +886,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
                               gap: '4px',
                               padding: '3px 8px',
                               background: colors.bg,
-                              color: colors.text,
+                              color: '#ffffff',
                               borderRadius: '12px',
                               fontSize: '11px'
                             }}
@@ -902,7 +902,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ onBookSelect, onDocumentS
                                 border: 'none',
                                 padding: 0,
                                 cursor: 'pointer',
-                                color: colors.text,
+                                color: '#ffffff',
                                 display: 'flex',
                                 alignItems: 'center'
                               }}

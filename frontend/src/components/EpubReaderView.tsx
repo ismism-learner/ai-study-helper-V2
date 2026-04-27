@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ePub, { Rendition, NavItem, Book } from 'epubjs';
 import {
   ArrowLeft,
@@ -28,9 +28,9 @@ interface EpubReaderViewProps {
 
 const FONT_SIZES = [12, 14, 16, 18, 20, 22, 24, 28];
 const THEMES = [
-  { name: 'light', bg: '#ffffff', color: '#1a1a2e', toolbarBg: '#ffffff' },
-  { name: 'sepia', bg: '#f4ecd8', color: '#5b4636', toolbarBg: '#f9f3e8' },
-  { name: 'dark', bg: '#1e293b', color: '#e2e8f0', toolbarBg: '#0f172a' },
+  { name: 'light', bg: 'var(--bg-base)', color: 'var(--bg-base)', toolbarBg: 'var(--bg-base)' },
+  { name: 'sepia', bg: 'var(--bg-surface)', color: 'var(--text-secondary)', toolbarBg: 'var(--bg-surface)' },
+  { name: 'dark', bg: 'var(--bg-base)', color: 'var(--border-subtle)', toolbarBg: 'var(--bg-base)' },
 ];
 
 const EpubReaderView: React.FC<EpubReaderViewProps> = ({ book, fileUrl, onBack }) => {

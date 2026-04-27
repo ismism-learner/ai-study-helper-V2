@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 export function useSidebarResize(initialWidth: number = 280) {
   const [sidebarWidth, setSidebarWidth] = useState(initialWidth);
   const [isResizing, setIsResizing] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -33,10 +34,16 @@ export function useSidebarResize(initialWidth: number = 280) {
     }
   }, [isResizing, handleMouseMove, handleMouseUp]);
 
+  const toggleCollapse = useCallback(() => {
+    setIsCollapsed(prev => !prev);
+  }, []);
+
   return {
-    sidebarWidth,
+    sidebarWidth: isCollapsed ? 0 : sidebarWidth,
     isResizing,
+    isCollapsed,
     sidebarRef,
     handleMouseDown,
+    toggleCollapse,
   };
 }

@@ -58,7 +58,7 @@
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  background: linear-gradient(135deg, var(--primary-color), var(--accent-600));
+  background: var(--primary-color);
   color: white;
   border-radius: 12px;
   font-size: 12px;
@@ -360,13 +360,14 @@
 }
 
 .highlighted-keyword {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  background: var(--warning-light);
   padding: 2px 4px;
   border-radius: 3px;
   animation: keyword-pulse 1s ease-in-out;
 }
 
 .document-content {
+  font-family: var(--font-serif);
   line-height: 1.8;
   font-size: 16px;
 }
@@ -474,7 +475,7 @@
   display: inline-flex;
   align-items: center;
   padding: 2px 6px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-500);
   color: white;
   border-radius: 4px;
   font-size: 10px;
@@ -927,7 +928,7 @@
   align-items: center;
   gap: 4px;
   padding: 4px 12px;
-  background: var(--gradient-accent);
+  background: var(--accent-500);
   color: white;
   border: none;
   border-radius: 4px;
@@ -953,7 +954,7 @@
   align-items: center;
   gap: 4px;
   padding: 4px 12px;
-  background: var(--gradient-warning);
+  background: var(--warning-500);
   color: white;
   border: none;
   border-radius: 4px;
@@ -997,7 +998,7 @@
   align-items: center;
   gap: 4px;
   padding: 6px 12px;
-  background: var(--gradient-accent);
+  background: var(--accent-500);
   color: white;
   border: none;
   border-radius: 6px;
@@ -1120,7 +1121,7 @@
   padding: 6px 12px;
   width: 100%;
   justify-content: center;
-  background: var(--gradient-accent);
+  background: var(--accent-500);
   color: white;
   border: none;
   border-radius: 6px;

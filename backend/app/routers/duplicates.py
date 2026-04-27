@@ -1,14 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from typing import Optional, List, Dict
-from datetime import datetime
-import uuid
 import os
+import uuid
+from datetime import datetime
+from typing import Dict, List, Optional
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import BookDocument
-from app.services.duplicate_detector import duplicate_detector, DuplicateCheckResult
+from app.services.duplicate_detector import DuplicateCheckResult, duplicate_detector
 
 router = APIRouter()
 
@@ -16,22 +17,22 @@ router = APIRouter()
 class DuplicateCheckRequest(BaseModel):
     file_path: str
     title: str
-    author: Optional[str] = None
-    skip_hash: Optional[bool] = False
+    author: str | None = None
+    skip_hash: bool | None = False
 
 
 class DuplicateCheckResponse(BaseModel):
     is_duplicate: bool
     duplicate_type: str
-    existing_book_id: Optional[str] = None
-    existing_book_title: Optional[str] = None
+    existing_book_id: str | None = None
+    existing_book_title: str | None = None
     similarity_score: float
-    details: Dict
+    details: dict
 
 
 class DuplicateGroupResponse(BaseModel):
     group_id: str
-    books: List[Dict]
+    books: list[dict]
     primary_book_id: str
 
 
@@ -40,7 +41,7 @@ class DuplicateScanResult(BaseModel):
     exact_duplicates: int
     content_duplicates: int
     metadata_duplicates: int
-    duplicate_groups: List[DuplicateGroupResponse]
+    duplicate_groups: list[DuplicateGroupResponse]
 
 
 @router.post("/check", response_model=DuplicateCheckResponse)
@@ -69,7 +70,7 @@ def check_duplicate(request: DuplicateCheckRequest, db: Session = Depends(get_db
 def check_book_duplicate(
     file_path: str,
     title: str,
-    author: Optional[str] = None,
+    author: str | None = None,
     db: Session = None,
     skip_hash: bool = False,
 ) -> DuplicateCheckResult:
@@ -181,9 +182,9 @@ def check_book_duplicate(
 def scan_duplicates(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     books = db.query(BookDocument).all()
 
-    hash_groups: Dict[str, List[BookDocument]] = {}
-    content_hash_groups: Dict[str, List[BookDocument]] = {}
-    metadata_groups: Dict[str, List[BookDocument]] = {}
+    hash_groups: dict[str, list[BookDocument]] = {}
+    content_hash_groups: dict[str, list[BookDocument]] = {}
+    metadata_groups: dict[str, list[BookDocument]] = {}
 
     for book in books:
         if book.file_hash_sha256:
@@ -287,7 +288,7 @@ def get_duplicate_groups(db: Session = Depends(get_db)):
         db.query(BookDocument).filter(BookDocument.duplicate_group_id != None).all()
     )
 
-    grouped_books: Dict[str, List[Dict]] = {}
+    grouped_books: dict[str, list[dict]] = {}
 
     for book in groups:
         if book.duplicate_group_id not in grouped_books:
@@ -323,7 +324,7 @@ def get_duplicate_groups(db: Session = Depends(get_db)):
 @router.post("/resolve")
 def resolve_duplicate(
     primary_book_id: str,
-    duplicate_book_ids: List[str],
+    duplicate_book_ids: list[str],
     action: str = "keep_primary",
     db: Session = Depends(get_db),
 ):
